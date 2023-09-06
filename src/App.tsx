@@ -1,0 +1,42 @@
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import HomePage from "./pages/home-page";
+import ClientsPage from "./pages/clients-page";
+import TicketsPage from "./pages/tickets-page";
+import ProvidersPage from "./pages/providers-page";
+import CategoriesPage from "./pages/categories-page";
+import ImagesPage from "./pages/images-page";
+import PurchasesPage from "./pages/purchases-page";
+import SalesPage from "./pages/sales-page";
+import PublicationsPage from "./pages/publications-page";
+import ElementsPage from "./pages/elements-page";
+import ProblemsPage from "./pages/problems-page";
+import ServicesPage from "./pages/services-page";
+import UsersPage from "./pages/users-page";
+import ProductsPage from "./pages/products-page";
+import MessagesPage from "./pages/messages-page";
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/clientes" element={<ClientsPage />} />
+        <Route path="/elementos" element={<ElementsPage />} />
+        <Route path="/usuarios" element={<UsersPage />} />
+        <Route path="/tickets" element={<TicketsPage />} />
+        <Route path="/tickets/:id/mensajes" element={<MessagesPage />} />
+        <Route path="/tickets/:id/problemas" element={<ProblemsPage />} />
+        <Route path="/tickets/:id/servicios" element={<ServicesPage />} />
+        <Route path="/tickets/:id/servicios/operaciones" />
+        <Route path="/productos" element={<ProductsPage />} />
+        <Route path="/ventas" element={<SalesPage />} />
+        <Route path="/compras" element={<PurchasesPage />} />
+        <Route path="/proveedores" element={<ProvidersPage />} />
+        <Route path="/publicaciones" element={<PublicationsPage />} />
+        <Route path="/imagenes" element={<ImagesPage />} />
+        <Route path="/categorias" element={<CategoriesPage />} />
+        <Route path="/mensajero" />
+      </Routes>
+    </BrowserRouter>
+  );
+}
