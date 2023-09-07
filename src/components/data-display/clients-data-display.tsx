@@ -2,12 +2,19 @@ import { useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "../../assets/chevron-right-solid.svg";
 import { ReactComponent as Down } from "../../assets/chevron-down-solid.svg";
 import { ReactComponent as Face } from "../../assets/thinking.svg";
+import { ReactComponent as Warning } from "../../assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
-import { ModalProps, DataRow, DropupProps, Action, Cliente } from "../../types";
-import { Toaster } from "react-hot-toast";
+import {
+  ModalProps,
+  DataRowProps,
+  DropupProps,
+  Action,
+  Cliente,
+} from "../../types";
+import toast, { Toaster } from "react-hot-toast";
 import ClientService from "../../services/client-service";
 
-function AddModal({ isOpen, close }: ModalProps) {
+function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [formData, setFormData] = useState<Cliente>({
     nombre: "",
@@ -20,18 +27,33 @@ function AddModal({ isOpen, close }: ModalProps) {
     contraseña: "",
   });
 
+  const resetFormData = () => {
+    setFormData({
+      nombre: "",
+      apellido: "",
+      cédula: "",
+      email: "",
+      telefono: "",
+      dirección: "",
+      enviarMensajes: false,
+      contraseña: "",
+    });
+  };
+
   useEffect(() => {
     if (isOpen) {
       ref.current?.showModal();
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
-          close();
+          closeModal();
           ref.current?.close();
+          resetFormData();
         }
       });
     } else {
-      close();
+      closeModal();
       ref.current?.close();
+      resetFormData();
     }
   }, [isOpen]);
 
@@ -46,7 +68,7 @@ function AddModal({ isOpen, close }: ModalProps) {
           e.clientY < dialogDimensions.top ||
           e.clientY > dialogDimensions.bottom
         ) {
-          close();
+          closeModal();
           ref.current?.close();
         }
       }}
@@ -55,7 +77,24 @@ function AddModal({ isOpen, close }: ModalProps) {
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir cliente</h1>
       </div>
-      <form className="flex flex-col p-8 pt-6 gap-4" autoComplete="off">
+      <form
+        className="flex flex-col p-8 pt-6 gap-4"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          closeModal();
+          const loadingToast = toast.loading("Añadiendo cliente...");
+          ClientService.create(formData).then((data) => {
+            toast.dismiss(loadingToast);
+            setOperationAsCompleted();
+            if (data === false) {
+              toast.error("Cliente no pudo ser añadido.");
+            } else {
+              toast.success("Cliente añadido con exito.");
+            }
+          });
+        }}
+      >
         <div className="flex gap-4">
           <input
             type="text"
@@ -135,6 +174,7 @@ function AddModal({ isOpen, close }: ModalProps) {
         <input
           type="text"
           placeholder="Contraseña"
+          name="password"
           onChange={(e) => {
             setFormData({
               ...formData,
@@ -168,7 +208,7 @@ function AddModal({ isOpen, close }: ModalProps) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={close}
+              onClick={closeModal}
               className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
             >
               Cancelar
@@ -183,7 +223,300 @@ function AddModal({ isOpen, close }: ModalProps) {
   );
 }
 
-function DataRow({ action, cliente }: DataRow) {
+function EditModal({
+  isOpen,
+  closeModal,
+  setOperationAsCompleted,
+  cliente,
+}: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [formData, setFormData] = useState<Cliente>({
+    ...cliente!,
+    contraseña: "",
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-2/5 h-fit rounded-xl shadow"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Editar cliente</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          closeModal();
+          const loadingToast = toast.loading("Editando cliente...");
+          const cleanedFormData = { ...formData };
+
+          if (formData.contraseña === "") {
+            delete cleanedFormData.contraseña;
+          }
+
+          ClientService.update(cliente?.id!, cleanedFormData).then((data) => {
+            toast.dismiss(loadingToast);
+            setOperationAsCompleted();
+            if (data) {
+              toast.success("Cliente editado con exito.");
+            } else {
+              toast.error("Cliente no pudo ser editado.");
+            }
+            setOperationAsCompleted();
+          });
+        }}
+      >
+        <div className="flex gap-4">
+          <input
+            type="text"
+            placeholder="Nombre"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            value={formData.nombre}
+            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+          />
+          <input
+            type="text"
+            placeholder="Apellido"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                apellido: e.target.value,
+              });
+            }}
+            value={formData.apellido}
+            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+          />
+        </div>
+        <div className="flex gap-4">
+          <input
+            type="text"
+            placeholder="Cédula"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                cédula: e.target.value,
+              });
+            }}
+            value={formData.cédula}
+            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+          />
+          <input
+            type="tel"
+            placeholder="Telefono"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                telefono: e.target.value,
+              });
+            }}
+            value={formData.telefono}
+            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+          />
+        </div>
+        <input
+          type="email"
+          placeholder="E-mail"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              email: e.target.value,
+            });
+          }}
+          value={formData.email}
+          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+        />
+        <input
+          type="text"
+          placeholder="Dirección"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              dirección: e.target.value,
+            });
+          }}
+          value={formData.dirección}
+          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+        />
+        <input
+          type="text"
+          placeholder="Nueva contraseña"
+          name="password"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              contraseña: e.target.value,
+            });
+          }}
+          value={formData.contraseña}
+          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+        />
+        <div className="flex w-full justify-between items-center">
+          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+            <input
+              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              type="checkbox"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  enviarMensajes: e.target.checked,
+                });
+              }}
+              checked={formData.enviarMensajes}
+              id="checkbox"
+            />
+            <label
+              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+              htmlFor="checkbox"
+            >
+              ¿Enviar mensajes?
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            >
+              Cancelar
+            </button>
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
+              Guardar
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
+function DeleteModal({
+  isOpen,
+  closeModal,
+  setOperationAsCompleted,
+  cliente,
+}: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-2/5 h-fit rounded-xl shadow"
+    >
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          closeModal();
+          const loadingToast = toast.loading("Eliminando cliente...");
+          ClientService.delete(cliente?.id!).then((data) => {
+            toast.dismiss(loadingToast);
+            if (data) {
+              toast.success("Cliente eliminado con exito.");
+            } else {
+              toast.error("Cliente no pudo ser eliminado.");
+            }
+            setOperationAsCompleted();
+          });
+        }}
+      >
+        <div className="place-self-center  flex flex-col items-center">
+          <Warning className="fill-red-400 h-16 w-16" />
+          <p className="font-bold text-lg text-center mt-2">¿Esta seguro de que desea continuar?</p>
+          <p className="font-medium text text-center mt-1">
+            Los cambios provocados por esta acción son irreversibles.
+          </p>
+        </div>
+        <div className="flex gap-2 justify-center">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+          >
+            Cancelar
+          </button>
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
+            Continuar
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
+function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  const closeEditModal = () => {
+    setIsEditOpen(false);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteOpen(false);
+  };
+
   return (
     <tr className="bg-white border-b dark:bg-gray-900 dark:border-gray-700 last:border-b-0">
       <th
@@ -195,23 +528,50 @@ function DataRow({ action, cliente }: DataRow) {
       <td className="px-6 py-4">{cliente?.nombre}</td>
       <td className="px-6 py-4">{cliente?.apellido}</td>
       <td className="px-6 py-4">{cliente?.cédula}</td>
+      <td className="px-6 py-4">{cliente?.email}</td>
       <td className="px-6 py-4">{cliente?.telefono}</td>
       <td className="px-6 py-4">{cliente?.dirección}</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 w-52">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
           </button>
         )}
         {action === "EDIT" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline">
-            Editar cliente
-          </button>
+          <>
+            <button
+              onClick={() => {
+                setIsEditOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+            >
+              Editar cliente
+            </button>
+            <EditModal
+              cliente={cliente}
+              isOpen={isEditOpen}
+              closeModal={closeEditModal}
+              setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
         )}
         {action === "DELETE" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline">
-            Eliminar cliente
-          </button>
+          <>
+            <button
+              onClick={() => {
+                setIsDeleteOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+            >
+              Eliminar cliente
+            </button>
+            <DeleteModal
+              cliente={cliente}
+              isOpen={isDeleteOpen}
+              closeModal={closeDeleteModal}
+              setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
         )}
       </td>
     </tr>
@@ -363,6 +723,7 @@ export default function ClientsDataDisplay() {
   const [notFound, setNotFound] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
+  const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
 
   const openAddModal = () => {
@@ -381,7 +742,14 @@ export default function ClientsDataDisplay() {
     setAction(action);
   };
 
+  const setAsCompleted = () => {
+    setIsOperationCompleted(true);
+  };
+
   useEffect(() => {
+    if (isOperationCompleted) {
+      setLoading(true);
+    }
     ClientService.getAll().then((data) => {
       if (data === false) {
         setNotFound(true);
@@ -390,8 +758,9 @@ export default function ClientsDataDisplay() {
         setClientes(data);
         setLoading(false);
       }
+      setIsOperationCompleted(false);
     });
-  }, []);
+  }, [isOperationCompleted]);
 
   return (
     <>
@@ -421,7 +790,7 @@ export default function ClientsDataDisplay() {
           </div>
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
-        {clientes.length > 0 && (
+        {clientes.length > 0 && loading == false && (
           <div className="relative overflow-x-auto sm:rounded-lg shadow">
             <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
               <thead className="text-xs text-[#2096ed] uppercase bg-blue-100 dark:bg-gray-700 dark:text-gray-400">
@@ -439,6 +808,9 @@ export default function ClientsDataDisplay() {
                     Cédula
                   </th>
                   <th scope="col" className="px-6 py-3">
+                    Email
+                  </th>
+                  <th scope="col" className="px-6 py-3">
                     Telefono
                   </th>
                   <th scope="col" className="px-6 py-3">
@@ -450,7 +822,16 @@ export default function ClientsDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                <DataRow action={action} />
+                {clientes.map((cliente) => {
+                  return (
+                    <DataRow
+                      action={action}
+                      cliente={cliente}
+                      setOperationAsCompleted={setAsCompleted}
+                      key={cliente.id}
+                    />
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -489,15 +870,19 @@ export default function ClientsDataDisplay() {
                     fill="currentFill"
                   />
                 </svg>
-                <span className="sr-only">Loading...</span>
+                <span className="sr-only">Cargando...</span>
               </div>
             </div>
           </div>
         )}
       </div>
-      {clientes.length > 0 && <Pagination />}
+      {clientes.length > 0 && loading == false && <Pagination />}
       <Toaster position="bottom-right" reverseOrder={false} />
-      <AddModal isOpen={isAddOpen} close={closeAddModal} />
+      <AddModal
+        isOpen={isAddOpen}
+        setOperationAsCompleted={setAsCompleted}
+        closeModal={closeAddModal}
+      />
     </>
   );
 }

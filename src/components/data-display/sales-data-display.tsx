@@ -118,7 +118,7 @@ function DataRow({ action }: DataRow) {
         )}
         {action === "VIEW_AS_PDF" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline">
-            Listar como PDF
+            PDF de venta
           </button>
         )}
       </td>

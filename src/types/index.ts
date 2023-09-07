@@ -1,6 +1,11 @@
 export type ModalProps = {
   isOpen: boolean;
-  close: () => void;
+  closeModal: () => void;
+  setOperationAsCompleted: () => void;
+  cliente?: Cliente;
+  usuario?: Usuario;
+  producto?: Producto;
+  publicación?: Publicación;
 };
 
 export type DropupProps = {
@@ -9,10 +14,13 @@ export type DropupProps = {
   openAddModal: () => void;
 };
 
-export type DataRow = {
+export type DataRowProps = {
   action: string;
+  setOperationAsCompleted: () => void;
   cliente?: Cliente;
   usuario?: Usuario;
+  producto?: Producto;
+  publicación?: Publicación;
 };
 
 export enum Action {
@@ -208,6 +216,8 @@ export interface Publicación {
   título: string;
   contenido: string;
   esPublica: boolean;
+  creada?: Date,
+  modificada?: Date,
   imagen_id?: number;
   usuario_id?: number;
 }
