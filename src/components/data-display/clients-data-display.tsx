@@ -13,6 +13,7 @@ import {
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
 import ClientService from "../../services/client-service";
+import { useNavigate } from "react-router-dom";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -483,7 +484,9 @@ function DeleteModal({
       >
         <div className="place-self-center  flex flex-col items-center">
           <Warning className="fill-red-400 h-16 w-16" />
-          <p className="font-bold text-lg text-center mt-2">¿Esta seguro de que desea continuar?</p>
+          <p className="font-bold text-lg text-center mt-2">
+            ¿Esta seguro de que desea continuar?
+          </p>
           <p className="font-medium text text-center mt-1">
             Los cambios provocados por esta acción son irreversibles.
           </p>
@@ -508,6 +511,7 @@ function DeleteModal({
 function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const navigate = useNavigate();
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -518,7 +522,7 @@ function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
   };
 
   return (
-    <tr className="bg-white border-b dark:bg-gray-900 dark:border-gray-700 last:border-b-0">
+    <tr className="bg-white border border-slate-300 dark:bg-gray-900 dark:border-gray-700">
       <th
         scope="row"
         className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
@@ -531,7 +535,7 @@ function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
       <td className="px-6 py-4">{cliente?.email}</td>
       <td className="px-6 py-4">{cliente?.telefono}</td>
       <td className="px-6 py-4">{cliente?.dirección}</td>
-      <td className="px-6 py-4 w-52">
+      <td className="px-6 py-3 w-52">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -543,7 +547,7 @@ function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
               onClick={() => {
                 setIsEditOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
             >
               Editar cliente
             </button>
@@ -561,7 +565,7 @@ function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
               onClick={() => {
                 setIsDeleteOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
             >
               Eliminar cliente
             </button>
@@ -571,6 +575,18 @@ function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
               closeModal={closeDeleteModal}
               setOperationAsCompleted={setOperationAsCompleted}
             />
+          </>
+        )}
+        {action === "VIEW_ELEMENTS" && (
+          <>
+            <button
+              onClick={() => {
+                navigate(`/clientes/${cliente?.id}/elementos`);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
+            >
+              Mostrar elementos
+            </button>
           </>
         )}
       </td>
@@ -614,10 +630,10 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           text-left
           rounded-lg
           shadow-xl
-          mt-1
+          mt-2
           m-0
           bg-clip-padding
-          border-none
+          border
         "
     >
       <li>
@@ -664,6 +680,29 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
             "
         >
           Eliminar cliente
+        </div>
+      </li>
+      <li>
+        <div
+          onClick={() => {
+            selectAction("VIEW_ELEMENTS");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Mostrar elementos
         </div>
       </li>
       <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
@@ -747,9 +786,6 @@ export default function ClientsDataDisplay() {
   };
 
   useEffect(() => {
-    if (isOperationCompleted) {
-      setLoading(true);
-    }
     ClientService.getAll().then((data) => {
       if (data === false) {
         setNotFound(true);
@@ -791,9 +827,9 @@ export default function ClientsDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
         {clientes.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto sm:rounded-lg shadow">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs text-[#2096ed] uppercase bg-blue-100 dark:bg-gray-700 dark:text-gray-400">
+          <div className="relative overflow-x-auto rounded-lg">
+            <table className="w-full text-sm text-left text-slate-600 dark:text-gray-400">
+              <thead className="text-xs bg-[#2096ed] uppercase text-white dark:bg-gray-700 dark:text-gray-400">
                 <tr>
                   <th scope="col" className="px-6 py-3">
                     #
@@ -816,7 +852,7 @@ export default function ClientsDataDisplay() {
                   <th scope="col" className="px-6 py-3">
                     Dirección
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-8 py-3">
                     Acción
                   </th>
                 </tr>

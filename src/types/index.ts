@@ -6,6 +6,10 @@ export type ModalProps = {
   usuario?: Usuario;
   producto?: Producto;
   publicación?: Publicación;
+  categoría?: Categoría;
+  proveedor?: Proveedor;
+  elemento?: Elemento;
+  ticket?: Ticket
 };
 
 export type DropupProps = {
@@ -21,12 +25,17 @@ export type DataRowProps = {
   usuario?: Usuario;
   producto?: Producto;
   publicación?: Publicación;
+  categoría?: Categoría;
+  proveedor?: Proveedor;
+  elemento?: Elemento;
+  ticket?: Ticket
 };
 
 export enum Action {
   NONE = "NONE",
   EDIT = "EDIT",
   DELETE = "DELETE",
+  VIEW_ELEMENTS = "VIEW_ELEMENTS",
   VIEW_SERVICES = "VIEW_SERVICES",
   VIEW_PROBLEMS = "VIEW_PROBLEMS",
   VIEW_MESSAGES = "VIEW_MESSAGES",
@@ -37,65 +46,66 @@ export enum Action {
   QUERY_BY = "QUERY_BY"
 }
 
-enum UsuarioRol {
+export enum UsuarioRol {
   EMPLEADO = "EMPLEADO",
   ADMINISTRADOR = "ADMINISTRADOR",
 }
 
-enum ElementoEstado {
+export enum ElementoEstado {
   ACTIVO = "ACTIVO",
   INACTIVO = "INACTIVO",
 }
 
-enum TicketEstado {
+export enum TicketEstado {
   ABIERTO = "ABIERTO",
   CERRADO = "CERRADO",
 }
 
-enum TicketTipo {
+export enum TicketTipo {
   DOMICILIO = "DOMICILIO",
   TIENDA = "TIENDA",
   REMOTO = "REMOTO",
 }
 
-enum ServicioEstado {
+export enum ServicioEstado {
   EN_PROGRESO = "EN_PROGRESO",
   COMPLETADO = "COMPLETADO",
 }
 
-enum ProblemaEstado {
+export enum ProblemaEstado {
   NO_RESUELTO = "NO_RESUELTO",
   RESUELTO = "RESUELTO",
 }
 
-enum ProblemaPrioridad {
+export enum ProblemaPrioridad {
   BAJO = "BAJO",
   MEDIA = "MEDIA",
   ALTA = "ALTA",
 }
 
-enum MensajeEstado {
+export enum MensajeEstado {
   NO_ENVIADO = "NO_ENVIADO",
   ENVIADO = "ENVIADO",
 }
 
-enum OperaciónEstado {
+export enum OperaciónEstado {
   EN_PROGRESO = "EN_PROGRESO",
   COMPLETADA = "COMPLETADA",
 }
 
-enum CategoríaTipo {
+export enum CategoríaTipo {
+  NONE = "NONE",
   ELEMENTO = "ELEMENTO",
   PRODUCTO = "PRODUCTO",
   SERVICIO = "SERVICIO",
 }
 
-enum CompraEstado {
+export enum CompraEstado {
   PENDIENTE = "PENDIENTE",
   COMFIRMADA = "CONFIRMADA",
 }
 
-enum ImagenPara {
+export enum ImagenPara {
   GALERÍA = "GALERÍA",
   PRODUCTO = "PRODUCTO",
   PUBLICACIÓN = "PUBLICACIÓN",
@@ -136,16 +146,18 @@ export interface Elemento {
   id?: number;
   nombre: string;
   descripción?: string;
-  estado: ElementoEstado;
-  readonly registrado: Date;
+  estado: `${ElementoEstado}`;
+  readonly registrado?: Date;
   cliente_id?: number;
   categoría_id?: number;
+  categoría?: Categoría;
+  cliente?: Cliente;
 }
 
 export interface Ticket {
   id?: number;
-  estado: TicketEstado;
-  tipo: TicketTipo;
+  estado: `${TicketEstado}`;
+  tipo: `${TicketTipo}`;
   readonly creado?: DataViewConstructor;
   elemento_id?: number;
 }
@@ -197,7 +209,7 @@ export interface Categoría {
   id?: number;
   nombre: string;
   descripción?: string;
-  tipo: CategoríaTipo;
+  tipo: `${CategoríaTipo}`;
 }
 
 export interface Producto {
