@@ -13,7 +13,7 @@ import { ReactComponent as Cart } from "../../assets/trolley.svg";
 import { ReactComponent as Inventory } from "../../assets/inventory.svg";
 import { ReactComponent as Down } from "../../assets/chevron-down-solid.svg";
 import { ReactComponent as Up } from "../../assets/chevron-up-solid.svg";
-import { ReactComponent as Gear } from "../../assets/gear-solid.svg";
+import { ReactComponent as Account } from "../../assets/account.svg";
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
 
@@ -21,32 +21,25 @@ export default function NavPanel() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <aside className="pt-7 shadow-md">
+    <aside className="pt-7 h-full shadow-md bg-[#2096ed]">
       <div className="font-bold text-white text-2xl pl-6 flex gap-2 items-center">
         <img
           className="h-9 w-9 object-cover"
-          src="public/assets/logo.png"
+          src="/assets/logo.png"
           alt="Logo de TecniCoelho"
           draggable="false"
         />
-        ITMS
+        <p className="cursor-default">ITMS</p>
       </div>
-      <hr className="my-3 border" />
-      <div>
-        <div className="text-white font-semibold flex flex-col gap-1 pl-5">
+      <hr className="my-4 mx-5" />
+      <div className="max-h-[568px] scrollbar-none overflow-auto pb-5">
+        <div className="text-white font-semibold flex flex-col gap-0.5 pl-5">
           <NavLink
             to="/"
             className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
           >
             <House className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Inicio</p>
-          </NavLink>
-          <NavLink
-            to="/clientes"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
-          >
-            <Work className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-            <p>Clientes</p>
           </NavLink>
           <NavLink
             to="/usuarios"
@@ -56,11 +49,25 @@ export default function NavPanel() {
             <p>Usuarios</p>
           </NavLink>
           <NavLink
+            to="/clientes"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+          >
+            <Work className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+            <p>Clientes</p>
+          </NavLink>
+          <NavLink
             to="/tickets"
             className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
           >
             <Ticket className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Tickets</p>
+          </NavLink>
+          <NavLink
+            to="/publicaciones"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+          >
+            <Article className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+            <p>Publicaciones</p>
           </NavLink>
           <NavLink
             to="/productos"
@@ -75,6 +82,13 @@ export default function NavPanel() {
           >
             <Truck className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Proveedores</p>
+          </NavLink>
+          <NavLink
+            to="/categorias"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+          >
+            <Category className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+            <p>Categorías</p>
           </NavLink>
           <div
             onClick={() => {
@@ -109,25 +123,11 @@ export default function NavPanel() {
             </div>
           ) : null}
           <NavLink
-            to="/categorias"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
-          >
-            <Category className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-            <p>Categorías</p>
-          </NavLink>
-          <NavLink
-            to="/publicaciones"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
-          >
-            <Article className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-            <p>Publicaciones</p>
-          </NavLink>
-          <NavLink
             to="/imagenes"
             className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
           >
             <Library className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-            <p>Imagenes</p>
+            <p>Galería</p>
           </NavLink>
           <NavLink
             to="/mensajero"
@@ -136,6 +136,10 @@ export default function NavPanel() {
             <Envelopes className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Mensajero</p>
           </NavLink>
+          <div className="group/parent justify-self-end	flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg">
+            <Account className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+            <p>Esta cuenta</p>
+          </div>
         </div>
       </div>
     </aside>

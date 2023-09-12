@@ -87,18 +87,18 @@ function AddModal({ isOpen, close }: ModalProps) {
 
 function DataRow({ action }: DataRow) {
   return (
-    <tr className="bg-white border-b dark:bg-gray-900 dark:border-gray-700 last:border-b-0">
+    <tr>
       <th
         scope="row"
-        className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
       >
         1
       </th>
-      <td className="px-6 py-4">Jean</td>
-      <td className="px-6 py-4">Bolívar</td>
-      <td className="px-6 py-4">bolivita</td>
-      <td className="px-6 py-4">Administrador</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-3 border border-slate-300">Jean</td>
+      <td className="px-6 py-3 border border-slate-300">Bolívar</td>
+      <td className="px-6 py-3 border border-slate-300">bolivita</td>
+      <td className="px-6 py-3 border border-slate-300">Administrador</td>
+      <td className="px-6 py-3 border border-slate-300">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -304,7 +304,7 @@ export default function UsersDataDisplay() {
 
   return (
     <>
-      <div className="absolute w-full px-8 py-5">
+      <div className="absolute w-full h-full px-8 py-5">
         <nav className="flex justify-between items-center">
           <div className="font-medium">
             Menu <Right className="w-3 h-3 inline" /> Usuarios
@@ -330,31 +330,32 @@ export default function UsersDataDisplay() {
           </div>
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
-        <div className="relative overflow-x-auto sm:rounded-lg shadow">
-          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-            <thead className="text-xs text-[#2096ed] uppercase bg-blue-100 dark:bg-gray-700 dark:text-gray-400">
+        <div className="relative overflow-x-auto">
+          <table className="w-full text-sm text-left border border-slate-300">
+            <thead className="text-xs bg-[#2096ed] uppercase text-white">
               <tr>
-                <th scope="col" className="px-6 py-3">
+                <th scope="col" className="px-6 py-3 border border-slate-300">
                   #
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th scope="col" className="px-6 py-3 border border-slate-300">
                   Nombre
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th scope="col" className="px-6 py-3 border border-slate-300">
                   Apellido
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th scope="col" className="px-6 py-3 border border-slate-300">
                   Nombre de usuario
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th scope="col" className="px-6 py-3 border border-slate-300">
                   Rol
                 </th>
-                <th scope="col" className="px-6 py-3">
-                  Acciones
+                <th scope="col" className="px-6 py-3 border border-slate-300">
+                  Acción
                 </th>
               </tr>
             </thead>
             <tbody>
+              <DataRow action={action} />
               <DataRow action={action} />
             </tbody>
           </table>

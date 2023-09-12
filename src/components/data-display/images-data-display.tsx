@@ -51,7 +51,7 @@ function AddModal({ isOpen, close }: ModalProps) {
         <div className="border-2 border-blue-300 border-dashed px-12 py-8 rounded-lg flex justify-around gap-10">
           <div className="flex flex-col items-center gap-2 cursor-pointer">
             <File className="h-10 w-10 fill-blue-200" />
-            <p className="text-sm">Subir imagen</p>
+            <p className="text-sm">Subir desde el ordenador</p>
           </div>
           <div className="inline-block min-h-[1em] w-0.5 self-stretch bg-slate-300 opacity-100 dark:opacity-50"></div>
           <div className="flex flex-col items-center gap-2 cursor-pointer">
@@ -139,7 +139,7 @@ function EditModal({ isOpen, close }: ModalProps) {
 
 function DataRow({ action }: DataRow) {
   return (
-    <tr className="bg-white border-b dark:bg-gray-900 dark:border-gray-700 last:border-b-0">
+    <tr className="bg-white border border-slate-300 dark:bg-gray-900 dark:border-gray-700">
       <th
         scope="row"
         className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
@@ -317,7 +317,7 @@ export default function ImagesDataDisplay() {
 
   return (
     <>
-      <div className="absolute w-full px-8 py-5">
+      <div className="absolute w-full h-full px-8 py-5">
         <nav className="flex justify-between items-center">
           <div className="font-medium">
             Menu <Right className="w-3 h-3 inline" /> Imagenes
@@ -343,9 +343,9 @@ export default function ImagesDataDisplay() {
           </div>
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
-        <div className="relative overflow-x-auto sm:rounded-lg shadow">
+        <div className="relative overflow-x-auto rounded-lg">
           <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-            <thead className="text-xs text-[#2096ed] uppercase bg-blue-100 dark:bg-gray-700 dark:text-gray-400">
+            <thead className="text-xs bg-[#2096ed] uppercase text-white dark:bg-gray-700 dark:text-gray-400">
               <tr>
                 <th scope="col" className="px-6 py-3">
                   #

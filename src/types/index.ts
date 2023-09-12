@@ -105,12 +105,6 @@ export enum CompraEstado {
   COMFIRMADA = "CONFIRMADA",
 }
 
-export enum ImagenPara {
-  GALERÍA = "GALERÍA",
-  PRODUCTO = "PRODUCTO",
-  PUBLICACIÓN = "PUBLICACIÓN",
-}
-
 export interface Usuario {
   id?: number;
   nombre: string;
@@ -160,6 +154,7 @@ export interface Ticket {
   tipo: `${TicketTipo}`;
   readonly creado?: DataViewConstructor;
   elemento_id?: number;
+  elemento?: Elemento;
 }
 
 export interface Servicio {
@@ -219,7 +214,7 @@ export interface Producto {
   descripción?: string;
   precio: number;
   stock: number;
-  esPublico: boolean;
+  esPúblico: boolean;
 }
 
 export interface Publicación {
@@ -227,7 +222,7 @@ export interface Publicación {
   slug: string;
   título: string;
   contenido: string;
-  esPublica: boolean;
+  esPública: boolean;
   creada?: Date,
   modificada?: Date,
   imagen_id?: number;
@@ -286,7 +281,7 @@ export interface Imagen {
   id?: number;
   url: string;
   descripción?: string;
-  para: ImagenPara;
+  esPública: boolean;
 }
 
 export interface ImagenProducto {

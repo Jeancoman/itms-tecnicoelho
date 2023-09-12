@@ -352,7 +352,7 @@ function DataRow({ action, proveedor, setOperationAsCompleted }: DataRowProps) {
   };
 
   return (
-    <tr className="bg-white border-b dark:bg-gray-900 dark:border-gray-700 last:border-b-0">
+    <tr className="bg-white border border-slate-300 dark:bg-gray-900 dark:border-gray-700">
       <th
         scope="row"
         className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
@@ -622,9 +622,9 @@ export default function ProvidersDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
         {providers.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto sm:rounded-lg shadow">
+          <div className="relative overflow-x-auto rounded-lg">
             <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs text-[#2096ed] uppercase bg-blue-100 dark:bg-gray-700 dark:text-gray-400">
+              <thead className="text-xs bg-[#2096ed] uppercase text-white dark:bg-gray-700 dark:text-gray-400">
                 <tr>
                   <th scope="col" className="px-6 py-3">
                     #

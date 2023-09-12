@@ -630,7 +630,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           text-left
           rounded-lg
           shadow-xl
-          mt-2
+          mt-1
           m-0
           bg-clip-padding
           border
@@ -682,6 +682,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           Eliminar cliente
         </div>
       </li>
+      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       <li>
         <div
           onClick={() => {

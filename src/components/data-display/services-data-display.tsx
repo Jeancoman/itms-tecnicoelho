@@ -4,9 +4,9 @@ import { ReactComponent as Right } from "../../assets/chevron-right-solid.svg";
 import { ReactComponent as Up } from "../../assets/chevron-up-solid.svg";
 import { ReactComponent as Down } from "../../assets/chevron-down-solid.svg";
 import Pagination from "../misc/pagination";
-import { ModalProps, DataRow, DropupProps, Action } from "../../types";
+import { ModalProps, DataRowProps, DropupProps, Action } from "../../types";
 
-function AddModal({ isOpen, close }: ModalProps) {
+function AddModal({ isOpen, closeModal }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -74,9 +74,9 @@ function AddModal({ isOpen, close }: ModalProps) {
   );
 }
 
-function DataRow({ action }: DataRow) {
+function DataRow({ action }: DataRowProps) {
   return (
-    <tr className="bg-white border-b dark:bg-gray-900 dark:border-gray-700 last:border-b-0">
+    <tr className="bg-white border border-slate-300 dark:bg-gray-900 dark:border-gray-700">
       <th
         scope="row"
         className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
@@ -265,7 +265,7 @@ export default function ServicesDataDisplay() {
 
   return (
     <>
-      <div className="absolute w-full px-8 py-5">
+      <div className="absolute w-full h-full px-8 py-5">
         <nav className="flex justify-between items-center">
           <div className="font-medium">
             Menu <Right className="w-3 h-3 inline" /> Servicios
@@ -291,9 +291,9 @@ export default function ServicesDataDisplay() {
           </div>
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
-        <div className="relative overflow-x-auto sm:rounded-lg shadow">
+        <div className="relative overflow-x-auto rounded-lg">
           <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-            <thead className="text-xs text-[#2096ed] uppercase bg-blue-100 dark:bg-gray-700 dark:text-gray-400">
+            <thead className="text-xs bg-[#2096ed] uppercase text-white dark:bg-gray-700 dark:text-gray-400">
               <tr>
                 <th scope="col" className="px-6 py-3">
                   #

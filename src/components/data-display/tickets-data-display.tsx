@@ -14,18 +14,24 @@ import {
   Elemento,
 } from "../../types";
 import ClientService from "../../services/client-service";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import ElementService from "../../services/element-service";
 import TicketService from "../../services/ticket-service";
+import { useNavigate } from "react-router-dom";
 
 function EditModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  elemento,
+  ticket,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
-  const [formData, setFormData] = useState<Elemento>(elemento!);
+  const [formData, setFormData] = useState<Ticket>(ticket!);
+  const [clients, setClients] = useState<Cliente[]>([]);
+  const [elements, setElements] = useState<Elemento[]>([]);
+  const [selectedClient, setSelectedClient] = useState(ticket?.id!);
+  const [selectedElement, setSelectedElement] = useState(ticket?.elemento_id!);
+  const [selectedType, setSelectedType] = useState<string>(ticket?.tipo!);
 
   useEffect(() => {
     if (isOpen) {
@@ -41,6 +47,24 @@ function EditModal({
       ref.current?.close();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (clients.length === 0) {
+      ClientService.getAll().then((data) => {
+        if (data === false) {
+        } else {
+          setClients(data);
+        }
+      });
+    } else {
+      ElementService.getAll(selectedClient).then((data) => {
+        if (data === false) {
+        } else {
+          setElements(data);
+        }
+      });
+    }
+  }, [selectedElement]);
 
   return (
     <dialog
@@ -60,7 +84,7 @@ function EditModal({
       className="w-2/5 h-fit max-h-[500px] rounded-xl shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar elemento</h1>
+        <h1 className="text-xl font-bold text-white">Editar ticket</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
@@ -68,46 +92,85 @@ function EditModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Editando elemento...");
-          ElementService.update(
-            elemento?.id!,
-            formData,
-            elemento?.cliente_id!
-          ).then((data) => {
+          const loadingToast = toast.loading("Editando ticket...");
+          TicketService.update(ticket?.id!, formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
-              toast.error("Elemento no pudo ser editado.");
+              toast.error("Ticket no pudo ser editando.");
             } else {
-              toast.success("Elemento editado con exito.");
+              toast.success("Ticket editado con exito.");
             }
           });
         }}
       >
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          placeholder="Nombre*"
-          value={formData.nombre}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
-        />
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
-        />
+        <div className="relative">
+          <select
+            onChange={(e) => {
+              setSelectedType(e.target.value);
+            }}
+            className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
+            value={selectedType}
+          >
+            <option value="">Seleccionar tipo</option>
+            <option value="TIENDA">Tienda</option>
+            <option value="DOMICILIO">Domicilio</option>
+            <option value="REMOTO">Remoto</option>
+          </select>
+          <Down className="absolute h-4 w-4 top-3 right-5" />
+        </div>
+        <div className="relative">
+          <select
+            onChange={(e) => {
+              setSelectedClient(Number(e.target.value));
+            }}
+            className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
+            value={selectedClient}
+          >
+            <option value={-1}>Seleccionar cliente</option>
+            {clients.map((client) => (
+              <option key={client.id} value={client.id}>
+                {client.nombre} {client.apellido}, {client.cédula}
+              </option>
+            ))}
+          </select>
+          <Down className="absolute h-4 w-4 top-3 right-5" />
+        </div>
+        {clients.length > 0 && elements.length > 0 && (
+          <div className="relative">
+            <select
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  elemento_id: Number(e.target.value),
+                });
+                setSelectedElement(Number(e.target.value));
+              }}
+              className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
+              value={selectedElement}
+            >
+              <option value={-1}>Seleccionar elemento</option>
+              {elements.map((element) => (
+                <option key={element.id} value={element.id}>
+                  {element.nombre}
+                </option>
+              ))}
+            </select>
+            <Down className="absolute h-4 w-4 top-3 right-5" />
+          </div>
+        )}
+        {clients.length > 0 && elements.length === 0 && selectedClient > 0 ? (
+          <div className="relative">
+            <select
+              disabled={true}
+              className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
+              value={-1}
+            >
+              <option value={-1}>Este cliente no tiene elementos</option>
+            </select>
+            <Down className="absolute h-4 w-4 top-3 right-5" />
+          </div>
+        ) : null}
         <div className="flex gap-2">
           <button
             type="button"
@@ -146,7 +209,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     });
     setSelectedClient(-1);
     setSelectedElement(-1);
-    setSelectedType("")
+    setSelectedType("");
   };
 
   useEffect(() => {
@@ -310,7 +373,7 @@ function DeleteModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  elemento,
+  ticket,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -352,24 +415,22 @@ function DeleteModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Eliminando elemento...");
-          ElementService.delete(elemento?.id!, elemento?.cliente_id!).then(
-            (data) => {
-              toast.dismiss(loadingToast);
-              if (data) {
-                toast.success("Elemento eliminado con exito.");
-              } else {
-                toast.error("Elemento no pudo ser eliminado.");
-              }
-              setOperationAsCompleted();
+          const loadingToast = toast.loading("Eliminando ticket...");
+          TicketService.delete(ticket?.id!).then((data) => {
+            toast.dismiss(loadingToast);
+            if (data) {
+              toast.success("Ticket eliminado con exito.");
+            } else {
+              toast.error("Ticket no pudo ser eliminado.");
             }
-          );
+            setOperationAsCompleted();
+          });
         }}
       >
         <div className="place-self-center  flex flex-col items-center">
           <Warning className="fill-red-400 h-16 w-16" />
           <p className="font-bold text-lg text-center mt-2">
-            ¿Esta seguro de que desea continuar?
+            ¿Está seguro de que desea continuar?
           </p>
           <p className="font-medium text text-center mt-1">
             Los cambios provocados por esta acción son irreversibles.
@@ -392,52 +453,117 @@ function DeleteModal({
   );
 }
 
-function DataRow({ action }: DataRowProps) {
+function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const closeEditModal = () => {
+    setIsEditOpen(false);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteOpen(false);
+  };
+
   return (
-    <tr className="bg-white border-b dark:bg-gray-900 dark:border-gray-700 last:border-b-0">
+    <tr>
       <th
         scope="row"
-        className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
+        className="px-6 py-3 font-medium text-[#2096ed] whitespace-nowrap border border-slate-300"
       >
-        1
+        {ticket?.id}
       </th>
-      <td className="px-6 py-2">
-        <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-full">
-          Abierto
-        </div>
+      <td className="px-6 py-2 border border-slate-300">
+        {ticket?.estado === "ABIERTO" ? (
+          <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
+            Abierto
+          </div>
+        ) : (
+          <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg capitalize">
+            Cerrado
+          </div>
+        )}
       </td>
-      <td className="px-6 py-4">Jean Bolívar</td>
-      <td className="px-6 py-4">Lenovo Ideapad 3</td>
-      <td className="px-6 py-4">20/20/20</td>
-      <td className="px-6 py-4">20/20/20</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-3 border border-slate-300">
+        {ticket?.elemento?.cliente?.nombre}{" "}
+        {ticket?.elemento?.cliente?.apellido}
+      </td>
+      <td className="px-6 py-3 border border-slate-300">
+        {ticket?.elemento?.nombre}
+      </td>
+      <td className="px-6 py-3 border border-slate-300">
+        {String(ticket?.creado)}
+      </td>
+      <td className="px-6 py-3 border border-slate-300">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
           </button>
         )}
         {action === "EDIT" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline">
-            Editar ticket
-          </button>
+          <>
+            <button
+              onClick={() => {
+                setIsEditOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
+            >
+              Editar ticket
+            </button>
+            <EditModal
+              ticket={ticket}
+              isOpen={isEditOpen}
+              closeModal={closeEditModal}
+              setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
         )}
         {action === "DELETE" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline">
-            Eliminar ticket
-          </button>
+          <>
+            <button
+              onClick={() => {
+                setIsDeleteOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
+            >
+              Eliminar ticket
+            </button>
+            <DeleteModal
+              ticket={ticket}
+              isOpen={isDeleteOpen}
+              closeModal={closeDeleteModal}
+              setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
         )}
         {action === "VIEW_SERVICES" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline">
+          <button
+            onClick={() => {
+              navigate(`/tickets/${ticket?.id}/servicios`);
+            }}
+            className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+          >
             Mostrar servicios
           </button>
         )}
         {action === "VIEW_PROBLEMS" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline">
+          <button
+            onClick={() => {
+              navigate(`/ticket/${ticket?.id}/problemas`);
+            }}
+            className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+          >
             Mostrar problemas
           </button>
         )}
         {action === "VIEW_MESSAGES" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline">
+          <button
+            onClick={() => {
+              navigate(`/ticket/${ticket?.id}/mensajes`);
+            }}
+            className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+          >
             Mostrar mensajes
           </button>
         )}
@@ -536,7 +662,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
       <li>
         <div
           onClick={() => {
-            selectAction("VIEW_PROBLEMS");
+            selectAction("EDIT");
             close();
           }}
           className="
@@ -553,9 +679,10 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Mostrar problemas
+          Cerrar ticket
         </div>
       </li>
+      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       <li>
         <div
           onClick={() => {
@@ -577,6 +704,29 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
             "
         >
           Mostrar servicios
+        </div>
+      </li>
+      <li>
+        <div
+          onClick={() => {
+            selectAction("VIEW_PROBLEMS");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Mostrar problemas
         </div>
       </li>
       <li>
@@ -624,6 +774,29 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
             "
         >
           Crear ticket
+        </div>
+      </li>
+      <li>
+        <div
+          onClick={() => {
+            openAddModal();
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Hacer consulta
         </div>
       </li>
     </ul>
@@ -674,7 +847,7 @@ export default function TicketDataDisplay() {
 
   return (
     <>
-      <div className="absolute w-full px-8 py-5">
+      <div className="absolute w-full h-full px-8 py-6">
         <nav className="flex justify-between items-center">
           <div className="font-medium">
             Menu <Right className="w-3 h-3 inline" /> Tickets
@@ -700,40 +873,88 @@ export default function TicketDataDisplay() {
           </div>
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
-        <div className="relative overflow-x-auto sm:rounded-lg shadow">
-          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-            <thead className="text-xs text-[#2096ed] uppercase bg-blue-100 dark:bg-gray-700 dark:text-gray-400">
-              <tr>
-                <th scope="col" className="px-6 py-3">
-                  #
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Estado
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Cliente
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Elemento
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Creado
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Actualizado
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Acción
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <DataRow action={action} />
-            </tbody>
-          </table>
-        </div>
+        {tickets.length > 0 && loading == false && (
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm text-left border border-slate-300">
+              <thead className="text-xs bg-[#2096ed] uppercase text-white">
+                <tr>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    #
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Estado
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Cliente
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Elemento
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Creado
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Acción
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {tickets.map((ticket) => {
+                  return (
+                    <DataRow
+                      action={action}
+                      ticket={ticket}
+                      setOperationAsCompleted={setAsCompleted}
+                      key={ticket.id}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {notFound === true && (
+          <div className="grid w-full h-4/5">
+            <div className="place-self-center  flex flex-col items-center">
+              <Face className="fill-[#2096ed] h-20 w-20" />
+              <p className="font-bold text-xl text-center mt-1">
+                Tickets no encontrados
+              </p>
+              <p className="font-medium text text-center mt-1">
+                Esto puede deberse a un error del servidor, o a que simplemente
+                no hay ningún ticket registrado.
+              </p>
+            </div>
+          </div>
+        )}
+        {loading === true && (
+          <div className="grid w-full h-4/5">
+            <div className="place-self-center">
+              <div role="status">
+                <svg
+                  aria-hidden="true"
+                  className="inline w-14 h-14 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
+                  viewBox="0 0 100 101"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                    fill="currentColor"
+                  />
+                  <path
+                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                    fill="currentFill"
+                  />
+                </svg>
+                <span className="sr-only">Cargando...</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      <Pagination />
+      {tickets.length > 0 && loading == false && <Pagination />}
+      <Toaster position="bottom-right" reverseOrder={false} />
       <AddModal
         isOpen={isAddOpen}
         closeModal={closeAddModal}
