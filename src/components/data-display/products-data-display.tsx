@@ -70,7 +70,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit max-h-[500px] rounded-xl shadow scrollbar-none"
+      className="w-2/5 h-fit max-h-[510px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir producto</h1>
@@ -97,7 +97,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           type="text"
           placeholder="slug"
           value={formData.slug}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
           disabled
         />
         <input
@@ -111,7 +111,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           }}
           value={formData.nombre}
           placeholder="Nombre*"
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="flex gap-4">
           <input
@@ -124,7 +124,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               });
             }}
             value={formData.stock === 0 ? "" : formData.stock}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
           />
           <input
             type="tel"
@@ -136,7 +136,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               });
             }}
             value={formData.precio === 0 ? "" : formData.precio}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
           />
         </div>
         <Editor
@@ -153,22 +153,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             menubar: true,
             promotion: false,
             ui_mode: "split",
-            plugins: [
-              "advlist",
-              "autolink",
-              "lists",
-              "link",
-              "image",
-              "charmap",
-              "anchor",
-              "searchreplace",
-              "visualblocks",
-              "code",
-              "insertdatetime",
-              "media",
-              "preview",
-              "wordcount",
-            ],
+            plugins: ["wordcount"],
             toolbar:
               "undo redo | blocks | " +
               "bold italic forecolor | alignleft aligncenter " +
@@ -257,7 +242,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit max-h-[500px] rounded-xl shadow scrollbar-none"
+      className="w-2/5 h-fit max-h-[510px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar producto</h1>
@@ -284,7 +269,7 @@ function EditModal({
           type="text"
           placeholder="slug"
           value={formData.slug}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
           disabled
         />
         <input
@@ -298,7 +283,7 @@ function EditModal({
           }}
           value={formData.nombre}
           placeholder="Nombre*"
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="flex gap-4">
           <input
@@ -311,7 +296,7 @@ function EditModal({
               });
             }}
             value={formData.stock === 0 ? "" : formData.stock}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
           />
           <input
             type="tel"
@@ -323,7 +308,7 @@ function EditModal({
               });
             }}
             value={formData.precio === 0 ? "" : formData.precio}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
           />
         </div>
         <Editor
@@ -340,22 +325,7 @@ function EditModal({
             menubar: true,
             promotion: false,
             ui_mode: "split",
-            plugins: [
-              "advlist",
-              "autolink",
-              "lists",
-              "link",
-              "image",
-              "charmap",
-              "anchor",
-              "searchreplace",
-              "visualblocks",
-              "code",
-              "insertdatetime",
-              "media",
-              "preview",
-              "wordcount",
-            ],
+            plugins: ["wordcount"],
             toolbar:
               "undo redo | blocks | " +
               "bold italic forecolor | alignleft aligncenter " +

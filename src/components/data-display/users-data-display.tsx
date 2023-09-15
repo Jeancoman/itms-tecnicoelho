@@ -129,7 +129,11 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
 
   useEffect(() => {
     const handleClickOutside = (event: any) => {
-      if (ref.current && !ref.current.contains(event.target) && event.target.id !== "acciones-btn") {
+      if (
+        ref.current &&
+        !ref.current.contains(event.target) &&
+        event.target.id !== "acciones-btn"
+      ) {
         close();
       }
     };
@@ -158,7 +162,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           mt-1
           m-0
           bg-clip-padding
-          border-none
+          border
         "
     >
       <li>
@@ -207,6 +211,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           Eliminar usuario
         </div>
       </li>
+      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       <li>
         <div
           onClick={() => {
@@ -227,7 +232,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Permisos de usuario
+          Mostrar permisos
         </div>
       </li>
       <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
@@ -284,7 +289,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
 export default function UsersDataDisplay() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("NONE");
+  const [action, setAction] = useState<Action>("NONE");
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -298,16 +303,16 @@ export default function UsersDataDisplay() {
     setIsDropup(false);
   };
 
-  const selectAction = (action: `${Action}`) => {
+  const selectAction = (action: Action) => {
     setAction(action);
   };
 
   return (
     <>
       <div className="absolute w-full h-full px-8 py-5">
-        <nav className="flex justify-between items-center">
-          <div className="font-medium">
-            Menu <Right className="w-3 h-3 inline" /> Usuarios
+        <nav className="flex justify-between items-center select-none">
+          <div className="font-medium text-slate-600">
+            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Usuarios
           </div>
           <div>
             {isDropup && (
@@ -318,7 +323,7 @@ export default function UsersDataDisplay() {
               />
             )}
             <button
-             id="acciones-btn"
+              id="acciones-btn"
               onClick={() => {
                 setIsDropup(!isDropup);
               }}
@@ -331,9 +336,9 @@ export default function UsersDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
         <div className="relative overflow-x-auto">
-          <table className="w-full text-sm text-left border border-slate-300">
-            <thead className="text-xs bg-[#2096ed] uppercase text-white">
-              <tr>
+          <table className="w-full text-sm font-medium text-slate-600 text-left">
+            <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
+              <tr className="border-2 border-[#2096ed]">
                 <th scope="col" className="px-6 py-3 border border-slate-300">
                   #
                 </th>

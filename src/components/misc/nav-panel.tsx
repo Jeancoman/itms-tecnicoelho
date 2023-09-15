@@ -21,7 +21,7 @@ export default function NavPanel() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <aside className="pt-7 h-full shadow-md bg-[#2096ed]">
+    <aside className="pt-7 h-full shadow-md bg-[#2096ed] select-none">
       <div className="font-bold text-white text-2xl pl-6 flex gap-2 items-center">
         <img
           className="h-9 w-9 object-cover"
@@ -123,7 +123,7 @@ export default function NavPanel() {
             </div>
           ) : null}
           <NavLink
-            to="/imagenes"
+            to="/galeria"
             className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
           >
             <Library className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />

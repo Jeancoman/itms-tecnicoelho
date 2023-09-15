@@ -12,12 +12,15 @@ import {
   Ticket,
   Cliente,
   Elemento,
+  Selected,
+  TicketTipo,
 } from "../../types";
 import ClientService from "../../services/client-service";
 import toast, { Toaster } from "react-hot-toast";
 import ElementService from "../../services/element-service";
 import TicketService from "../../services/ticket-service";
 import { useNavigate } from "react-router-dom";
+import Select from "../misc/select";
 
 function EditModal({
   isOpen,
@@ -27,11 +30,29 @@ function EditModal({
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [formData, setFormData] = useState<Ticket>(ticket!);
+  const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Cliente[]>([]);
   const [elements, setElements] = useState<Elemento[]>([]);
-  const [selectedClient, setSelectedClient] = useState(ticket?.id!);
-  const [selectedElement, setSelectedElement] = useState(ticket?.elemento_id!);
-  const [selectedType, setSelectedType] = useState<string>(ticket?.tipo!);
+  const [selectedClient, setSelectedClient] = useState<Selected>({
+    value: ticket?.elemento?.cliente_id,
+    label:
+      ticket?.elemento?.cliente?.nombre +
+      " " +
+      ticket?.elemento?.cliente?.apellido,
+  });
+  const [selectedElement, setSelectedElement] = useState<Selected>({
+    value: ticket?.elemento_id,
+    label: ticket?.elemento?.nombre,
+  });
+  const [selectedType, setSelectedType] = useState<Selected>({
+    label:
+      ticket?.tipo === "DOMICILIO"
+        ? "Domicilio"
+        : ticket?.tipo === "TIENDA"
+        ? "Tienda"
+        : "Remoto",
+    value: ticket?.tipo,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -50,21 +71,27 @@ function EditModal({
 
   useEffect(() => {
     if (clients.length === 0) {
+      setLoading(true);
       ClientService.getAll().then((data) => {
         if (data === false) {
+          setLoading(false);
         } else {
           setClients(data);
+          setLoading(false);
         }
       });
     } else {
-      ElementService.getAll(selectedClient).then((data) => {
+      setLoading(true);
+      ElementService.getAll(selectedClient.value! as number).then((data) => {
         if (data === false) {
+          setLoading(false);
         } else {
           setElements(data);
+          setLoading(false);
         }
       });
     }
-  }, [selectedElement]);
+  }, [selectedClient]);
 
   return (
     <dialog
@@ -97,7 +124,7 @@ function EditModal({
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
-              toast.error("Ticket no pudo ser editando.");
+              toast.error("Ticket no pudo ser editado.");
             } else {
               toast.success("Ticket editado con exito.");
             }
@@ -105,73 +132,175 @@ function EditModal({
         }}
       >
         <div className="relative">
-          <select
-            onChange={(e) => {
-              setSelectedType(e.target.value);
+          <Select
+            onChange={() => {
+              setFormData({
+                ...formData,
+                tipo: selectedType.value as TicketTipo,
+              });
             }}
-            className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
-            value={selectedType}
-          >
-            <option value="">Seleccionar tipo</option>
-            <option value="TIENDA">Tienda</option>
-            <option value="DOMICILIO">Domicilio</option>
-            <option value="REMOTO">Remoto</option>
-          </select>
-          <Down className="absolute h-4 w-4 top-3 right-5" />
+            options={[
+              {
+                value: "DOMICILIO",
+                label: "Domicilio",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "TIENDA",
+                label: "Tienda",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "REMOTO",
+                label: "Remoto",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedType}
+          />
         </div>
         <div className="relative">
-          <select
-            onChange={(e) => {
-              setSelectedClient(Number(e.target.value));
-            }}
-            className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
-            value={selectedClient}
-          >
-            <option value={-1}>Seleccionar cliente</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.nombre} {client.apellido}, {client.cédula}
-              </option>
-            ))}
-          </select>
-          <Down className="absolute h-4 w-4 top-3 right-5" />
+          {clients.length > 0 && (
+            <Select
+              options={clients.map((client) => ({
+                value: client.id,
+                label: client.nombre + " " + client.apellido,
+                onClick: (value, label) => {
+                  setSelectedClient({
+                    value,
+                    label,
+                  });
+                },
+              }))}
+              selected={selectedClient}
+            />
+          )}
+          {clients.length === 0 && loading === false && (
+            <>
+              <select
+                className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                value={0}
+                disabled={true}
+              >
+                <option value={0}>Seleccionar cliente</option>
+              </select>
+              <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+            </>
+          )}
+          {clients.length === 0 && loading === true && (
+            <>
+              <select
+                className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                value={0}
+                disabled={true}
+              >
+                <option value={0}>Buscando clientes...</option>
+              </select>
+              <svg
+                aria-hidden="true"
+                className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
+                viewBox="0 0 100 101"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                  fill="currentColor"
+                />
+                <path
+                  d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                  fill="currentFill"
+                />
+              </svg>
+              <span className="sr-only">Cargando...</span>
+            </>
+          )}
         </div>
-        {clients.length > 0 && elements.length > 0 && (
-          <div className="relative">
-            <select
-              onChange={(e) => {
+        <div className="relative">
+          {clients.length > 0 && elements.length > 0 && (
+            <Select
+              onChange={() => {
                 setFormData({
                   ...formData,
-                  elemento_id: Number(e.target.value),
+                  elemento_id: selectedElement.value! as number,
                 });
-                setSelectedElement(Number(e.target.value));
               }}
-              className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
-              value={selectedElement}
-            >
-              <option value={-1}>Seleccionar elemento</option>
-              {elements.map((element) => (
-                <option key={element.id} value={element.id}>
-                  {element.nombre}
-                </option>
-              ))}
-            </select>
-            <Down className="absolute h-4 w-4 top-3 right-5" />
-          </div>
-        )}
-        {clients.length > 0 && elements.length === 0 && selectedClient > 0 ? (
-          <div className="relative">
-            <select
-              disabled={true}
-              className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
-              value={-1}
-            >
-              <option value={-1}>Este cliente no tiene elementos</option>
-            </select>
-            <Down className="absolute h-4 w-4 top-3 right-5" />
-          </div>
-        ) : null}
-        <div className="flex gap-2">
+              options={elements.map((element) => ({
+                value: element.id,
+                label: element.nombre,
+                onClick: (value, label) => {
+                  setSelectedElement({
+                    value,
+                    label,
+                  });
+                },
+              }))}
+              selected={selectedElement}
+            />
+          )}
+          {loading === false &&
+          clients.length > 0 &&
+          elements.length === 0 &&
+          (selectedClient.value! as number) > 0 ? (
+            <>
+              <select
+                className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                value={0}
+                disabled={true}
+              >
+                <option value={0}>Seleccionar elemento</option>
+              </select>
+              <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+            </>
+          ) : null}
+          {loading === true &&
+          clients.length > 0 &&
+          elements.length === 0 &&
+          (selectedClient.value! as number) > 0 ? (
+            <>
+              <select
+                className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                value={0}
+                disabled={true}
+              >
+                <option value={0}>Buscando elementos...</option>
+              </select>
+              <svg
+                aria-hidden="true"
+                className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
+                viewBox="0 0 100 101"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                  fill="currentColor"
+                />
+                <path
+                  d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                  fill="currentFill"
+                />
+              </svg>
+              <span className="sr-only">Cargando...</span>
+            </>
+          ) : null}
+        </div>
+        <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={closeModal}
@@ -190,11 +319,21 @@ function EditModal({
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Cliente[]>([]);
   const [elements, setElements] = useState<Elemento[]>([]);
-  const [selectedClient, setSelectedClient] = useState(-1);
-  const [selectedElement, setSelectedElement] = useState(-1);
-  const [selectedType, setSelectedType] = useState("");
+  const [selectedClient, setSelectedClient] = useState<Selected>({
+    value: -1,
+    label: "Seleccionar cliente",
+  });
+  const [selectedElement, setSelectedElement] = useState<Selected>({
+    value: -1,
+    label: "Seleccionar elemento",
+  });
+  const [selectedType, setSelectedType] = useState<Selected>({
+    label: "Seleccionar tipo",
+    value: "",
+  });
   const [formData, setFormData] = useState<Ticket>({
     tipo: "TIENDA",
     estado: "ABIERTO",
@@ -207,9 +346,15 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       estado: "ABIERTO",
       elemento_id: -1,
     });
-    setSelectedClient(-1);
-    setSelectedElement(-1);
-    setSelectedType("");
+    setSelectedClient({
+      value: -1,
+      label: "Seleccionar cliente",
+    });
+    setSelectedElement({
+      value: -1,
+      label: "Seleccionar elemento",
+    });
+    setSelectedType({ label: "Seleccionar tipo", value: "" });
   };
 
   useEffect(() => {
@@ -231,21 +376,27 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
 
   useEffect(() => {
     if (clients.length === 0) {
+      setLoading(true);
       ClientService.getAll().then((data) => {
         if (data === false) {
+          setLoading(false);
         } else {
           setClients(data);
+          setLoading(false);
         }
       });
     } else {
-      ElementService.getAll(selectedClient).then((data) => {
+      setLoading(true);
+      ElementService.getAll(selectedClient.value! as number).then((data) => {
         if (data === false) {
+          setLoading(false);
         } else {
           setElements(data);
+          setLoading(false);
         }
       });
     }
-  }, [selectedElement]);
+  }, [selectedClient]);
 
   return (
     <dialog
@@ -262,7 +413,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit max-h-[500px] rounded-xl shadow scrollbar-none"
+      className="w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Crear ticket</h1>
@@ -280,79 +431,181 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             if (data === false) {
               toast.error("Ticket no pudo ser creado.");
             } else {
-              toast.success("Ticket añadido con exito.");
+              toast.success("Ticket creado con exito.");
             }
           });
         }}
       >
         <div className="relative">
-          <select
-            onChange={(e) => {
-              setSelectedType(e.target.value);
+          <Select
+            onChange={() => {
+              setFormData({
+                ...formData,
+                tipo: selectedType.value as TicketTipo,
+              });
             }}
-            className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
-            value={selectedType}
-          >
-            <option value="">Seleccionar tipo</option>
-            <option value="TIENDA">Tienda</option>
-            <option value="DOMICILIO">Domicilio</option>
-            <option value="REMOTO">Remoto</option>
-          </select>
-          <Down className="absolute h-4 w-4 top-3 right-5" />
+            options={[
+              {
+                value: "DOMICILIO",
+                label: "Domicilio",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "TIENDA",
+                label: "Tienda",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "REMOTO",
+                label: "Remoto",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedType}
+          />
         </div>
         <div className="relative">
-          <select
-            onChange={(e) => {
-              setSelectedClient(Number(e.target.value));
-            }}
-            className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
-            value={selectedClient}
-          >
-            <option value={-1}>Seleccionar cliente</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.nombre} {client.apellido}, {client.cédula}
-              </option>
-            ))}
-          </select>
-          <Down className="absolute h-4 w-4 top-3 right-5" />
+          {clients.length > 0 && (
+            <Select
+              options={clients.map((client) => ({
+                value: client.id,
+                label: client.nombre + " " + client.apellido,
+                onClick: (value, label) => {
+                  setSelectedClient({
+                    value,
+                    label,
+                  });
+                },
+              }))}
+              selected={selectedClient}
+            />
+          )}
+          {clients.length === 0 && loading === false && (
+            <>
+              <select
+                className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                value={0}
+                disabled={true}
+              >
+                <option value={0}>Seleccionar cliente</option>
+              </select>
+              <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+            </>
+          )}
+          {clients.length === 0 && loading === true && (
+            <>
+              <select
+                className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                value={0}
+                disabled={true}
+              >
+                <option value={0}>Buscando clientes...</option>
+              </select>
+              <svg
+                aria-hidden="true"
+                className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
+                viewBox="0 0 100 101"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                  fill="currentColor"
+                />
+                <path
+                  d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                  fill="currentFill"
+                />
+              </svg>
+              <span className="sr-only">Cargando...</span>
+            </>
+          )}
         </div>
-        {clients.length > 0 && elements.length > 0 && (
-          <div className="relative">
-            <select
-              onChange={(e) => {
+        <div className="relative">
+          {clients.length > 0 && elements.length > 0 && (
+            <Select
+              onChange={() => {
                 setFormData({
                   ...formData,
-                  elemento_id: Number(e.target.value),
+                  elemento_id: selectedElement.value! as number,
                 });
-                setSelectedElement(Number(e.target.value));
               }}
-              className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
-              value={selectedElement}
-            >
-              <option value={-1}>Seleccionar elemento</option>
-              {elements.map((element) => (
-                <option key={element.id} value={element.id}>
-                  {element.nombre}
-                </option>
-              ))}
-            </select>
-            <Down className="absolute h-4 w-4 top-3 right-5" />
-          </div>
-        )}
-        {clients.length > 0 && elements.length === 0 && selectedClient > 0 ? (
-          <div className="relative">
-            <select
-              disabled={true}
-              className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
-              value={-1}
-            >
-              <option value={-1}>Cliente no tiene elementos</option>
-            </select>
-            <Down className="absolute h-4 w-4 top-3 right-5" />
-          </div>
-        ) : null}
-        <div className="flex gap-2">
+              options={elements.map((element) => ({
+                value: element.id,
+                label: element.nombre,
+                onClick: (value, label) => {
+                  setSelectedElement({
+                    value,
+                    label,
+                  });
+                },
+              }))}
+              selected={selectedElement}
+            />
+          )}
+          {loading === false &&
+          clients.length > 0 &&
+          elements.length === 0 &&
+          (selectedClient.value! as number) > 0 ? (
+            <>
+              <select
+                className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                value={0}
+                disabled={true}
+              >
+                <option value={0}>Seleccionar elemento</option>
+              </select>
+              <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+            </>
+          ) : null}
+          {loading === true &&
+          clients.length > 0 &&
+          elements.length === 0 &&
+          (selectedClient.value! as number) > 0 ? (
+            <>
+              <select
+                className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                value={0}
+                disabled={true}
+              >
+                <option value={0}>Buscando elementos...</option>
+              </select>
+              <svg
+                aria-hidden="true"
+                className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
+                viewBox="0 0 100 101"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                  fill="currentColor"
+                />
+                <path
+                  d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                  fill="currentFill"
+                />
+              </svg>
+              <span className="sr-only">Cargando...</span>
+            </>
+          ) : null}
+        </div>
+        <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={closeModal}
@@ -607,7 +860,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           text-left
           rounded-lg
           shadow-lg
-          mt-1
+          mt-2
           m-0
           bg-clip-padding
           border
@@ -848,9 +1101,9 @@ export default function TicketDataDisplay() {
   return (
     <>
       <div className="absolute w-full h-full px-8 py-6">
-        <nav className="flex justify-between items-center">
-          <div className="font-medium">
-            Menu <Right className="w-3 h-3 inline" /> Tickets
+        <nav className="flex justify-between items-center select-none">
+          <div className="font-medium text-slate-600">
+            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Tickets
           </div>
           <div>
             {isDropup && (
@@ -914,7 +1167,7 @@ export default function TicketDataDisplay() {
           </div>
         )}
         {notFound === true && (
-          <div className="grid w-full h-4/5">
+          <div className="grid w-full h-4/5 text-slate-600">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">

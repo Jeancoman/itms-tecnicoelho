@@ -66,7 +66,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit max-h-[500px] rounded-xl shadow scrollbar-none"
+      className="w-2/4 h-fit max-h-[510px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Crear publicación</h1>
@@ -93,7 +93,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           type="text"
           placeholder="slug"
           value={formData.slug}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
           disabled
         />
         <input
@@ -107,7 +107,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           }}
           value={formData.título}
           placeholder="Título*"
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <Editor
           tinymceScriptSrc={"/tinymce/tinymce.min.js"}
@@ -123,22 +123,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             menubar: true,
             promotion: false,
             ui_mode: "split",
-            plugins: [
-              "advlist",
-              "autolink",
-              "lists",
-              "link",
-              "image",
-              "charmap",
-              "anchor",
-              "searchreplace",
-              "visualblocks",
-              "code",
-              "insertdatetime",
-              "media",
-              "preview",
-              "wordcount",
-            ],
+            plugins: ["wordcount"],
             toolbar:
               "undo redo | blocks | " +
               "bold italic forecolor | alignleft aligncenter " +
@@ -227,7 +212,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit max-h-[500px] rounded-xl shadow scrollbar-none"
+      className="w-2/4 h-fit max-h-[510px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar publicación</h1>
@@ -254,7 +239,7 @@ function EditModal({
           type="text"
           placeholder="slug"
           value={formData.slug}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
           disabled
         />
         <input
@@ -268,7 +253,7 @@ function EditModal({
           }}
           value={formData.título}
           placeholder="Título*"
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <Editor
           tinymceScriptSrc={"/tinymce/tinymce.min.js"}
@@ -284,22 +269,7 @@ function EditModal({
             menubar: true,
             promotion: false,
             ui_mode: "split",
-            plugins: [
-              "advlist",
-              "autolink",
-              "lists",
-              "link",
-              "image",
-              "charmap",
-              "anchor",
-              "searchreplace",
-              "visualblocks",
-              "code",
-              "insertdatetime",
-              "media",
-              "preview",
-              "wordcount",
-            ],
+            plugins: ["wordcount"],
             toolbar:
               "undo redo | blocks | " +
               "bold italic forecolor | alignleft aligncenter " +

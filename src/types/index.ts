@@ -9,7 +9,13 @@ export type ModalProps = {
   categoría?: Categoría;
   proveedor?: Proveedor;
   elemento?: Elemento;
-  ticket?: Ticket
+  ticket?: Ticket;
+  problema?: Problema;
+  mensaje?: Mensaje;
+  servicio?: Servicio;
+  operación?: Operación;
+  venta?: Venta;
+  compra?: Compra;
 };
 
 export type DropupProps = {
@@ -28,82 +34,113 @@ export type DataRowProps = {
   categoría?: Categoría;
   proveedor?: Proveedor;
   elemento?: Elemento;
-  ticket?: Ticket
+  ticket?: Ticket;
+  problema?: Problema;
+  mensaje?: Mensaje;
+  servicio?: Servicio;
+  operación?: Operación;
+  venta?: Venta;
+  compra?: Compra;
 };
 
-export enum Action {
-  NONE = "NONE",
-  EDIT = "EDIT",
-  DELETE = "DELETE",
-  VIEW_ELEMENTS = "VIEW_ELEMENTS",
-  VIEW_SERVICES = "VIEW_SERVICES",
-  VIEW_PROBLEMS = "VIEW_PROBLEMS",
-  VIEW_MESSAGES = "VIEW_MESSAGES",
-  VIEW_PERMISSIONS = "VIEW_PERMISSIONS",
-  VIEW_AS_PDF = "VIEW_AS_PDF",
-  CONFIRM_ORDER = "CONFIRM_ORDER",
-  PREVIEW = "PREVIEW",
-  QUERY_BY = "QUERY_BY"
-}
+export type OptionProps = {
+  value: string | number | undefined;
+  label: string | undefined;
+  onClick: (
+    value: string | number | undefined,
+    label: string | undefined
+  ) => void;
+  closeOnClick?: () => void;
+};
 
-export enum UsuarioRol {
-  EMPLEADO = "EMPLEADO",
-  ADMINISTRADOR = "ADMINISTRADOR",
-}
+export type OptionGroupProps = {
+  options: OptionProps[];
+  close: () => void;
+  closeOnOptionClick: () => void;
+};
 
-export enum ElementoEstado {
-  ACTIVO = "ACTIVO",
-  INACTIVO = "INACTIVO",
-}
+export type SelectProps = {
+  selected: Selected;
+  options: OptionProps[];
+  onChange?: () => void;
+  disable?: boolean;
+};
 
-export enum TicketEstado {
-  ABIERTO = "ABIERTO",
-  CERRADO = "CERRADO",
-}
+export type Selected = {
+  value: string | number | undefined;
+  label: string | undefined;
+};
 
-export enum TicketTipo {
-  DOMICILIO = "DOMICILIO",
-  TIENDA = "TIENDA",
-  REMOTO = "REMOTO",
-}
+export type LogicalOperator = "Y" | "O";
 
-export enum ServicioEstado {
-  EN_PROGRESO = "EN_PROGRESO",
-  COMPLETADO = "COMPLETADO",
-}
+export type ComparisonOperator = "ES IGUAL QUE" | "NO ES IGUAL QUE";
 
-export enum ProblemaEstado {
-  NO_RESUELTO = "NO_RESUELTO",
-  RESUELTO = "RESUELTO",
-}
+export type TypeOperator = "SI" | "SINO" | "SINO PERO" | "DEFAULT" | "FIN";
 
-export enum ProblemaPrioridad {
-  BAJO = "BAJO",
-  MEDIA = "MEDIA",
-  ALTA = "ALTA",
-}
+export type Operation = {
+  leftSideValue: string | number | undefined;
+  rightSideValue: string | number | undefined;
+  comparisonOperator: ComparisonOperator;
+  logicalOperator?: LogicalOperator;
+};
 
-export enum MensajeEstado {
-  NO_ENVIADO = "NO_ENVIADO",
-  ENVIADO = "ENVIADO",
-}
+export type Result = {
+  isTrue: boolean;
+  logicalOperator?: LogicalOperator;
+};
 
-export enum OperaciónEstado {
-  EN_PROGRESO = "EN_PROGRESO",
-  COMPLETADA = "COMPLETADA",
-}
+export type CommandBlock = {
+  type: TypeOperator;
+  command: string;
+  template: string;
+  operations?: Operation[];
+  results?: Result[];
+  isTrue?: boolean;
+};
 
-export enum CategoríaTipo {
-  NONE = "NONE",
-  ELEMENTO = "ELEMENTO",
-  PRODUCTO = "PRODUCTO",
-  SERVICIO = "SERVICIO",
-}
+export type Previamente = {
+  ticket?: Ticket;
+  problema?: Problema;
+  servicio?: Servicio;
+  operación?: Operación;
+};
 
-export enum CompraEstado {
-  PENDIENTE = "PENDIENTE",
-  COMFIRMADA = "CONFIRMADA",
-}
+export type Action =
+  | "NONE"
+  | "EDIT"
+  | "DELETE"
+  | "VIEW_ELEMENTS"
+  | "VIEW_SERVICES"
+  | "VIEW_PROBLEMS"
+  | "VIEW_MESSAGES"
+  | "VIEW_PERMISSIONS"
+  | "VIEW_AS_PDF"
+  | "CONFIRM_ORDER"
+  | "PREVIEW"
+  | "RESOLVE_PROBLEM"
+  | "QUERY_BY";
+
+export type UsuarioRol = "EMPLEADO" | "ADMINISTRADOR";
+
+export type ElementoEstado = "ACTIVO" | "INACTIVO";
+
+export type TicketEstado = "ABIERTO" | "CERRADO";
+
+export type TicketTipo = "DOMICILIO" | "TIENDA" | "REMOTO";
+
+export type ServicioEstado = "EN_PROGRESO" | "COMPLETADO";
+
+export type ProblemaEstado = "PENDIENTE" | "RESUELTO";
+
+export type ProblemaPrioridad = "BAJA" | "MEDIA" | "ALTA";
+
+export type MensajeEstado = "NO_ENVIADO" | "ENVIADO";
+
+export type OperaciónEstado = "EN_PROGRESO" | "COMPLETADA";
+
+export type CategoríaTipo = "ELEMENTO" | "PRODUCTO" | "SERVICIO";
+
+export type CompraEstado = "PENDIENTE" | "CONFIRMADA";
 
 export interface Usuario {
   id?: number;
@@ -140,7 +177,7 @@ export interface Elemento {
   id?: number;
   nombre: string;
   descripción?: string;
-  estado: `${ElementoEstado}`;
+  estado: ElementoEstado;
   readonly registrado?: Date;
   cliente_id?: number;
   categoría_id?: number;
@@ -150,9 +187,9 @@ export interface Elemento {
 
 export interface Ticket {
   id?: number;
-  estado: `${TicketEstado}`;
-  tipo: `${TicketTipo}`;
-  readonly creado?: DataViewConstructor;
+  estado: TicketEstado;
+  tipo: TicketTipo;
+  readonly creado?: Date;
   elemento_id?: number;
   elemento?: Elemento;
 }
@@ -223,8 +260,8 @@ export interface Publicación {
   título: string;
   contenido: string;
   esPública: boolean;
-  creada?: Date,
-  modificada?: Date,
+  creada?: Date;
+  modificada?: Date;
   imagen_id?: number;
   usuario_id?: number;
 }

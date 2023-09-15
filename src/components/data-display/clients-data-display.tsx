@@ -73,7 +73,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/5 h-fit rounded shadow"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir cliente</h1>
@@ -99,7 +99,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <div className="flex gap-4">
           <input
             type="text"
-            placeholder="Nombre"
+            placeholder="Nombre*"
             onChange={(e) => {
               setFormData({
                 ...formData,
@@ -107,11 +107,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               });
             }}
             value={formData.nombre}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
           />
           <input
             type="text"
-            placeholder="Apellido"
+            placeholder="Apellido*"
             onChange={(e) => {
               setFormData({
                 ...formData,
@@ -119,13 +119,13 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               });
             }}
             value={formData.apellido}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
           />
         </div>
         <div className="flex gap-4">
           <input
             type="text"
-            placeholder="Cédula"
+            placeholder="Cédula*"
             onChange={(e) => {
               setFormData({
                 ...formData,
@@ -133,7 +133,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               });
             }}
             value={formData.cédula}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
           />
           <input
             type="tel"
@@ -145,7 +145,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               });
             }}
             value={formData.telefono}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
           />
         </div>
         <input
@@ -158,7 +158,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             });
           }}
           value={formData.email}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <input
           type="text"
@@ -170,11 +170,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             });
           }}
           value={formData.dirección}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <input
           type="text"
-          placeholder="Contraseña"
+          placeholder="Contraseña*"
           name="password"
           onChange={(e) => {
             setFormData({
@@ -183,7 +183,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             });
           }}
           value={formData.contraseña}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -605,7 +605,6 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
         event.target.id !== "acciones-btn"
       ) {
         close();
-        console.log("click outside");
       }
     };
     document.addEventListener("click", handleClickOutside, true);

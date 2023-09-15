@@ -33,7 +33,7 @@ export default function App() {
         <Route path="/compras" element={<PurchasesPage />} />
         <Route path="/proveedores" element={<ProvidersPage />} />
         <Route path="/publicaciones" element={<PublicationsPage />} />
-        <Route path="/imagenes" element={<ImagesPage />} />
+        <Route path="/galeria" element={<ImagesPage />} />
         <Route path="/categorias" element={<CategoriesPage />} />
         <Route path="/mensajero" />
       </Routes>

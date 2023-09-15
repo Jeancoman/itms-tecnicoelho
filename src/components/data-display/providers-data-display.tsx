@@ -87,7 +87,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       >
         <input
           type="text"
-          placeholder="Nombre"
+          placeholder="Nombre*"
           onChange={(e) => {
             setFormData({
               ...formData,
@@ -95,7 +95,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             });
           }}
           value={formData.nombre}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
         />
         <textarea
           rows={3}
@@ -121,7 +121,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           value={formData.telefono}
           className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
         />
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={closeModal}
@@ -130,7 +130,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             Cancelar
           </button>
           <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-            Añadir
+            Completar
           </button>
         </div>
       </form>
@@ -204,7 +204,7 @@ function EditModal({
       >
         <input
           type="text"
-          placeholder="Nombre"
+          placeholder="Nombre*"
           onChange={(e) => {
             setFormData({
               ...formData,
@@ -212,7 +212,7 @@ function EditModal({
             });
           }}
           value={formData.nombre}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
         />
         <textarea
           rows={3}
