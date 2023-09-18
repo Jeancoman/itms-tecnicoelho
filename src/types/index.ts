@@ -71,6 +71,19 @@ export type Selected = {
   label: string | undefined;
 };
 
+export type Opciones = {
+  creación: {
+    nunca: boolean;
+    siempre: boolean;
+    mostrarAntes: boolean;
+  };
+  envio: {
+    nunca: boolean;
+    siempre: boolean;
+    preguntarAntes: boolean;
+  };
+};
+
 export type LogicalOperator = "Y" | "O";
 
 export type ComparisonOperator = "ES IGUAL QUE" | "NO ES IGUAL QUE";
@@ -105,6 +118,17 @@ export type Previamente = {
   operación?: Operación;
 };
 
+export interface Options {
+  usuario?: Usuario;
+  cliente?: Cliente;
+  elemento?: Elemento;
+  ticket?: Ticket;
+  problema?: Problema;
+  servicio?: Servicio;
+  operación?: Operación;
+  previamente?: Previamente;
+}
+
 export type Action =
   | "NONE"
   | "EDIT"
@@ -114,13 +138,14 @@ export type Action =
   | "VIEW_PROBLEMS"
   | "VIEW_MESSAGES"
   | "VIEW_PERMISSIONS"
+  | "VIEW_OPERATIONS"
   | "VIEW_AS_PDF"
   | "CONFIRM_ORDER"
   | "PREVIEW"
   | "RESOLVE_PROBLEM"
   | "QUERY_BY";
 
-export type UsuarioRol = "EMPLEADO" | "ADMINISTRADOR";
+export type UsuarioRol = "EMPLEADO" | "ADMINISTRADOR" | "SUPERADMINISTRADOR";
 
 export type ElementoEstado = "ACTIVO" | "INACTIVO";
 
@@ -128,7 +153,7 @@ export type TicketEstado = "ABIERTO" | "CERRADO";
 
 export type TicketTipo = "DOMICILIO" | "TIENDA" | "REMOTO";
 
-export type ServicioEstado = "EN_PROGRESO" | "COMPLETADO";
+export type ServicioEstado = "PENDIENTE" | "INICIADO" | "COMPLETADO";
 
 export type ProblemaEstado = "PENDIENTE" | "RESUELTO";
 
@@ -136,11 +161,15 @@ export type ProblemaPrioridad = "BAJA" | "MEDIA" | "ALTA";
 
 export type MensajeEstado = "NO_ENVIADO" | "ENVIADO";
 
-export type OperaciónEstado = "EN_PROGRESO" | "COMPLETADA";
+export type OperaciónEstado = "PENDIENTE" | "INICIADA" | "COMPLETADA";
 
 export type CategoríaTipo = "ELEMENTO" | "PRODUCTO" | "SERVICIO";
 
 export type CompraEstado = "PENDIENTE" | "CONFIRMADA";
+
+export type PlantillaEsDe = "TICKET" | "PROBLEMA" | "SERVICIO" |  "OPERACIÓN";
+
+export type PlantillaEvento = "CREACIÓN" |"MODIFICACIÓN" | "ELIMINACIÓN" | "ASOCIACIÓN";
 
 export interface Usuario {
   id?: number;
@@ -199,10 +228,11 @@ export interface Servicio {
   nombre: string;
   descripción?: string;
   estado: ServicioEstado;
-  readonly añadido: Date;
+  readonly añadido?: Date;
   completado?: Date;
   ticket_id?: number;
   categoría_id?: number;
+  Categoría?: Categoría;
 }
 
 export interface Problema {
@@ -325,3 +355,17 @@ export interface ImagenProducto {
   imagen_id?: number;
   producto_id?: number;
 }
+
+export interface Plantilla {
+  id: number;
+  contenido: string;
+  esDe: PlantillaEsDe;
+  evento: PlantillaEvento;
+  estaActiva: boolean;
+  mensajería_id?: number;
+}
+
+export interface Mensajería {
+  id: number;
+  opciones: Opciones;
+  }

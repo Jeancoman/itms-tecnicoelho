@@ -3,39 +3,47 @@ import { ReactComponent as Glass } from "../../assets/magnifying-glass-solid.svg
 import { ReactComponent as Right } from "../../assets/chevron-right-solid.svg";
 import { ReactComponent as Up } from "../../assets/chevron-up-solid.svg";
 import { ReactComponent as Down } from "../../assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "../../assets/thinking.svg";
+import { ReactComponent as Warning } from "../../assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
-import { ModalProps, DataRowProps, DropupProps, Action } from "../../types";
+import {
+  ModalProps,
+  DataRowProps,
+  DropupProps,
+  Action,
+  Servicio,
+  Selected,
+} from "../../types";
 import { useParams } from "react-router-dom";
+import ServiceService from "../../services/service-service";
+import toast, { Toaster } from "react-hot-toast";
+import Select from "../misc/select";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id } = useParams();
   const ref = useRef<HTMLDialogElement>(null);
-  const [selectedPriority, setSelectedPriority] = useState<Selected>({
-    value: "",
-    label: "Seleccionar prioridad",
+  const [selectedState, setSelectedState] = useState<Selected>({
+    value: -1,
+    label: "Seleccionar categoría",
   });
-  const [formData, setFormData] = useState<Problema>({
+  const [formData, setFormData] = useState<Servicio>({
     nombre: "",
     descripción: "",
-    causa: "",
-    solución: "",
-    prioridad: "BAJA",
     estado: "PENDIENTE",
+    categoría_id: -1
   });
 
   const resetFormData = () => {
     setFormData({
       nombre: "",
       descripción: "",
-      causa: "",
-      solución: "",
-      prioridad: "BAJA",
       estado: "PENDIENTE",
+      categoría_id: -1
     });
     setSelectedPriority({
-      value: "",
-      label: "Seleccionar prioridad",
-    })
+      value: -1,
+      label: "Seleccionar categoría",
+    });
   };
 
   useEffect(() => {
@@ -73,16 +81,15 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       className="w-2/5 h-fit max-h-[510px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Registrar problema</h1>
+        <h1 className="text-xl font-bold text-white">Registrar servicio</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
-
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Registrando problema...");
+          const loadingToast = toast.loading("Registrando servicio...");
           ProblemService.create(Number(id), formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
@@ -144,47 +151,47 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
         />
         <div className="relative">
-        <Select
-          onChange={() => {
-            setFormData({
-              ...formData,
-              prioridad: selectedPriority.value as ProblemaPrioridad,
-            });
-          }}
-          options={[
-            {
-              value: "BAJA",
-              label: "Baja",
-              onClick: (value, label) => {
-                setSelectedPriority({
-                  value,
-                  label,
-                });
+          <Select
+            onChange={() => {
+              setFormData({
+                ...formData,
+                prioridad: selectedPriority.value as ProblemaPrioridad,
+              });
+            }}
+            options={[
+              {
+                value: "BAJA",
+                label: "Baja",
+                onClick: (value, label) => {
+                  setSelectedPriority({
+                    value,
+                    label,
+                  });
+                },
               },
-            },
-            {
-              value: "MEDIA",
-              label: "Media",
-              onClick: (value, label) => {
-                setSelectedPriority({
-                  value,
-                  label,
-                });
+              {
+                value: "MEDIA",
+                label: "Media",
+                onClick: (value, label) => {
+                  setSelectedPriority({
+                    value,
+                    label,
+                  });
+                },
               },
-            },
-            {
-              value: "ALTA",
-              label: "Alta",
-              onClick: (value, label) => {
-                setSelectedPriority({
-                  value,
-                  label,
-                });
+              {
+                value: "ALTA",
+                label: "Alta",
+                onClick: (value, label) => {
+                  setSelectedPriority({
+                    value,
+                    label,
+                  });
+                },
               },
-            },
-          ]}
-          selected={selectedPriority}
-        />
+            ]}
+            selected={selectedPriority}
+          />
         </div>
         <div className="flex gap-2">
           <button
@@ -207,11 +214,11 @@ function EditModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  problema,
+  servicio,
 }: ModalProps) {
   const { id } = useParams();
   const ref = useRef<HTMLDialogElement>(null);
-  const [formData, setFormData] = useState<Problema>(problema!);
+  const [formData, setFormData] = useState<Servicio>(servicio!);
   const [selectedPriority, setSelectedPriority] = useState<Selected>({
     value: problema?.prioridad,
     label:
@@ -388,7 +395,7 @@ function DeleteModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  problema,
+  servicio,
 }: ModalProps) {
   const { id } = useParams();
   const ref = useRef<HTMLDialogElement>(null);
@@ -423,7 +430,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/5 h-fit rounded-md shadow"
     >
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -431,13 +438,13 @@ function DeleteModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Eliminando problema...");
-          ProblemService.delete(Number(id), problema?.id!).then((data) => {
+          const loadingToast = toast.loading("Eliminando servicio...");
+          ServiceService.delete(Number(id), servicio?.id!).then((data) => {
             toast.dismiss(loadingToast);
             if (data) {
-              toast.success("Problema eliminado con exito.");
+              toast.success("Servicio eliminado con exito.");
             } else {
-              toast.error("Problema no pudo ser eliminado.");
+              toast.error("Servicio no pudo ser eliminado.");
             }
             setOperationAsCompleted();
           });
@@ -469,7 +476,7 @@ function DeleteModal({
   );
 }
 
-function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
+function DataRow({ action, setOperationAsCompleted, servicio }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
@@ -482,36 +489,25 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
   };
 
   return (
-    <tr className="bg-white border border-slate-300 dark:bg-gray-900 dark:border-gray-700">
+    <tr>
       <th
         scope="row"
-        className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
       >
-        {problema?.id}
+        {servicio?.id}
       </th>
-      <td className="px-6 py-4">{problema?.nombre}</td>
-      <td className="px-6 py-2 border border-slate-300">
-        {
-          // @ts-ignore
-          problema?.prioridad === "BAJA" ? (
-            <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
-              Baja
-            </div>
-          ) : problema?.prioridad === "MEDIA" ? (
-            <div className="bg-yellow-200 text-center text-yellow-600 text-xs py-2 font-bold rounded-lg capitalize">
-              Media
-            </div>
-          ) : (
-            <div className="bg-red-200 text-center text-red-600 text-xs py-2 font-bold rounded-lg capitalize">
-              Alta
-            </div>
-          )
-        }
+      <td className="px-6 py-4 border border-slate-300">{servicio?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300">
+        {servicio?.descripción}
       </td>
-      <td className="px-6 py-2">
-        {problema?.estado === "RESUELTO" ? (
+      <td className="px-6 py-2 border border-slate-300">
+        {servicio?.estado === "COMPLETADO" ? (
           <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
             Resuelto
+          </div>
+        ) : servicio?.estado === "INICIADO" ? (
+          <div className="bg-blue-200 text-center text-blue-600 text-xs py-2 font-bold rounded-lg capitalize">
+            Iniciado
           </div>
         ) : (
           <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg capitalize">
@@ -519,10 +515,13 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
           </div>
         )}
       </td>
-      <td className="px-6 py-4">{problema?.descripción}</td>
-      <td className="px-6 py-4">{problema?.causa}</td>
-      <td className="px-6 py-4">{String(problema?.detectado)}</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 border border-slate-300">
+        {servicio?.Categoría?.nombre}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">
+        {String(servicio?.añadido)}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -536,10 +535,10 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
               }}
               className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
             >
-              Editar problema
+              Editar servicio
             </button>
             <EditModal
-              problema={problema}
+              servicio={servicio}
               isOpen={isEditOpen}
               closeModal={closeEditModal}
               setOperationAsCompleted={setOperationAsCompleted}
@@ -554,10 +553,10 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
               }}
               className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
             >
-              Eliminar problema
+              Eliminar servicio
             </button>
             <DeleteModal
-              problema={problema}
+              servicio={servicio}
               isOpen={isDeleteOpen}
               closeModal={closeDeleteModal}
               setOperationAsCompleted={setOperationAsCompleted}
@@ -635,7 +634,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Editar problema
+          Editar servicio
         </div>
       </li>
       <li>
@@ -658,7 +657,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Eliminar problema
+          Eliminar servicio
         </div>
       </li>
       <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
@@ -706,7 +705,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Añadir problema
+          Añadir servicios
         </div>
       </li>
       <li>
@@ -738,7 +737,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
 
 export default function ServicesDataDisplay() {
   const { id } = useParams();
-  const [services, setServices] = useState<Servicios[]>([]);
+  const [services, setServices] = useState<Servicio[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
@@ -771,12 +770,12 @@ export default function ServicesDataDisplay() {
       setLoading(true);
     }
 
-    ProblemService.getAll(Number(id)).then((data) => {
+    ServiceService.getAll(Number(id)).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
       } else {
-        setProblems(data);
+        setServices(data);
         setLoading(false);
       }
       setIsOperationCompleted(false);
@@ -786,9 +785,12 @@ export default function ServicesDataDisplay() {
   return (
     <>
       <div className="absolute w-full h-full px-8 py-5">
-        <nav className="flex justify-between items-center text-slate-600">
+        <nav className="flex justify-between items-center text-slate-600 select-none">
           <div className="font-medium">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Problemas
+            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Tickets{" "}
+            <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span className="font-bold text-[#2096ed]">{id}</span>{" "}
+            <Right className="w-3 h-3 inline fill-slate-600" /> Servicios
           </div>
           <div>
             {isDropup && (
@@ -811,45 +813,42 @@ export default function ServicesDataDisplay() {
           </div>
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
-        {problems.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto rounded-lg">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs bg-[#2096ed] uppercase text-white dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                  <th scope="col" className="px-6 py-3">
+        {services.length > 0 && loading == false && (
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm font-medium text-slate-600 text-left">
+              <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
+                <tr className="border-2 border-[#2096ed]">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     #
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Nombre
                   </th>
-                  <th scope="col" className="px-6 py-3">
-                    Prioridad
-                  </th>
-                  <th scope="col" className="px-6 py-3">
-                    Estado
-                  </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Descripción
                   </th>
-                  <th scope="col" className="px-6 py-3">
-                    Causa
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Estado
                   </th>
-                  <th scope="col" className="px-6 py-3">
-                    Detectado
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Categoría
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Añadido
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {problems.map((problem) => {
+                {services.map((service) => {
                   return (
                     <DataRow
                       action={action}
-                      problema={problem}
+                      servicio={service}
                       setOperationAsCompleted={setAsCompleted}
-                      key={problem.id}
+                      key={service.id}
                     />
                   );
                 })}
@@ -862,11 +861,11 @@ export default function ServicesDataDisplay() {
             <div className="place-self-center flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">
-                Problemas no encontrados
+                Ningún servicio encontrado
               </p>
               <p className="font-medium text text-center mt-1">
                 Esto puede deberse a un error del servidor, o a que simplemente
-                no hay ningún problema registrado.
+                este ticket no tenga ningún servicio registrado.
               </p>
             </div>
           </div>
@@ -897,7 +896,7 @@ export default function ServicesDataDisplay() {
           </div>
         )}
       </div>
-      {problems.length > 0 && loading == false && <Pagination />}
+      {services.length > 0 && loading == false && <Pagination />}
       <Toaster position="bottom-right" reverseOrder={false} />
       <AddModal
         isOpen={isAddOpen}
@@ -907,4 +906,3 @@ export default function ServicesDataDisplay() {
     </>
   );
 }
-

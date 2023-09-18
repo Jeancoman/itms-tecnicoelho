@@ -1,48 +1,20 @@
 import {
-  Cliente,
   CommandBlock,
   ComparisonOperator,
-  Elemento,
   LogicalOperator,
-  Operación,
   Operation,
-  Previamente,
-  Problema,
+  Options,
   Result,
-  Servicio,
-  Ticket,
   TypeOperator,
-  Usuario,
 } from "../types";
 
 export default class TemplatingEngine {
-  private user?: Usuario;
-  private client?: Cliente;
-  private element?: Elemento;
-  private ticket?: Ticket;
-  private problem?: Problema;
-  private service?: Servicio;
-  private operation?: Operación;
-  private previamente?: Previamente;
+  private template: string;
+  private options: Options;
 
-  public constructor(
-    user?: Usuario,
-    client?: Cliente,
-    element?: Elemento,
-    ticket?: Ticket,
-    problem?: Problema,
-    service?: Servicio,
-    operation?: Operación,
-    previamente?: Previamente
-  ) {
-    this.user = user;
-    this.client = client;
-    this.element = element;
-    this.ticket = ticket;
-    this.problem = problem;
-    this.service = service;
-    this.operation = operation;
-    this.previamente = previamente;
+  public constructor(template: string, options: Options) {
+    this.template = template;
+    this.options = options;
   }
 
   private parseTemplate(template: string): CommandBlock[] {
@@ -66,7 +38,7 @@ export default class TemplatingEngine {
   }
 
   private parseCommand(command: string): Operation[] {
-    const strippedInput = command.slice(1, -1).replace(/^(SI|SINO PERO) /, "");
+    const strippedInput = command.replace(/^(SI|SINO PERO) /, "");
     const sections = strippedInput.split(/ (?=Y {{|O {{)/);
 
     return sections.map((section) => {
@@ -77,9 +49,9 @@ export default class TemplatingEngine {
         section = section.slice(2);
       }
 
-      const parts = section
-        .split(/(ES IGUAL QUE|NO ES IGUAL QUE)/)
-        .map((s) => s.trim());
+      const text = section.trim();
+
+      const parts = this.parseToParts(text);
 
       return {
         leftSideValue: parts[0],
@@ -88,6 +60,23 @@ export default class TemplatingEngine {
         logicalOperator,
       };
     });
+  }
+
+  private parseToParts(text: string): string[] {
+    const regex = /({{.*?}})|(ES IGUAL QUE|NO ES IGUAL QUE)/g;
+
+    let match;
+    let matches = [];
+
+    while ((match = regex.exec(text)) !== null) {
+      for (let i = 1; i < match.length; i++) {
+        if (match[i] !== undefined) {
+          matches.push(match[i].trim());
+        }
+      }
+    }
+
+    return matches;
   }
 
   private processPlaceholder(placeholder: string): any {
@@ -105,28 +94,28 @@ export default class TemplatingEngine {
 
     switch (parts[0]) {
       case "usuario":
-        object = this.user;
+        object = this.options.usuario;
         break;
       case "cliente":
-        object = this.client;
+        object = this.options.cliente;
         break;
       case "elemento":
-        object = this.element;
+        object = this.options.elemento;
         break;
       case "ticket":
-        object = this.ticket;
+        object = this.options.ticket;
         break;
       case "problema":
-        object = this.problem;
+        object = this.options.problema;
         break;
       case "servicio":
-        object = this.service;
+        object = this.options.servicio;
         break;
       case "operación":
-        object = this.operation;
+        object = this.options.operación;
         break;
       case "previamente":
-        object = this.previamente;
+        object = this.options.previamente;
         break;
       default:
         throw new Error(`Invalid object name ${parts[0]}`);
@@ -144,15 +133,22 @@ export default class TemplatingEngine {
   }
 
   private processOperation(operation: Operation): Result {
+    const processed = {
+      leftSideValue: this.processPlaceholder(operation.leftSideValue as string),
+      rightSideValue: this.processPlaceholder(
+        operation.rightSideValue as string
+      ),
+    };
+
     switch (operation.comparisonOperator) {
       case "ES IGUAL QUE":
         return {
-          isTrue: operation.leftSideValue === operation.rightSideValue,
+          isTrue: processed.leftSideValue === processed.rightSideValue,
           logicalOperator: operation.logicalOperator,
         };
       case "NO ES IGUAL QUE":
         return {
-          isTrue: operation.leftSideValue !== operation.rightSideValue,
+          isTrue: processed.leftSideValue !== processed.rightSideValue,
           logicalOperator: operation.logicalOperator,
         };
       default:
@@ -197,25 +193,25 @@ export default class TemplatingEngine {
     });
   }
 
-  start(template: string): string {
-    const commandBlock = this.parseTemplate(template).map((commandBlock) => {
-      if (commandBlock.type === "SI" || commandBlock.type === "SINO PERO") {
-        return {
-          ...commandBlock,
-          operations: this.parseCommand(commandBlock.command),
-        };
-      } else return commandBlock;
-    });
+  start(): string {
+    const commandBlock = this.parseTemplate(this.template).map(
+      (commandBlock) => {
+        if (commandBlock.type === "SI" || commandBlock.type === "SINO PERO") {
+          return {
+            ...commandBlock,
+            operations: this.parseCommand(commandBlock.command),
+          };
+        } else return commandBlock;
+      }
+    );
 
-    const DEFAULT = commandBlock.find((commandBlock) => {
-      commandBlock.type === "DEFAULT";
-    });
+    const DEFAULT = commandBlock.find(
+      (commandBlock) => commandBlock.type === "DEFAULT"
+    );
 
     if (DEFAULT) return this.processTemplate(DEFAULT.template);
 
-    const SI = commandBlock.find((commandBlock) => {
-      commandBlock.type === "SI";
-    });
+    const SI = commandBlock.find((commandBlock) => commandBlock.type === "SI");
 
     if (SI) {
       const results = this.processOperations(SI.operations!);
@@ -223,9 +219,9 @@ export default class TemplatingEngine {
       if (valid) return this.processTemplate(SI.template);
     }
 
-    const SINO_PERO = commandBlock.filter((commandBlock) => {
-      commandBlock.type === "SINO PERO";
-    });
+    const SINO_PERO = commandBlock.filter(
+      (commandBlock) => commandBlock.type === "SINO PERO"
+    );
 
     if (SINO_PERO.length > 0) {
       let template: string | undefined;
@@ -240,14 +236,12 @@ export default class TemplatingEngine {
       if (template) return this.processTemplate(template);
     }
 
-    const SINO = commandBlock.find((commandBlock) => {
-      commandBlock.type === "SINO";
-    });
+    const SINO = commandBlock.find(
+      (commandBlock) => commandBlock.type === "SINO"
+    );
 
     if (SINO) {
-      const results = this.processOperations(SINO.operations!);
-      const valid = this.processResults(results);
-      if (valid) return this.processTemplate(SINO.template);
+      return this.processTemplate(SINO.template);
     }
 
     return "There seems to be an processing error. This text should not have been returned";

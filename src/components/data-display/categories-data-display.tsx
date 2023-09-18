@@ -11,9 +11,11 @@ import {
   Action,
   Categoría,
   CategoríaTipo,
+  Selected
 } from "../../types";
 import CategoryService from "../../services/category-service";
 import toast, { Toaster } from "react-hot-toast";
+import Select from "../misc/select";
 
 function EditModal({
   isOpen,
@@ -23,6 +25,15 @@ function EditModal({
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [formData, setFormData] = useState<Categoría>(categoría!);
+  const [selectedType, setSelectedType] = useState<Selected>({
+    label:
+      categoría?.tipo === "PRODUCTO"
+        ? "Producto"
+        : categoría?.tipo === "ELEMENTO"
+        ? "Elemento"
+        : "Servicio",
+    value: categoría?.tipo,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -102,22 +113,47 @@ function EditModal({
           className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
         />
         <div className="relative">
-          <select
-            onChange={(e) => {
+          <Select
+            onChange={() => {
               setFormData({
                 ...formData,
-                tipo: e.target.value as `${CategoríaTipo}`,
+                tipo: selectedType.value as CategoríaTipo,
               });
             }}
-            className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
-            value={formData.tipo}
-          >
-            <option value="NONE">Seleccionar tipo</option>
-            <option value="PRODUCTO">Producto</option>
-            <option value="SERVICIO">Servicio</option>
-            <option value="ELEMENTO">Elemento</option>
-          </select>
-          <Down className="absolute h-4 w-4 top-3 right-5" />
+            options={[
+              {
+                value: "PRODUCTO",
+                label: "Producto",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "SERVICIO",
+                label: "Servicio",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "ELEMENTO",
+                label: "Elemento",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedType}
+          />
         </div>
         <div className="flex gap-2">
           <button
@@ -138,17 +174,21 @@ function EditModal({
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+    const [selectedType, setSelectedType] = useState<Selected>({
+    label: "Seleccionar tipo",
+    value: "",
+  });
   const [formData, setFormData] = useState<Categoría>({
     nombre: "",
     descripción: "",
-    tipo: "NONE",
+    tipo: "PRODUCTO",
   });
 
   const resetFormData = () => {
     setFormData({
       nombre: "",
       descripción: "",
-      tipo: "NONE",
+      tipo: "PRODUCTO",
     });
   };
 
@@ -232,22 +272,47 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
         />
         <div className="relative">
-          <select
-            onChange={(e) => {
+          <Select
+            onChange={() => {
               setFormData({
                 ...formData,
-                tipo: e.target.value as `${CategoríaTipo}`,
+                tipo: selectedType.value as CategoríaTipo,
               });
             }}
-            className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
-            value={formData.tipo}
-          >
-            <option value="NONE">Seleccionar tipo</option>
-            <option value="PRODUCTO">Producto</option>
-            <option value="SERVICIO">Servicio</option>
-            <option value="ELEMENTO">Elemento</option>
-          </select>
-          <Down className="absolute h-4 w-4 top-3 right-5" />
+            options={[
+              {
+                value: "PRODUCTO",
+                label: "Producto",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "SERVICIO",
+                label: "Servicio",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "ELEMENTO",
+                label: "Elemento",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedType}
+          />
         </div>
         <div className="flex gap-2">
           <button
@@ -363,19 +428,19 @@ function DataRow({ action, categoría, setOperationAsCompleted }: DataRowProps) 
   };
 
   return (
-    <tr className="bg-white border border-slate-300 dark:bg-gray-900 dark:border-gray-700">
+    <tr>
       <th
         scope="row"
-        className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
       >
         {categoría?.id}
       </th>
-      <td className="px-6 py-4">{categoría?.nombre}</td>
-      <td className="px-6 py-4">{categoría?.descripción}</td>
-      <td className="px-6 py-4">{categoría?.tipo}</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 border border-slate-300">{categoría?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300">{categoría?.descripción}</td>
+      <td className="px-6 py-4 border border-slate-300">{categoría?.tipo}</td>
+      <td className="px-6 py-4 border border-slate-300">
         {action === "NONE" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
+          <button className="font-medium text-[#0d1216] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
           </button>
         )}
@@ -607,9 +672,9 @@ export default function CategoriesDataDisplay() {
   return (
     <>
       <div className="absolute h-full w-full px-8 py-5">
-        <nav className="flex justify-between items-center">
-          <div className="font-medium">
-            Menu <Right className="w-3 h-3 inline" /> Categorías
+        <nav className="flex justify-between items-center select-none">
+          <div className="font-medium text-slate-600">
+            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Categorías
           </div>
           <div>
             {isDropup && (
@@ -633,23 +698,23 @@ export default function CategoriesDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         {categories.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto rounded-lg">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs bg-[#2096ed] uppercase text-white dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                  <th scope="col" className="px-6 py-3">
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm font-medium text-slate-600 text-left">
+              <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
+                <tr className="border-2 border-[#2096ed]">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     #
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Nombre
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Descripción
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Tipo
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
                   </th>
                 </tr>

@@ -472,21 +472,21 @@ function DataRow({ action, producto, setOperationAsCompleted }: DataRowProps) {
   };
 
   return (
-    <tr className="bg-white border border-slate-300 dark:bg-gray-900 dark:border-gray-700">
+    <tr>
       <th
         scope="row"
-        className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
       >
         {producto?.id}
       </th>
-      <td className="px-6 py-4 truncate max-w-[200px]">{producto?.slug}</td>
-      <td className="px-6 py-4 truncate">{producto?.nombre}</td>
-      <td className="px-6 py-4 truncate max-w-[200px]">
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">{producto?.slug}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate">{producto?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
         {producto?.descripción}
       </td>
-      <td className="px-6 py-4">{producto?.precio}</td>
-      <td className="px-6 py-4">{producto?.stock}</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 border border-slate-300">{producto?.precio}</td>
+      <td className="px-6 py-4 border border-slate-300">{producto?.stock}</td>
+      <td className="px-6 py-4 border border-slate-300">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -721,9 +721,9 @@ export default function ProductsDataDisplay() {
   return (
     <>
       <div className="absolute h-full w-full px-8 py-5">
-        <nav className="flex justify-between items-center">
-          <div className="font-medium">
-            Menu <Right className="w-3 h-3 inline" /> Productos
+        <nav className="flex justify-between items-center select-none">
+          <div className="font-medium text-slate-600">
+            Menu <Right className="w-3 h-3 inline fill-600" /> Productos
           </div>
           <div>
             {isDropup && (
@@ -748,29 +748,29 @@ export default function ProductsDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
         {products.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto rounded-lg">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs bg-[#2096ed] uppercase text-white dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                  <th scope="col" className="px-6 py-3">
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm font-medium text-slate-600 text-left">
+              <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
+                <tr className="border-2 border-[#2096ed]">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     #
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Slug
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Nombre
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Descripción
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Precio
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Stock
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
                   </th>
                 </tr>

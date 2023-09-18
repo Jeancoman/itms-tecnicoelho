@@ -66,7 +66,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/4 h-fit max-h-[510px] rounded shadow scrollbar-none"
+      className="w-2/4 h-fit max-h-[510px] rounded shadow scrollbar-none -z-50"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Crear publicación</h1>
@@ -123,7 +123,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             menubar: true,
             promotion: false,
             ui_mode: "split",
-            plugins: ["wordcount"],
+            plugins: [
+              'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+              'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+              'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
+            ],
             toolbar:
               "undo redo | blocks | " +
               "bold italic forecolor | alignleft aligncenter " +
@@ -269,12 +273,15 @@ function EditModal({
             menubar: true,
             promotion: false,
             ui_mode: "split",
-            plugins: ["wordcount"],
-            toolbar:
-              "undo redo | blocks | " +
-              "bold italic forecolor | alignleft aligncenter " +
-              "alignright alignjustify | bullist numlist outdent indent | " +
-              "removeformat",
+            plugins: [
+              'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+              'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+              'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks | ' +
+            'bold italic forecolor | alignleft aligncenter ' +
+            'alignright alignjustify | bullist numlist outdent indent | ' +
+            'removeformat',
             content_style:
               "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
             language: "es",
@@ -420,20 +427,20 @@ function DataRow({
   };
 
   return (
-    <tr className="bg-white border border-slate-300 dark:bg-gray-900 dark:border-gray-700">
+    <tr>
       <th
         scope="row"
-        className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
       >
         {publicación?.id}
       </th>
-      <td className="px-6 py-4">{publicación?.título}</td>
-      <td className="px-6 py-4">{publicación?.contenido}</td>
-      <td className="px-6 py-4">{String(publicación?.creada)}</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 border border-slate-300">{publicación?.título}</td>
+      <td className="px-6 py-4 border border-slate-300">{publicación?.contenido}</td>
+      <td className="px-6 py-4 border border-slate-300">{String(publicación?.creada)}</td>
+      <td className="px-6 py-4 border border-slate-300">
         {publicación?.modificada ? "N/A" : String(publicación?.modificada)}
       </td>
-      <td className="px-6 py-2">
+      <td className="px-6 py-2 border border-slate-300">
         {publicación?.esPública === true ? (
           <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-full">
             Sí
@@ -444,7 +451,7 @@ function DataRow({
           </div>
         )}
       </td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 border border-slate-300">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -534,7 +541,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           mt-1
           m-0
           bg-clip-padding
-          border-none
+          border
         "
     >
       <li>
@@ -706,9 +713,9 @@ export default function PublicationsDataDisplay() {
   return (
     <>
       <div className="absolute w-full h-full px-8 py-5">
-        <nav className="flex justify-between items-center">
-          <div className="font-medium">
-            Menu <Right className="w-3 h-3 inline" /> Publicaciones
+        <nav className="flex justify-between items-center select-none">
+          <div className="font-medium text-slate-600">
+            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Publicaciones
           </div>
           <div>
             {isDropup && (
@@ -732,29 +739,29 @@ export default function PublicationsDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
         {publications.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto rounded-lg">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs bg-[#2096ed] uppercase text-white dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                  <th scope="col" className="px-6 py-3">
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm font-medium text-slate-600 text-left">
+              <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
+                <tr className="border-2 border-[#2096ed]">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     #
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Título
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Contenido
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Creación
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Actualización
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Publicada
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
                   </th>
                 </tr>

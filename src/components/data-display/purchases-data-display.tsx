@@ -87,19 +87,19 @@ function AddModal({ isOpen, close }: ModalProps) {
 
 function DataRow({ action }: DataRow) {
   return (
-    <tr className="bg-white border border-slate-300 dark:bg-gray-900 dark:border-gray-700">
+    <tr>
       <th
         scope="row"
-        className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
       >
         1
       </th>
-      <td className="px-6 py-4">Repuestos Don Juan Inc.</td>
-      <td className="px-6 py-4">14%</td>
-      <td className="px-6 py-4">100.00</td>
-      <td className="px-6 py-4">114.00</td>
-      <td className="px-6 py-4">20/20/20</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 border border-slate-300">Repuestos Don Juan Inc.</td>
+      <td className="px-6 py-4 border border-slate-300">14%</td>
+      <td className="px-6 py-4 border border-slate-300">100.00</td>
+      <td className="px-6 py-4 border border-slate-300">114.00</td>
+      <td className="px-6 py-4 border border-slate-300">20/20/20</td>
+      <td className="px-6 py-4 border border-slate-300">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -278,9 +278,9 @@ export default function PurchasesDataDisplay() {
   return (
     <>
       <div className="absolute w-full h-full px-8 py-5">
-        <nav className="flex justify-between items-center">
-          <div className="font-medium">
-            Menu <Right className="w-3 h-3 inline" /> Compras
+        <nav className="flex justify-between items-center select-none">
+          <div className="font-medium text-slate-600">
+            Menu <Right className="w-3 h-3 inline fill-600" /> Compras
           </div>
           <div>
             {isDropup && (
@@ -303,29 +303,29 @@ export default function PurchasesDataDisplay() {
           </div>
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
-        <div className="relative overflow-x-auto rounded-lg">
-          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-            <thead className="text-xs bg-[#2096ed] uppercase text-white dark:bg-gray-700 dark:text-gray-400">
-              <tr>
-                <th scope="col" className="px-6 py-3">
+        <div className="relative overflow-x-auto">
+          <table className="w-full text-sm font-medium text-slate-600 text-left">
+            <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
+              <tr className="border-2 border-[#2096ed]">
+                <th scope="col" className="px-6 py-3 border border-slate-600">
                   #
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th scope="col" className="px-6 py-3 border border-slate-600">
                   Proveedor
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th scope="col" className="px-6 py-3 border border-slate-600">
                   Impuesto
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th scope="col" className="px-6 py-3 border border-slate-600">
                   Subtotal
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th scope="col" className="px-6 py-3 border border-slate-600">
                   Total
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th scope="col" className="px-6 py-3 border border-slate-600">
                   Fecha
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th scope="col" className="px-6 py-3 border border-slate-600">
                   Acción
                 </th>
               </tr>

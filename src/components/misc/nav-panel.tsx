@@ -33,59 +33,59 @@ export default function NavPanel() {
       </div>
       <hr className="my-4 mx-5" />
       <div className="max-h-[568px] scrollbar-none overflow-auto pb-5">
-        <div className="text-white font-semibold flex flex-col gap-0.5 pl-5">
+        <div className="text-white font-semibold flex flex-col gap-0.5 px-5">
           <NavLink
             to="/"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
           >
             <House className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Inicio</p>
           </NavLink>
           <NavLink
             to="/usuarios"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
           >
             <Users className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Usuarios</p>
           </NavLink>
           <NavLink
             to="/clientes"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
           >
             <Work className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Clientes</p>
           </NavLink>
           <NavLink
             to="/tickets"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
           >
             <Ticket className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Tickets</p>
           </NavLink>
           <NavLink
             to="/publicaciones"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
           >
             <Article className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Publicaciones</p>
           </NavLink>
           <NavLink
             to="/productos"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
           >
             <Store className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Productos</p>
           </NavLink>
           <NavLink
             to="/proveedores"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
           >
             <Truck className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Proveedores</p>
           </NavLink>
           <NavLink
             to="/categorias"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
           >
             <Category className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Categorías</p>
@@ -94,7 +94,7 @@ export default function NavPanel() {
             onClick={() => {
               setIsCollapsed(!isCollapsed);
             }}
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
           >
             <Inventory className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p className="mr-8">Inventario</p>
@@ -108,14 +108,14 @@ export default function NavPanel() {
             <div className="pl-3">
               <NavLink
                 to="/ventas"
-                className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+                className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
               >
                 <Register className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
                 <p>Ventas</p>
               </NavLink>
               <NavLink
                 to="/compras"
-                className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+                className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
               >
                 <Cart className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
                 <p>Compras</p>
@@ -124,19 +124,19 @@ export default function NavPanel() {
           ) : null}
           <NavLink
             to="/galeria"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
           >
             <Library className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Galería</p>
           </NavLink>
           <NavLink
             to="/mensajero"
-            className="group/parent justify-self-end	flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg"
+            className="group/parent justify-self-end	flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
           >
             <Envelopes className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Mensajero</p>
           </NavLink>
-          <div className="group/parent justify-self-end	flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-l-lg">
+          <div className="group/parent justify-self-end	flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg">
             <Account className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
             <p>Esta cuenta</p>
           </div>

@@ -10,12 +10,14 @@ import {
   DropupProps,
   Action,
   Elemento,
-  Cliente,
+  Categoría,
+  Selected,
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
 import ElementService from "../../services/element-service";
-import ClientService from "../../services/client-service";
 import { useParams } from "react-router-dom";
+import CategoryService from "../../services/category-service";
+import Select from "../misc/select";
 
 function EditModal({
   isOpen,
@@ -24,7 +26,13 @@ function EditModal({
   elemento,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<Categoría[]>([]);
   const [formData, setFormData] = useState<Elemento>(elemento!);
+    const [selectedCategory, setSelectedCategory] = useState<Selected>({
+    value: formData.categoría_id,
+    label: formData.categoría?.nombre,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -40,6 +48,20 @@ function EditModal({
       ref.current?.close();
     }
   }, [isOpen]);
+
+    useEffect(() => {
+    if (categories.length === 0) {
+      setLoading(true);
+      CategoryService.getAll().then((data) => {
+        if (data === false) {
+          setLoading(false);
+        } else {
+          setLoading(false);
+          setCategories(data);
+        }
+      });
+    }
+  }, []);
 
   return (
     <dialog
@@ -83,18 +105,83 @@ function EditModal({
           });
         }}
       >
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          placeholder="Nombre*"
-          value={formData.nombre}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
-        />
+        <div className="flex gap-2">
+          <input
+            type="text"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            placeholder="Nombre*"
+            value={formData.nombre}
+            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+          />
+          <div className="relative w-2/4">
+            {categories.length > 0 && (
+              <Select
+                options={categories.map((category) => ({
+                  value: category.id,
+                  label: category.nombre,
+                  onClick: (value, label) => {
+                    setSelectedCategory({
+                      value,
+                      label,
+                    });
+                  },
+                }))}
+                selected={selectedCategory}
+                onChange={() => {
+                  setFormData({
+                    ...formData,
+                    categoría_id: selectedCategory.value! as number,
+                  });
+                }}
+              />
+            )}
+            {categories.length === 0 && loading === false && (
+              <>
+                <select
+                  className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                  value={0}
+                  disabled={true}
+                >
+                  <option value={0}>Seleccionar categoría</option>
+                </select>
+                <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+              </>
+            )}
+            {categories.length === 0 && loading === true && (
+              <>
+                <select
+                  className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                  value={0}
+                  disabled={true}
+                >
+                  <option value={0}>Buscando categorías...</option>
+                </select>
+                <svg
+                  aria-hidden="true"
+                  className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
+                  viewBox="0 0 100 101"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                    fill="currentColor"
+                  />
+                  <path
+                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                    fill="currentFill"
+                  />
+                </svg>
+                <span className="sr-only">Cargando...</span>
+              </>
+            )}
+          </div>
+        </div>
         <textarea
           rows={3}
           placeholder="Descripción"
@@ -127,13 +214,17 @@ function EditModal({
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id } = useParams();
   const ref = useRef<HTMLDialogElement>(null);
-  const [clients, setClients] = useState<Cliente[]>([]);
-  const [selected, setSelected] = useState(-1);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Categoría[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Selected>({
+    value: -1,
+    label: "Seleccionar categoría",
+  });
   const [formData, setFormData] = useState<Elemento>({
     nombre: "",
     descripción: "",
     estado: "INACTIVO",
-    cliente_id: -1,
+    cliente_id: Number(id),
   });
 
   const resetFormData = () => {
@@ -141,7 +232,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       nombre: "",
       descripción: "",
       estado: "INACTIVO",
-      cliente_id: -1,
+      cliente_id: Number(id),
     });
   };
 
@@ -163,12 +254,17 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   }, [isOpen]);
 
   useEffect(() => {
-    ClientService.getAll().then((data) => {
-      if (data === false) {
-      } else {
-        setClients(data);
-      }
-    });
+    if (categories.length === 0) {
+      setLoading(true);
+      CategoryService.getAll().then((data) => {
+        if (data === false) {
+          setLoading(false);
+        } else {
+          setLoading(false);
+          setCategories(data);
+        }
+      });
+    }
   }, []);
 
   return (
@@ -186,7 +282,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit max-h-[500px] rounded-xl shadow scrollbar-none"
+      className="w-2/4 h-fit rounded-md shadow-md scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir elemento</h1>
@@ -209,18 +305,83 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           });
         }}
       >
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          placeholder="Nombre*"
-          value={formData.nombre}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
-        />
+        <div className="flex gap-2">
+          <input
+            type="text"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            placeholder="Nombre*"
+            value={formData.nombre}
+            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+          />
+          <div className="relative w-2/4">
+            {categories.length > 0 && (
+              <Select
+                options={categories.map((category) => ({
+                  value: category.id,
+                  label: category.nombre,
+                  onClick: (value, label) => {
+                    setSelectedCategory({
+                      value,
+                      label,
+                    });
+                  },
+                }))}
+                selected={selectedCategory}
+                onChange={() => {
+                  setFormData({
+                    ...formData,
+                    categoría_id: selectedCategory.value! as number,
+                  });
+                }}
+              />
+            )}
+            {categories.length === 0 && loading === false && (
+              <>
+                <select
+                  className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                  value={0}
+                  disabled={true}
+                >
+                  <option value={0}>Seleccionar categoría</option>
+                </select>
+                <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+              </>
+            )}
+            {categories.length === 0 && loading === true && (
+              <>
+                <select
+                  className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                  value={0}
+                  disabled={true}
+                >
+                  <option value={0}>Buscando categorías...</option>
+                </select>
+                <svg
+                  aria-hidden="true"
+                  className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
+                  viewBox="0 0 100 101"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                    fill="currentColor"
+                  />
+                  <path
+                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                    fill="currentFill"
+                  />
+                </svg>
+                <span className="sr-only">Cargando...</span>
+              </>
+            )}
+          </div>
+        </div>
         <textarea
           rows={3}
           placeholder="Descripción"
@@ -233,27 +394,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           value={formData.descripción}
           className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
         />
-        <div className="relative">
-          <select
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                cliente_id: Number(e.target.value),
-              });
-              setSelected(Number(e.target.value));
-            }}
-            className="border w-full p-2 rounded-lg outline-none focus:border-[#2096ed] appearance-none"
-            value={selected}
-          >
-            <option value={-1}>Seleccionar cliente</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.nombre} {client.apellido}
-              </option>
-            ))}
-          </select>
-          <Down className="absolute h-4 w-4 top-3 right-5" />
-        </div>
         <div className="flex gap-2">
           <button
             type="button"
@@ -370,22 +510,28 @@ function DataRow({ action, elemento, setOperationAsCompleted }: DataRowProps) {
   };
 
   return (
-    <tr className="bg-white border-b dark:bg-gray-900 dark:border-gray-700 last:border-b-0">
+    <tr>
       <th
         scope="row"
-        className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
       >
         {elemento?.id}
       </th>
-      <td className="px-6 py-4">{elemento?.nombre}</td>
-      <td className="px-6 py-4">{elemento?.descripción}</td>
-      <td className="px-6 py-4">{elemento?.estado}</td>
-      <td className="px-6 py-4">{elemento?.categoría?.nombre}</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 border border-slate-300">{elemento?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300">
+        {elemento?.descripción}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">{elemento?.estado}</td>
+      <td className="px-6 py-4 border border-slate-300">
+        {elemento?.categoría?.nombre}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">
         {elemento?.cliente?.nombre} {elemento?.cliente?.apellido}
       </td>
-      <td className="px-6 py-4">{String(elemento?.registrado)}</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 border border-slate-300">
+        {String(elemento?.registrado)}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -620,9 +766,9 @@ export default function ElementsDataDisplay() {
   return (
     <>
       <div className="absolute h-full w-full px-8 py-5">
-        <nav className="flex justify-between items-center">
-          <div className="font-medium">
-            Menu <Right className="w-3 h-3 inline" /> Clientes{" "}
+        <nav className="flex justify-between items-center select-none">
+          <div className="font-medium text-slate-600">
+            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Clientes{" "}
             <Right className="w-3 h-3 inline" />{" "}
             <span className="text-[#2096ed] font-bold">{id}</span>{" "}
             <Right className="w-3 h-3 inline" /> Elementos
@@ -649,32 +795,32 @@ export default function ElementsDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
         {elements.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto sm:rounded-lg shadow">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs text-[#2096ed] uppercase bg-blue-100 dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                  <th scope="col" className="px-6 py-3">
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm font-medium text-slate-600 text-left">
+              <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
+                <tr className="border-2 border-[#2096ed]">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     #
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Nombre
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Descripción
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Estado
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Categoría
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Cliente
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Registro
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
                   </th>
                 </tr>

@@ -43,7 +43,7 @@ function OptionGroup({ options, close, closeOnOptionClick }: OptionGroupProps) {
   return (
     <ul
       ref={ref}
-      className="w-full absolute bg-white text-base z-[3000] py-1 list-none text-left rounded mt-1 shadow-md m-0 bg-clip-padding border border-slate-300"
+      className="w-full absolute bg-white text-base z-[3000] py-1 list-none text-left rounded mt-1 shadow m-0 bg-clip-padding border border-slate-300"
     >
       {options.map((option) => {
         return (

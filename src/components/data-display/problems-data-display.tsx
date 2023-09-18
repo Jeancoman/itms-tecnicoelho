@@ -46,7 +46,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     setSelectedPriority({
       value: "",
       label: "Seleccionar prioridad",
-    })
+    });
   };
 
   useEffect(() => {
@@ -81,14 +81,13 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit max-h-[510px] rounded shadow scrollbar-none"
+      className="w-2/4 h-fit rounded-md shadow-md scrollbar-none"
     >
-      <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Registrar problema</h1>
+      <div className="bg-[#2096ed] py-4 px-6">
+        <h1 className="text-lg font-bold text-white">Registrar problema</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
-
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -105,22 +104,67 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           });
         }}
       >
-        <input
-          type="text"
-          name="name"
-          placeholder="Nombre*"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          value={formData.nombre}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
-        />
+        <div className="flex gap-4">
+          <input
+            type="text"
+            name="name"
+            placeholder="Nombre*"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            value={formData.nombre}
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4 font-medium"
+          />
+          <div className="relative w-2/4">
+            <Select
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  prioridad: selectedPriority.value as ProblemaPrioridad,
+                });
+              }}
+              options={[
+                {
+                  value: "BAJA",
+                  label: "Baja",
+                  onClick: (value, label) => {
+                    setSelectedPriority({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "MEDIA",
+                  label: "Media",
+                  onClick: (value, label) => {
+                    setSelectedPriority({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ALTA",
+                  label: "Alta",
+                  onClick: (value, label) => {
+                    setSelectedPriority({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedPriority}
+            />
+          </div>
+        </div>
         <textarea
           rows={3}
-          placeholder="Descripción"
+          placeholder="Descripción*"
           onChange={(e) => {
             setFormData({
               ...formData,
@@ -128,7 +172,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             });
           }}
           value={formData.descripción}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] font-medium"
         />
         <textarea
           rows={3}
@@ -140,7 +184,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             });
           }}
           value={formData.causa}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] font-medium"
         />
         <textarea
           rows={3}
@@ -152,52 +196,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             });
           }}
           value={formData.solución}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 font-medium"
         />
-        <div className="relative">
-        <Select
-          onChange={() => {
-            setFormData({
-              ...formData,
-              prioridad: selectedPriority.value as ProblemaPrioridad,
-            });
-          }}
-          options={[
-            {
-              value: "BAJA",
-              label: "Baja",
-              onClick: (value, label) => {
-                setSelectedPriority({
-                  value,
-                  label,
-                });
-              },
-            },
-            {
-              value: "MEDIA",
-              label: "Media",
-              onClick: (value, label) => {
-                setSelectedPriority({
-                  value,
-                  label,
-                });
-              },
-            },
-            {
-              value: "ALTA",
-              label: "Alta",
-              onClick: (value, label) => {
-                setSelectedPriority({
-                  value,
-                  label,
-                });
-              },
-            },
-          ]}
-          selected={selectedPriority}
-        />
-        </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={closeModal}
@@ -263,10 +264,10 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/4 h-fit rounded-md shadow-md scrollbar-none"
     >
-      <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar problema</h1>
+      <div className="bg-[#2096ed] py-4 px-6">
+        <h1 className="text-lg font-bold text-white">Editar problema</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
@@ -289,21 +290,67 @@ function EditModal({
           );
         }}
       >
-        <input
-          type="text"
-          placeholder="Nombre"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          value={formData.nombre}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
-        />
+       <div className="flex gap-4">
+          <input
+            type="text"
+            name="name"
+            placeholder="Nombre*"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            value={formData.nombre}
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4 font-medium"
+          />
+          <div className="relative w-2/4">
+            <Select
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  prioridad: selectedPriority.value as ProblemaPrioridad,
+                });
+              }}
+              options={[
+                {
+                  value: "BAJA",
+                  label: "Baja",
+                  onClick: (value, label) => {
+                    setSelectedPriority({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "MEDIA",
+                  label: "Media",
+                  onClick: (value, label) => {
+                    setSelectedPriority({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ALTA",
+                  label: "Alta",
+                  onClick: (value, label) => {
+                    setSelectedPriority({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedPriority}
+            />
+          </div>
+        </div>
         <textarea
           rows={3}
-          placeholder="Descripción"
+          placeholder="Descripción*"
           onChange={(e) => {
             setFormData({
               ...formData,
@@ -311,7 +358,7 @@ function EditModal({
             });
           }}
           value={formData.descripción}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] font-medium"
         />
         <textarea
           rows={3}
@@ -323,7 +370,7 @@ function EditModal({
             });
           }}
           value={formData.causa}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] font-medium"
         />
         <textarea
           rows={3}
@@ -335,48 +382,7 @@ function EditModal({
             });
           }}
           value={formData.solución}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
-        />
-        <Select
-          onChange={() => {
-            setFormData({
-              ...formData,
-              prioridad: selectedPriority.value as ProblemaPrioridad,
-            });
-          }}
-          options={[
-            {
-              value: "BAJA",
-              label: "Baja",
-              onClick: (value, label) => {
-                setSelectedPriority({
-                  value,
-                  label,
-                });
-              },
-            },
-            {
-              value: "MEDIA",
-              label: "Media",
-              onClick: (value, label) => {
-                setSelectedPriority({
-                  value,
-                  label,
-                });
-              },
-            },
-            {
-              value: "ALTA",
-              label: "Alta",
-              onClick: (value, label) => {
-                setSelectedPriority({
-                  value,
-                  label,
-                });
-              },
-            },
-          ]}
-          selected={selectedPriority}
+          className="border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 font-medium"
         />
         <div className="flex gap-2">
           <button
@@ -493,33 +499,30 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
   };
 
   return (
-    <tr className="bg-white border border-slate-300 dark:bg-gray-900 dark:border-gray-700">
+    <tr>
       <th
         scope="row"
-        className="px-6 py-4 font-medium text-[#2096ed] whitespace-nowrap dark:text-white"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
       >
         {problema?.id}
       </th>
-      <td className="px-6 py-4">{problema?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300">{problema?.nombre}</td>
       <td className="px-6 py-2 border border-slate-300">
-        {
-          // @ts-ignore
-          problema?.prioridad === "BAJA" ? (
-            <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
-              Baja
-            </div>
-          ) : problema?.prioridad === "MEDIA" ? (
-            <div className="bg-yellow-200 text-center text-yellow-600 text-xs py-2 font-bold rounded-lg capitalize">
-              Media
-            </div>
-          ) : (
-            <div className="bg-red-200 text-center text-red-600 text-xs py-2 font-bold rounded-lg capitalize">
-              Alta
-            </div>
-          )
-        }
+        {problema?.prioridad === "BAJA" ? (
+          <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
+            Baja
+          </div>
+        ) : problema?.prioridad === "MEDIA" ? (
+          <div className="bg-yellow-200 text-center text-yellow-600 text-xs py-2 font-bold rounded-lg capitalize">
+            Media
+          </div>
+        ) : (
+          <div className="bg-red-200 text-center text-red-600 text-xs py-2 font-bold rounded-lg capitalize">
+            Alta
+          </div>
+        )}
       </td>
-      <td className="px-6 py-2">
+      <td className="px-6 py-2 border border-slate-300">
         {problema?.estado === "RESUELTO" ? (
           <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
             Resuelto
@@ -530,10 +533,14 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
           </div>
         )}
       </td>
-      <td className="px-6 py-4">{problema?.descripción}</td>
-      <td className="px-6 py-4">{problema?.causa}</td>
-      <td className="px-6 py-4">{String(problema?.detectado)}</td>
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 border border-slate-300">
+        {problema?.descripción}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">{problema?.causa}</td>
+      <td className="px-6 py-4 border border-slate-300">
+        {String(problema?.detectado)}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -717,7 +724,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Añadir problema
+          Registrar problema
         </div>
       </li>
       <li>
@@ -797,9 +804,12 @@ export default function ProblemsDataDisplay() {
   return (
     <>
       <div className="absolute w-full h-full px-8 py-5">
-        <nav className="flex justify-between items-center text-slate-600">
+        <nav className="flex justify-between items-center text-slate-600 select-none">
           <div className="font-medium">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Problemas
+            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Tickets{" "}
+            <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span className="font-bold text-[#2096ed]">{id}</span>{" "}
+            <Right className="w-3 h-3 inline fill-slate-600" /> Problemas
           </div>
           <div>
             {isDropup && (
@@ -823,32 +833,32 @@ export default function ProblemsDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
         {problems.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto rounded-lg">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs bg-[#2096ed] uppercase text-white dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                  <th scope="col" className="px-6 py-3">
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm font-medium text-slate-600 text-left">
+              <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
+                <tr className="border-2 border-[#2096ed]">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     #
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Nombre
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Prioridad
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Estado
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Descripción
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Causa
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Detectado
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
                   </th>
                 </tr>
@@ -873,11 +883,11 @@ export default function ProblemsDataDisplay() {
             <div className="place-self-center flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">
-                Problemas no encontrados
+                Ningún problema encontrado
               </p>
               <p className="font-medium text text-center mt-1">
                 Esto puede deberse a un error del servidor, o a que simplemente
-                no hay ningún problema registrado.
+                este ticket no tenga ningún problema registrado.
               </p>
             </div>
           </div>
