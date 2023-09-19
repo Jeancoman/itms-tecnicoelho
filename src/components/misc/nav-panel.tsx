@@ -130,11 +130,11 @@ export default function NavPanel() {
             <p>Galería</p>
           </NavLink>
           <NavLink
-            to="/mensajero"
+            to="/mensajeria"
             className="group/parent justify-self-end	flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
           >
             <Envelopes className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-            <p>Mensajero</p>
+            <p>Mensajería</p>
           </NavLink>
           <div className="group/parent justify-self-end	flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg">
             <Account className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />

@@ -18,6 +18,15 @@ export type ModalProps = {
   compra?: Compra;
 };
 
+export type SectionProps = {
+  isOpen: boolean;
+  close: () => void;
+  setOperationAsCompleted: () => void;
+  onClick?: () => void;
+  producto?: Producto;
+  publicación?: Publicación;
+}
+
 export type DropupProps = {
   selectAction: (action: `${Action}`) => void;
   close: () => void;
@@ -71,18 +80,6 @@ export type Selected = {
   label: string | undefined;
 };
 
-export type Opciones = {
-  creación: {
-    nunca: boolean;
-    siempre: boolean;
-    mostrarAntes: boolean;
-  };
-  envio: {
-    nunca: boolean;
-    siempre: boolean;
-    preguntarAntes: boolean;
-  };
-};
 
 export type LogicalOperator = "Y" | "O";
 
@@ -139,6 +136,7 @@ export type Action =
   | "VIEW_MESSAGES"
   | "VIEW_PERMISSIONS"
   | "VIEW_OPERATIONS"
+  | "VIEW_ASSOCIATED_PRODUCTOS"
   | "VIEW_AS_PDF"
   | "CONFIRM_ORDER"
   | "PREVIEW"
@@ -171,6 +169,19 @@ export type PlantillaEsDe = "TICKET" | "PROBLEMA" | "SERVICIO" |  "OPERACIÓN";
 
 export type PlantillaEvento = "CREACIÓN" |"MODIFICACIÓN" | "ELIMINACIÓN" | "ASOCIACIÓN";
 
+export type Opciones = {
+  creación: {
+    nunca: boolean;
+    siempre: boolean;
+    mostrarAntes: boolean;
+  };
+  envio: {
+    nunca: boolean;
+    siempre: boolean;
+    preguntarAntes: boolean;
+  };
+};
+
 export interface Usuario {
   id?: number;
   nombre: string;
@@ -178,16 +189,32 @@ export interface Usuario {
   nombreUsuario: string;
   contraseña?: string;
   rol: UsuarioRol;
+  último_login?: Date;
 }
 
-export interface Permiso {
+export type Permiso = {
+  cliente: boolean;
+  ticket: boolean;
+  elemento: boolean;
+  problema: boolean;
+  mensaje: boolean;
+  servicio: boolean;
+  operación: boolean;
+  categoría: boolean;
+  imagen: boolean;
+  venta: boolean;
+  compra: boolean;
+  publicación: boolean;
+  proveedor: boolean;
+};
+
+export interface Permisos {
   id?: number;
-  nombre: string;
-}
-
-export interface PermisoUsuario {
+  ver: Permiso;
+  crear: Permiso;
+  editar: Permiso;
+  eliminar: Permiso;
   usuario_id?: number;
-  permiso_id?: number;
 }
 
 export interface Cliente {
@@ -232,7 +259,7 @@ export interface Servicio {
   completado?: Date;
   ticket_id?: number;
   categoría_id?: number;
-  Categoría?: Categoría;
+  categoría?: Categoría;
 }
 
 export interface Problema {

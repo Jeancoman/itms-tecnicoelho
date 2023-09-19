@@ -247,7 +247,7 @@ function EditModal({
             Cancelar
           </button>
           <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-            Añadir
+            Completar
           </button>
         </div>
       </form>
@@ -595,7 +595,7 @@ export default function ProvidersDataDisplay() {
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-5">
+      <div className="absolute h-full w-full px-8 py-6">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" /> Proveedores

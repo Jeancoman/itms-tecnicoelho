@@ -306,7 +306,7 @@ export default function SalesDataDisplay() {
 
   return (
     <>
-      <div className="absolute w-full px-8 py-5">
+      <div className="absolute w-full px-8 py-6">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" /> Ventas

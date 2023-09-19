@@ -277,7 +277,7 @@ export default function PurchasesDataDisplay() {
 
   return (
     <>
-      <div className="absolute w-full h-full px-8 py-5">
+      <div className="absolute w-full h-full px-8 py-6">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-600" /> Compras

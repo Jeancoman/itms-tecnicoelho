@@ -9,30 +9,19 @@ import {
   DataRowProps,
   DropupProps,
   Action,
-  Servicio,
-  Selected,
-  Categoría,
+  Operación,
 } from "../../types";
 import { useParams } from "react-router-dom";
-import ServiceService from "../../services/service-service";
 import toast, { Toaster } from "react-hot-toast";
-import Select from "../misc/select";
-import CategoryService from "../../services/category-service";
+import OperationService from "../../services/operation-service";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
-  const { id } = useParams();
+  const { id, service_id } = useParams();
   const ref = useRef<HTMLDialogElement>(null);
-  const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<Categoría[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<Selected>({
-    value: -1,
-    label: "Seleccionar categoría",
-  });
-  const [formData, setFormData] = useState<Servicio>({
+  const [formData, setFormData] = useState<Operación>({
     nombre: "",
     descripción: "",
-    estado: "PENDIENTE",
-    categoría_id: -1
+    estado: "PENDIENTE"
   });
 
   const resetFormData = () => {
@@ -40,11 +29,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       nombre: "",
       descripción: "",
       estado: "PENDIENTE",
-      categoría_id: -1
-    });
-    setSelectedCategory({
-      value: -1,
-      label: "Seleccionar categoría",
     });
   };
 
@@ -65,20 +49,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (categories.length === 0) {
-      setLoading(true);
-      CategoryService.getAll().then((data) => {
-        if (data === false) {
-          setLoading(false);
-        } else {
-          setLoading(false);
-          setCategories(data);
-        }
-      });
-    }
-  }, []);
-
   return (
     <dialog
       ref={ref}
@@ -97,7 +67,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       className="w-2/5 h-fit rounded-md shadow-md scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Añadiendo servicio</h1>
+        <h1 className="text-xl font-bold text-white">Añadiendo operación</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
@@ -105,19 +75,18 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Añadiendo servicio...");
-          ServiceService.create(Number(id), formData).then((data) => {
+          const loadingToast = toast.loading("Añadiendo operación...");
+          OperationService.create(Number(id), Number(service_id), formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
-              toast.error("Servicio no pudo ser añadido.");
+              toast.error("Operación no pudo ser añadida.");
             } else {
-              toast.success("Servicio añadido con exito.");
+              toast.success("Operación añadida con exito.");
             }
           });
         }}
       >
-        <div className="flex gap-2">
           <input
             type="text"
             onChange={(e) => {
@@ -130,73 +99,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             value={formData.nombre}
             className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
           />
-          <div className="relative w-2/4">
-            {categories.length > 0 && (
-              <Select
-                options={categories.map((category) => ({
-                  value: category.id,
-                  label: category.nombre,
-                  onClick: (value, label) => {
-                    setSelectedCategory({
-                      value,
-                      label,
-                    });
-                  },
-                }))}
-                selected={selectedCategory}
-                onChange={() => {
-                  setFormData({
-                    ...formData,
-                    categoría_id: selectedCategory.value! as number,
-                  });
-                }}
-              />
-            )}
-            {categories.length === 0 && loading === false && (
-              <>
-                <select
-                  className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-                  value={0}
-                  disabled={true}
-                >
-                  <option value={0}>Seleccionar categoría</option>
-                </select>
-                <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-              </>
-            )}
-            {categories.length === 0 && loading === true && (
-              <>
-                <select
-                  className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
-                  value={0}
-                  disabled={true}
-                >
-                  <option value={0}>Buscando categorías...</option>
-                </select>
-                <svg
-                  aria-hidden="true"
-                  className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
-                  viewBox="0 0 100 101"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                    fill="currentFill"
-                  />
-                </svg>
-                <span className="sr-only">Cargando...</span>
-              </>
-            )}
-          </div>
-        </div>
         <textarea
           rows={3}
-          placeholder="Descripción"
+          placeholder="Descripción*"
           onChange={(e) => {
             setFormData({
               ...formData,
@@ -227,17 +132,11 @@ function EditModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  servicio,
+  operación,
 }: ModalProps) {
-  const { id } = useParams();
-  const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<Categoría[]>([])
+  const { id, service_id } = useParams();
   const ref = useRef<HTMLDialogElement>(null);
-  const [formData, setFormData] = useState<Servicio>(servicio!);
-  const [selectedCategory, setSelectedCategory] = useState<Selected>({
-    value: formData.categoría_id,
-    label: formData.categoría?.nombre,
-  });
+  const [formData, setFormData] = useState<Operación>(operación!);
 
   useEffect(() => {
     if (isOpen) {
@@ -254,19 +153,6 @@ function EditModal({
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (categories.length === 0) {
-      setLoading(true);
-      CategoryService.getAll().then((data) => {
-        if (data === false) {
-          setLoading(false);
-        } else {
-          setLoading(false);
-          setCategories(data);
-        }
-      });
-    }
-  }, []);
 
   return (
     <dialog
@@ -286,7 +172,7 @@ function EditModal({
       className="w-2/5 h-fit rounded-xl shadow"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar servicio</h1>
+        <h1 className="text-xl font-bold text-white">Editar operación</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
@@ -294,101 +180,36 @@ function EditModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Editando servicio...");
-          ServiceService.update(Number(id), servicio?.id!, formData).then(
+          const loadingToast = toast.loading("Editando operación...");
+          OperationService.update(Number(id), Number(service_id), operación?.id!, formData).then(
             (data) => {
               toast.dismiss(loadingToast);
               setOperationAsCompleted();
               if (data) {
-                toast.success("Servicio editado con exito.");
+                toast.success("Operación editada con exito.");
               } else {
-                toast.error("Servicio no pudo ser editado.");
+                toast.error("Operación no pudo ser editada.");
               }
               setOperationAsCompleted();
             }
           );
         }}
       >
-        <div className="flex gap-2">
-          <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            placeholder="Nombre*"
-            value={formData.nombre}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
-          />
-          <div className="relative w-2/4">
-            {categories.length > 0 && (
-              <Select
-                options={categories.map((category) => ({
-                  value: category.id,
-                  label: category.nombre,
-                  onClick: (value, label) => {
-                    setSelectedCategory({
-                      value,
-                      label,
-                    });
-                  },
-                }))}
-                selected={selectedCategory}
-                onChange={() => {
-                  setFormData({
-                    ...formData,
-                    categoría_id: selectedCategory.value! as number,
-                  });
-                }}
-              />
-            )}
-            {categories.length === 0 && loading === false && (
-              <>
-                <select
-                  className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-                  value={0}
-                  disabled={true}
-                >
-                  <option value={0}>Seleccionar categoría</option>
-                </select>
-                <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-              </>
-            )}
-            {categories.length === 0 && loading === true && (
-              <>
-                <select
-                  className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
-                  value={0}
-                  disabled={true}
-                >
-                  <option value={0}>Buscando categorías...</option>
-                </select>
-                <svg
-                  aria-hidden="true"
-                  className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
-                  viewBox="0 0 100 101"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                    fill="currentFill"
-                  />
-                </svg>
-                <span className="sr-only">Cargando...</span>
-              </>
-            )}
-          </div>
-        </div>
+        <input
+          type="text"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              nombre: e.target.value,
+            });
+          }}
+          placeholder="Nombre*"
+          value={formData.nombre}
+          className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+        />
         <textarea
           rows={3}
-          placeholder="Descripción"
+          placeholder="Descripción*"
           onChange={(e) => {
             setFormData({
               ...formData,
@@ -419,9 +240,10 @@ function DeleteModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  servicio,
+  operación,
 }: ModalProps) {
   const { id } = useParams();
+  const { service_id } = useParams();
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -462,13 +284,17 @@ function DeleteModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Eliminando servicio...");
-          ServiceService.delete(Number(id), servicio?.id!).then((data) => {
+          const loadingToast = toast.loading("Eliminando operación...");
+          OperationService.delete(
+            Number(id),
+            Number(service_id),
+            operación?.id!
+          ).then((data) => {
             toast.dismiss(loadingToast);
             if (data) {
-              toast.success("Servicio eliminado con exito.");
+              toast.success("Operación eliminada con exito.");
             } else {
-              toast.error("Servicio no pudo ser eliminado.");
+              toast.error("Operación no pudo ser eliminada.");
             }
             setOperationAsCompleted();
           });
@@ -500,7 +326,7 @@ function DeleteModal({
   );
 }
 
-function DataRow({ action, setOperationAsCompleted, servicio }: DataRowProps) {
+function DataRow({ action, setOperationAsCompleted, operación }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
@@ -518,20 +344,20 @@ function DataRow({ action, setOperationAsCompleted, servicio }: DataRowProps) {
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
       >
-        {servicio?.id}
+        {operación?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">{servicio?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300">{operación?.nombre}</td>
       <td className="px-6 py-4 border border-slate-300">
-        {servicio?.descripción}
+        {operación?.descripción}
       </td>
       <td className="px-6 py-2 border border-slate-300">
-        {servicio?.estado === "COMPLETADO" ? (
+        {operación?.estado === "COMPLETADA" ? (
           <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
-            Completado
+            Completada
           </div>
-        ) : servicio?.estado === "INICIADO" ? (
+        ) : operación?.estado === "INICIADA" ? (
           <div className="bg-blue-200 text-center text-blue-600 text-xs py-2 font-bold rounded-lg capitalize">
-            Iniciado
+            Iniciada
           </div>
         ) : (
           <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg capitalize">
@@ -540,10 +366,7 @@ function DataRow({ action, setOperationAsCompleted, servicio }: DataRowProps) {
         )}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {servicio?.categoría?.nombre}
-      </td>
-      <td className="px-6 py-4 border border-slate-300">
-        {String(servicio?.añadido)}
+        {String(operación?.añadida)}
       </td>
       <td className="px-6 py-4 border border-slate-300">
         {action === "NONE" && (
@@ -559,10 +382,10 @@ function DataRow({ action, setOperationAsCompleted, servicio }: DataRowProps) {
               }}
               className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
             >
-              Editar servicio
+              Editar operación
             </button>
             <EditModal
-              servicio={servicio}
+              operación={operación}
               isOpen={isEditOpen}
               closeModal={closeEditModal}
               setOperationAsCompleted={setOperationAsCompleted}
@@ -577,19 +400,19 @@ function DataRow({ action, setOperationAsCompleted, servicio }: DataRowProps) {
               }}
               className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
             >
-              Eliminar servicio
+              Eliminar operación
             </button>
             <DeleteModal
-              servicio={servicio}
+              operación={operación}
               isOpen={isDeleteOpen}
               closeModal={closeDeleteModal}
               setOperationAsCompleted={setOperationAsCompleted}
             />
           </>
         )}
-        {action === "VIEW_OPERATIONS" && (
+        {action === "VIEW_ASSOCIATED_PRODUCTOS" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline">
-            Mostrar operaciones
+            Mostrar productos asociados
           </button>
         )}
       </td>
@@ -658,7 +481,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Editar servicio
+          Editar operación
         </div>
       </li>
       <li>
@@ -681,14 +504,14 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Eliminar servicio
+          Eliminar operación
         </div>
       </li>
       <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       <li>
         <div
           onClick={() => {
-            selectAction("VIEW_OPERATIONS");
+            selectAction("VIEW_ASSOCIATED_PRODUCTOS");
             close();
           }}
           className="
@@ -705,7 +528,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Mostrar operaciones
+          Mostrar productos asociados
         </div>
       </li>
       <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
@@ -729,7 +552,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Añadir servicio
+          Añadir operación
         </div>
       </li>
       <li>
@@ -759,9 +582,9 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
   );
 }
 
-export default function ServicesDataDisplay() {
-  const { id } = useParams();
-  const [services, setServices] = useState<Servicio[]>([]);
+export default function OperationsDataDisplay() {
+  const { id, service_id } = useParams();
+  const [operations, setOperations] = useState<Operación[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
@@ -794,12 +617,12 @@ export default function ServicesDataDisplay() {
       setLoading(true);
     }
 
-    ServiceService.getAll(Number(id)).then((data) => {
+    OperationService.getAll(Number(id), Number(service_id)).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
       } else {
-        setServices(data);
+        setOperations(data);
         setLoading(false);
       }
       setIsOperationCompleted(false);
@@ -808,13 +631,16 @@ export default function ServicesDataDisplay() {
 
   return (
     <>
-      <div className="absolute w-full h-full px-8 py-5">
+      <div className="absolute w-full h-full px-8 py-6">
         <nav className="flex justify-between items-center text-slate-600 select-none">
           <div className="font-medium">
             Menu <Right className="w-3 h-3 inline fill-slate-600" /> Tickets{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="font-bold text-[#2096ed]">{id}</span>{" "}
-            <Right className="w-3 h-3 inline fill-slate-600" /> Servicios
+            <Right className="w-3 h-3 inline fill-slate-600" /> Servicios{" "}
+            <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span className="font-bold text-[#2096ed]">{id}</span>{" "}
+            <Right className="w-3 h-3 inline fill-slate-600" /> Operaciones
           </div>
           <div>
             {isDropup && (
@@ -837,7 +663,7 @@ export default function ServicesDataDisplay() {
           </div>
         </nav>
         <hr className="border-1 border-slate-200 my-5" />
-        {services.length > 0 && loading == false && (
+        {operations.length > 0 && loading == false && (
           <div className="relative overflow-x-auto">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
@@ -858,7 +684,7 @@ export default function ServicesDataDisplay() {
                     Categoría
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Añadido
+                    Añadida
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
@@ -866,13 +692,13 @@ export default function ServicesDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {services.map((service) => {
+                {operations.map((operation) => {
                   return (
                     <DataRow
                       action={action}
-                      servicio={service}
+                      operación={operation}
                       setOperationAsCompleted={setAsCompleted}
-                      key={service.id}
+                      key={operation.id}
                     />
                   );
                 })}
@@ -885,11 +711,11 @@ export default function ServicesDataDisplay() {
             <div className="place-self-center flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">
-                Ningún servicio encontrado
+                Ningúna operación encontrada
               </p>
               <p className="font-medium text text-center mt-1">
                 Esto puede deberse a un error del servidor, o a que simplemente
-                este ticket no tenga ningún servicio registrado.
+                este servicio no tenga ningúna operación registrada.
               </p>
             </div>
           </div>
@@ -920,7 +746,7 @@ export default function ServicesDataDisplay() {
           </div>
         )}
       </div>
-      {services.length > 0 && loading == false && <Pagination />}
+      {operations.length > 0 && loading == false && <Pagination />}
       <Toaster position="bottom-right" reverseOrder={false} />
       <AddModal
         isOpen={isAddOpen}

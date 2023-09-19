@@ -83,8 +83,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       }}
       className="w-2/4 h-fit rounded-md shadow-md scrollbar-none"
     >
-      <div className="bg-[#2096ed] py-4 px-6">
-        <h1 className="text-lg font-bold text-white">Registrar problema</h1>
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Registrar problema</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
@@ -266,8 +266,8 @@ function EditModal({
       }}
       className="w-2/4 h-fit rounded-md shadow-md scrollbar-none"
     >
-      <div className="bg-[#2096ed] py-4 px-6">
-        <h1 className="text-lg font-bold text-white">Editar problema</h1>
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Editar problema</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"

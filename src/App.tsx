@@ -14,6 +14,7 @@ import ServicesPage from "./pages/services-page";
 import UsersPage from "./pages/users-page";
 import ProductsPage from "./pages/products-page";
 import MessagesPage from "./pages/messages-page";
+import OperationsPage from "./pages/operations-page";
 
 export default function App() {
   return (
@@ -27,7 +28,7 @@ export default function App() {
         <Route path="/tickets/:id/mensajes" element={<MessagesPage />} />
         <Route path="/tickets/:id/problemas" element={<ProblemsPage />} />
         <Route path="/tickets/:id/servicios" element={<ServicesPage />} />
-        <Route path="/tickets/:id/servicios/operaciones" />
+        <Route path="/tickets/:id/servicios/:service_id/operaciones" element={<OperationsPage />} />
         <Route path="/productos" element={<ProductsPage />} />
         <Route path="/ventas" element={<SalesPage />} />
         <Route path="/compras" element={<PurchasesPage />} />
@@ -35,7 +36,8 @@ export default function App() {
         <Route path="/publicaciones" element={<PublicationsPage />} />
         <Route path="/galeria" element={<ImagesPage />} />
         <Route path="/categorias" element={<CategoriesPage />} />
-        <Route path="/mensajero" />
+        <Route path="/mensajeria" />
+        <Route path="/login" />
       </Routes>
     </BrowserRouter>
   );

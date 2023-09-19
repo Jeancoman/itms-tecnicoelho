@@ -1,65 +1,49 @@
-import { Permiso, Usuario } from "../types";
+import { Operación } from "../types";
 
-export default class UserService {
-  static async getAll() {
+export default class OperationService {
+  static async getAll(ticket_id: number, service_id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/`
-      );
-
-      if (response.status === 404) {
-        return false;
-      }
-
-      return (await response.json()) as Usuario[];
-    } catch {
-      return false;
-    }
-  }
-
-  static async getById(id: number) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/servicios/${service_id}/operaciones`
       );
 
       if (response.status > 300) {
         return false;
       }
 
-      return (await response.json()) as Usuario;
+      return (await response.json()) as Operación[];
     } catch {
       return false;
     }
   }
 
-  static async getPermissionsById(id: number) {
+  static async getById(ticket_id: number, service_id: number, id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}/permisos`
+        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/servicios/${service_id}/operaciones/${id}`
       );
 
       if (response.status > 300) {
         return false;
       }
 
-      return (await response.json()) as Permiso[];
+      return (await response.json()) as Operación;
     } catch {
       return false;
     }
   }
 
-  static async create(user: Usuario) {
+  static async create(ticket_id: number, service_id: number, operation: Operación) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/${service_id}/operaciones`,
         {
           method: "POST",
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(user),
+          body: JSON.stringify(operation),
         }
       );
 
@@ -67,23 +51,23 @@ export default class UserService {
         return false;
       }
 
-      return (await response.json()) as Usuario;
+      return (await response.json()) as Operación;
     } catch {
       return false;
     }
   }
 
-  static async update(id: number, user: Usuario) {
+  static async update(ticket_id: number, service_id: number, id: number, operation: Operación) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/servicios/${service_id}/operaciones/${id}`,
         {
           method: "PATCH",
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(user),
+          body: JSON.stringify(operation),
         }
       );
 
@@ -97,10 +81,10 @@ export default class UserService {
     }
   }
 
-  static async delete(id: number) {
+  static async delete(ticket_id: number, service_id: number, id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/servicios/${service_id}/operaciones/${id}`,
         {
           method: "DELETE",
           headers: {
