@@ -5,9 +5,9 @@ export default function ElementsPage() {
 
   return (
     <> 
-      <div className="h-screen bg-[#2096ed] grid grid-cols-[1fr_5fr]">
+      <div className="h-screen bg-white grid grid-cols-[1fr_5fr]">
         <NavPanel />
-        <main className="bg-white relativ max-h-[656px]">
+        <main className="bg-white relative max-h-[656px]">
           <ElementsDataDisplay />
         </main>
       </div>

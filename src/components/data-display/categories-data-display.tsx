@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "../../assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "../../assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "../../assets/thinking.svg";
-import { ReactComponent as Warning } from "../../assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/public/assets/thinking.svg";
+import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -65,7 +65,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit max-h-[500px] rounded-xl shadow scrollbar-none"
+      className="w-2/5 h-fit rounded-md shadow-md scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar categoría</h1>
@@ -99,6 +99,7 @@ function EditModal({
           placeholder="Nombre*"
           value={formData.nombre}
           className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          required
         />
         <textarea
           rows={3}
@@ -155,7 +156,7 @@ function EditModal({
             selected={selectedType}
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={closeModal}
@@ -224,7 +225,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit max-h-[500px] rounded-xl shadow scrollbar-none"
+      className="w-2/5 h-fit rounded-md shadow-md scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Crear categoría</h1>
@@ -257,7 +258,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           }}
           placeholder="Nombre*"
           value={formData.nombre}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          required
         />
         <textarea
           rows={3}
@@ -269,7 +271,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             });
           }}
           value={formData.descripción}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="relative">
           <Select
@@ -314,7 +316,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             selected={selectedType}
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={closeModal}
@@ -399,14 +401,14 @@ function DeleteModal({
           </p>
         </div>
         <div className="flex gap-2 justify-center">
-          <button
+        <button
             type="button"
             onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Continuar
           </button>
         </div>
@@ -436,11 +438,11 @@ function DataRow({ action, categoría, setOperationAsCompleted }: DataRowProps) 
         {categoría?.id}
       </th>
       <td className="px-6 py-4 border border-slate-300">{categoría?.nombre}</td>
-      <td className="px-6 py-4 border border-slate-300">{categoría?.descripción}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">{categoría?.descripción}</td>
       <td className="px-6 py-4 border border-slate-300">{categoría?.tipo}</td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 w-[200px]">
         {action === "NONE" && (
-          <button className="font-medium text-[#0d1216] dark:text-blue-500 italic cursor-not-allowed">
+          <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
           </button>
         )}
@@ -520,10 +522,10 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           text-left
           rounded-lg
           shadow-lg
-          mt-1
+          mt-2
           m-0
           bg-clip-padding
-          border-none
+          border
         "
     >
       <li>
@@ -616,7 +618,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Hacer consulta
+          Buscar categoría
         </div>
       </li>
     </ul>
@@ -664,6 +666,8 @@ export default function CategoriesDataDisplay() {
       } else {
         setCategories(data);
         setLoading(false);
+        setNotFound(false)
+
       }
       setIsOperationCompleted(false);
     });
@@ -739,7 +743,7 @@ export default function CategoriesDataDisplay() {
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">
-                Categorías no encontradas
+                Ningúna categoría encontrada
               </p>
               <p className="font-medium text text-center mt-1">
                 Esto puede deberse a un error del servidor, o a que simplemente

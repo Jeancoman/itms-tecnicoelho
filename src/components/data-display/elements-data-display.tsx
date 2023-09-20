@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "../../assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "../../assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "../../assets/thinking.svg";
-import { ReactComponent as Warning } from "../../assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/public/assets/thinking.svg";
+import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -18,6 +18,7 @@ import ElementService from "../../services/element-service";
 import { useParams } from "react-router-dom";
 import CategoryService from "../../services/category-service";
 import Select from "../misc/select";
+import { format } from "date-fns";
 
 function EditModal({
   isOpen,
@@ -78,7 +79,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit max-h-[500px] rounded-xl shadow scrollbar-none"
+      className="w-2/5 h-fit rounded shadow scrollbar-none text-base"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar elemento</h1>
@@ -116,21 +117,23 @@ function EditModal({
             }}
             placeholder="Nombre*"
             value={formData.nombre}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
           />
           <div className="relative w-2/4">
             {categories.length > 0 && (
               <Select
-                options={categories.map((category) => ({
-                  value: category.id,
-                  label: category.nombre,
-                  onClick: (value, label) => {
-                    setSelectedCategory({
-                      value,
-                      label,
-                    });
-                  },
-                }))}
+                options={categories
+                  .filter((category) => category.tipo === "ELEMENTO")
+                  .map((category) => ({
+                    value: category.id,
+                    label: category.nombre,
+                    onClick: (value, label) => {
+                      setSelectedCategory({
+                        value,
+                        label,
+                      });
+                    },
+                  }))}
                 selected={selectedCategory}
                 onChange={() => {
                   setFormData({
@@ -192,9 +195,9 @@ function EditModal({
             });
           }}
           value={formData.descripción}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={closeModal}
@@ -233,6 +236,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       descripción: "",
       estado: "INACTIVO",
       cliente_id: Number(id),
+    });
+    setSelectedCategory({
+      value: -1,
+      label: "Seleccionar categoría",
     });
   };
 
@@ -282,7 +289,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/4 h-fit rounded-md shadow-md scrollbar-none"
+      className="w-2/5 h-fit rounded-md shadow-md scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir elemento</h1>
@@ -316,21 +323,24 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             }}
             placeholder="Nombre*"
             value={formData.nombre}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
+            required
           />
           <div className="relative w-2/4">
             {categories.length > 0 && (
               <Select
-                options={categories.map((category) => ({
-                  value: category.id,
-                  label: category.nombre,
-                  onClick: (value, label) => {
-                    setSelectedCategory({
-                      value,
-                      label,
-                    });
-                  },
-                }))}
+                options={categories
+                  .filter((category) => category.tipo === "ELEMENTO")
+                  .map((category) => ({
+                    value: category.id,
+                    label: category.nombre,
+                    onClick: (value, label) => {
+                      setSelectedCategory({
+                        value,
+                        label,
+                      });
+                    },
+                  }))}
                 selected={selectedCategory}
                 onChange={() => {
                   setFormData({
@@ -392,9 +402,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             });
           }}
           value={formData.descripción}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={closeModal}
@@ -449,7 +459,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/5 h-fit rounded-xl shadow text-base"
     >
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -484,12 +494,12 @@ function DeleteModal({
           <button
             type="button"
             onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-            Continuar
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Completar
           </button>
         </div>
       </form>
@@ -517,8 +527,10 @@ function DataRow({ action, elemento, setOperationAsCompleted }: DataRowProps) {
       >
         {elemento?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">{elemento?.nombre}</td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
+        {elemento?.nombre}
+      </td>
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {elemento?.descripción}
       </td>
       <td className="px-6 py-4 border border-slate-300">{elemento?.estado}</td>
@@ -526,12 +538,9 @@ function DataRow({ action, elemento, setOperationAsCompleted }: DataRowProps) {
         {elemento?.categoría?.nombre}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {elemento?.cliente?.nombre} {elemento?.cliente?.apellido}
+        {format(new Date(elemento?.registrado!), "dd/MM/yyyy")}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
-        {String(elemento?.registrado)}
-      </td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 w-[200px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -613,10 +622,10 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           text-left
           rounded-lg
           shadow-lg
-          mt-1
+          mt-2
           m-0
           bg-clip-padding
-          border-none
+          border
         "
     >
       <li>
@@ -709,7 +718,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Hacer consulta
+          Buscar elemento
         </div>
       </li>
     </ul>
@@ -813,9 +822,6 @@ export default function ElementsDataDisplay() {
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Categoría
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Cliente
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Registro

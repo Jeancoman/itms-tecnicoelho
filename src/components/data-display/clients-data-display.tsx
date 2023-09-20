@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "../../assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "../../assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "../../assets/thinking.svg";
-import { ReactComponent as Warning } from "../../assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/public/assets/thinking.svg";
+import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -108,6 +108,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             }}
             value={formData.nombre}
             className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
+            required
           />
           <input
             type="text"
@@ -120,6 +121,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             }}
             value={formData.apellido}
             className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
+            required
           />
         </div>
         <div className="flex gap-4">
@@ -134,6 +136,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             }}
             value={formData.cédula}
             className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
+            required
           />
           <input
             type="tel"
@@ -146,6 +149,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             }}
             value={formData.telefono}
             className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
+            required
           />
         </div>
         <input
@@ -184,6 +188,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           }}
           value={formData.contraseña}
           className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed]"
+          required
         />
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -210,12 +215,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             <button
               type="button"
               onClick={closeModal}
-              className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-              Añadir
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
             </button>
           </div>
         </div>
@@ -266,7 +271,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/5 h-fit rounded-md shadow text-base"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar cliente</h1>
@@ -307,7 +312,8 @@ function EditModal({
               });
             }}
             value={formData.nombre}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
+            required
           />
           <input
             type="text"
@@ -319,7 +325,8 @@ function EditModal({
               });
             }}
             value={formData.apellido}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
+            required
           />
         </div>
         <div className="flex gap-4">
@@ -333,7 +340,8 @@ function EditModal({
               });
             }}
             value={formData.cédula}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
+            required
           />
           <input
             type="tel"
@@ -345,7 +353,8 @@ function EditModal({
               });
             }}
             value={formData.telefono}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
+            required
           />
         </div>
         <input
@@ -358,7 +367,8 @@ function EditModal({
             });
           }}
           value={formData.email}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          required
         />
         <input
           type="text"
@@ -370,7 +380,7 @@ function EditModal({
             });
           }}
           value={formData.dirección}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <input
           type="text"
@@ -383,7 +393,7 @@ function EditModal({
             });
           }}
           value={formData.contraseña}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -407,15 +417,15 @@ function EditModal({
             </label>
           </div>
           <div className="flex gap-2">
-            <button
+          <button
               type="button"
               onClick={closeModal}
-              className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-              Guardar
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
             </button>
           </div>
         </div>
@@ -495,12 +505,12 @@ function DeleteModal({
           <button
             type="button"
             onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-            Continuar
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Completar
           </button>
         </div>
       </form>
@@ -532,10 +542,14 @@ function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
       <td className="px-6 py-4 border border-slate-300">{cliente?.nombre}</td>
       <td className="px-6 py-4 border border-slate-300">{cliente?.apellido}</td>
       <td className="px-6 py-4 border border-slate-300">{cliente?.cédula}</td>
-      <td className="px-6 py-4 border border-slate-300">{cliente?.email}</td>
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px]">
+        {cliente?.email}
+      </td>
       <td className="px-6 py-4 border border-slate-300">{cliente?.telefono}</td>
-      <td className="px-6 py-4 border border-slate-300">{cliente?.dirección}</td>
-      <td className="px-6 py-3 w-52 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px]">
+        {cliente?.dirección}
+      </td>
+      <td className="px-6 py-3 border border-slate-300 w-[200px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -629,7 +643,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           text-left
           rounded-lg
           shadow-xl
-          mt-1
+          mt-2
           m-0
           bg-clip-padding
           border
@@ -749,7 +763,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Hacer consulta
+          Buscar cliente
         </div>
       </li>
     </ul>
@@ -793,6 +807,7 @@ export default function ClientsDataDisplay() {
       } else {
         setClientes(data);
         setLoading(false);
+        setNotFound(false)
       }
       setIsOperationCompleted(false);
     });
@@ -874,10 +889,10 @@ export default function ClientsDataDisplay() {
         )}
         {notFound === true && (
           <div className="grid w-full h-4/5">
-            <div className="place-self-center  flex flex-col items-center">
+            <div className="place-self-center flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">
-                Clientes no encontrados
+                Ningún cliente encontrado
               </p>
               <p className="font-medium text text-center mt-1">
                 Esto puede deberse a un error del servidor, o a que simplemente

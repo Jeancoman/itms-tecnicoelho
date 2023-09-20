@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "../../assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "../../assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "../../assets/thinking.svg";
-import { ReactComponent as Warning } from "../../assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/public/assets/thinking.svg";
+import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
 import Slugifier from "../../utils/slugifier";
 import Pagination from "../misc/pagination";
 import {
@@ -18,182 +18,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { Editor } from "@tinymce/tinymce-react";
 import { format } from "date-fns";
 
-function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const [formData, setFormData] = useState<Publicación>({
-    slug: "",
-    título: "",
-    contenido: "",
-    esPública: false,
-  });
-
-  const resetFormData = () => {
-    setFormData({
-      slug: "",
-      título: "",
-      contenido: "",
-      esPública: false,
-    });
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-          resetFormData();
-        }
-      });
-    } else {
-      closeModal();
-      ref.current?.close();
-      resetFormData();
-    }
-  }, [isOpen]);
-
-  return (
-    <dialog
-      ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-2/4 h-fit max-h-[510px] rounded shadow scrollbar-none -z-50"
-    >
-      <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Crear publicación</h1>
-      </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Creando publicación...");
-          PublicationService.create(formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Publicación no pudo ser creada.");
-            } else {
-              toast.success("Publicación creada con exito.");
-            }
-          });
-        }}
-      >
-        <input
-          type="text"
-          placeholder="slug"
-          value={formData.slug}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          disabled
-        />
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              título: e.target.value,
-              slug: Slugifier.slugifyWithRandomString(e.target.value),
-            });
-          }}
-          value={formData.título}
-          placeholder="Título*"
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <Editor
-          tinymceScriptSrc={"/tinymce/tinymce.min.js"}
-          onEditorChange={(_evt, editor) =>
-            setFormData({
-              ...formData,
-              contenido: editor.getContent(),
-            })
-          }
-          initialValue="<p>Escriba aquí el contenido de la publicación.</p>"
-          init={{
-            height: 200,
-            menubar: true,
-            promotion: false,
-            ui_mode: "split",
-            plugins: [
-              "advlist",
-              "autolink",
-              "lists",
-              "link",
-              "image",
-              "charmap",
-              "anchor",
-              "searchreplace",
-              "visualblocks",
-              "code",
-              "fullscreen",
-              "insertdatetime",
-              "media",
-              "table",
-              "preview",
-              "help",
-              "wordcount",
-            ],
-            toolbar:
-              "undo redo | blocks | " +
-              "bold italic forecolor | alignleft aligncenter " +
-              "alignright alignjustify | bullist numlist outdent indent | " +
-              "removeformat",
-            content_style:
-              "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-            language: "es",
-          }}
-        />
-        <div className="flex w-full justify-between items-center">
-          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
-            <input
-              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              type="checkbox"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  esPública: e.target.checked,
-                });
-              }}
-              checked={formData.esPública}
-              id="checkbox"
-            />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox"
-            >
-              ¿Hacer pública en sitio web?
-            </label>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
-          </div>
-        </div>
-      </form>
-    </dialog>
-  );
-}
-
-function AddSection({ isOpen, setOperationAsCompleted }: SectionProps) {
+function AddSection({ close, setOperationAsCompleted }: SectionProps) {
   const [formData, setFormData] = useState<Publicación>({
     slug: "",
     título: "",
@@ -217,10 +42,12 @@ function AddSection({ isOpen, setOperationAsCompleted }: SectionProps) {
       onSubmit={(e) => {
         e.preventDefault();
         close();
+        resetFormData()
         const loadingToast = toast.loading("Creando publicación...");
         PublicationService.create(formData).then((data) => {
           toast.dismiss(loadingToast);
           setOperationAsCompleted();
+          close();
           if (data === false) {
             toast.error("Publicación no pudo ser creada.");
           } else {
@@ -287,6 +114,137 @@ function AddSection({ isOpen, setOperationAsCompleted }: SectionProps) {
           value={formData.título}
           placeholder="Título*"
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          required
+        />
+        <div className="flex h-full items-end">
+          <div className="flex w-full justify-between items-center">
+            <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+              <input
+                className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                type="checkbox"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    esPública: e.target.checked,
+                  });
+                }}
+                checked={formData.esPública}
+                id="checkbox"
+              />
+              <label
+                className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+                htmlFor="checkbox"
+              >
+                Pública
+              </label>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                close();
+                resetFormData();
+              }}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  );
+}
+
+function EditSection({
+  close,
+  setOperationAsCompleted,
+  publicación,
+}: SectionProps) {
+  const [formData, setFormData] = useState<Publicación>(publicación!);
+
+  return (
+    <form
+      className="h-fit grid grid-cols-2 gap-5 py-4"
+      autoComplete="off"
+      onSubmit={(e) => {
+        e.preventDefault();
+        close();
+        const loadingToast = toast.loading("Editando publicación...");
+        PublicationService.update(publicación?.id!, formData).then((data) => {
+          toast.dismiss(loadingToast);
+          setOperationAsCompleted();
+          if (data === false) {
+            toast.error("Publicación no pudo ser editada.");
+          } else {
+            toast.success("Publicación editada con exito.");
+          }
+        });
+      }}
+    >
+      <div className="h-full">
+        <Editor
+          tinymceScriptSrc={"/tinymce/tinymce.min.js"}
+          onEditorChange={(_evt, editor) =>
+            setFormData({
+              ...formData,
+              contenido: editor.getContent(),
+            })
+          }
+          value={formData.contenido}
+          init={{
+            menubar: true,
+            promotion: false,
+            height: 500,
+            plugins: [
+              "advlist",
+              "autolink",
+              "lists",
+              "link",
+              "image",
+              "charmap",
+              "anchor",
+              "visualblocks",
+              "code",
+              "media",
+              "help",
+              "wordcount",
+            ],
+            toolbar:
+              "undo redo | blocks | " +
+              "bold italic forecolor | alignleft aligncenter " +
+              "alignright alignjustify | bullist numlist outdent indent | removeformat",
+            content_style:
+              "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+            language: "es",
+          }}
+        />
+      </div>
+      <div className="flex flex-col gap-4">
+        <input
+          type="text"
+          placeholder="slug"
+          value={formData.slug}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          disabled
+        />
+        <input
+          type="text"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              título: e.target.value,
+              slug: Slugifier.slugifyWithRandomString(e.target.value),
+            });
+          }}
+          value={formData.título}
+          placeholder="Título*"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          required
         />
         <div className="flex h-full items-end">
           <div className="flex w-full justify-between items-center">
@@ -326,170 +284,6 @@ function AddSection({ isOpen, setOperationAsCompleted }: SectionProps) {
         </div>
       </div>
     </form>
-  );
-}
-
-function EditModal({
-  isOpen,
-  closeModal,
-  setOperationAsCompleted,
-  publicación,
-}: ModalProps) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const [formData, setFormData] = useState<Publicación>(publicación!);
-
-  useEffect(() => {
-    if (isOpen) {
-      ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-        }
-      });
-    } else {
-      closeModal();
-      ref.current?.close();
-    }
-  }, [isOpen]);
-
-  return (
-    <dialog
-      ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-2/4 h-fit max-h-[510px] rounded shadow scrollbar-none"
-    >
-      <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar publicación</h1>
-      </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Editando publicación...");
-          PublicationService.update(publicación?.id!, formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Publicación no pudo ser editada.");
-            } else {
-              toast.success("Publicación editada con exito.");
-            }
-          });
-        }}
-      >
-        <input
-          type="text"
-          placeholder="slug"
-          value={formData.slug}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          disabled
-        />
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              título: e.target.value,
-              slug: Slugifier.slugifyWithRandomString(e.target.value),
-            });
-          }}
-          value={formData.título}
-          placeholder="Título*"
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <Editor
-          tinymceScriptSrc={"/tinymce/tinymce.min.js"}
-          onEditorChange={(_evt, editor) =>
-            setFormData({
-              ...formData,
-              contenido: editor.getContent(),
-            })
-          }
-          value={formData.contenido}
-          init={{
-            height: 200,
-            menubar: true,
-            promotion: false,
-            ui_mode: "split",
-            plugins: [
-              "advlist",
-              "autolink",
-              "lists",
-              "link",
-              "image",
-              "charmap",
-              "anchor",
-              "searchreplace",
-              "visualblocks",
-              "code",
-              "fullscreen",
-              "insertdatetime",
-              "media",
-              "table",
-              "preview",
-              "help",
-              "wordcount",
-            ],
-            toolbar:
-              "undo redo | blocks | " +
-              "bold italic forecolor | alignleft aligncenter " +
-              "alignright alignjustify | bullist numlist outdent indent | " +
-              "removeformat",
-            content_style:
-              "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-            language: "es",
-          }}
-        />
-        <div className="flex w-full justify-between items-center">
-          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
-            <input
-              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              type="checkbox"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  esPública: e.target.checked,
-                });
-              }}
-              checked={formData.esPública}
-              id="checkbox"
-            />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox"
-            >
-              ¿Hacer público en sitio web?
-            </label>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
-          </div>
-        </div>
-      </form>
-    </dialog>
   );
 }
 
@@ -534,7 +328,7 @@ function DeleteModal({
       className="w-2/5 h-fit rounded-xl shadow"
     >
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center text-base"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -563,13 +357,13 @@ function DeleteModal({
         <div className="flex gap-2 justify-center">
           <button
             type="button"
-            onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            onClick={close}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-            Continuar
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Completar
           </button>
         </div>
       </form>
@@ -581,13 +375,9 @@ function DataRow({
   action,
   publicación,
   setOperationAsCompleted,
+  onClick,
 }: DataRowProps) {
-  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-
-  const closeEditModal = () => {
-    setIsEditOpen(false);
-  };
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
@@ -601,19 +391,14 @@ function DataRow({
       >
         {publicación?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {publicación?.título}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {publicación?.contenido}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {format(publicación?.creada!, "dd/MM/yyyy")}
-      </td>
-      <td className="px-6 py-4 border border-slate-300">
-        {publicación?.modificada
-          ? format(publicación?.modificada, "dd/MM/yyyy")
-          : "Nunca"}
+        {format(new Date(publicación?.creada!), "dd/MM/yyyy")}
       </td>
       <td className="px-6 py-2 border border-slate-300">
         {publicación?.esPública === true ? (
@@ -626,7 +411,7 @@ function DataRow({
           </div>
         )}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 w-[210px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -635,19 +420,11 @@ function DataRow({
         {action === "EDIT" && (
           <>
             <button
-              onClick={() => {
-                setIsEditOpen(true);
-              }}
+              onClick={onClick}
               className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
             >
               Editar publicación
             </button>
-            <EditModal
-              publicación={publicación}
-              isOpen={isEditOpen}
-              closeModal={closeEditModal}
-              setOperationAsCompleted={setOperationAsCompleted}
-            />
           </>
         )}
         {action === "DELETE" && (
@@ -677,6 +454,65 @@ function DataRow({
     </tr>
   );
 }
+
+/*
+function EmbeddedDataRow({ onClick }: EmbeddedDataRowProps) {
+  return (
+    <tr>
+      <th
+        scope="row"
+        className="px-6 py-3 font-bold whitespace-nowrap border border-slate-300"
+      >
+        <div className="mb-[0.125rem] min-h-[1.5rem] justify-center flex items-center">
+          <input
+            className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            type="checkbox"
+            id="checkbox"
+          />
+        </div>
+      </th>
+      <td className="font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 text-center">
+        1
+      </td>
+      <td className="px-6 border border-slate-300 flex justify-center">
+        <img
+          src="https://i.natgeofe.com/n/4f5aaece-3300-41a4-b2a8-ed2708a0a27c/domestic-dog_thumb_3x2.jpg"
+          className="h-8 w-8 object-cover"
+        />
+      </td>
+      <td className="px-6 py-2 border border-slate-300 max-w-[250px] truncate">
+        https://i.natgeofe.com/n/4f5aaece-3300-41a4-b2a8-ed2708a0a27c/domestic-dog_thumb_3x2.jpg
+      </td>
+    </tr>
+  );
+}
+
+function EmbeddedTable({ onClick }: EmbeddedTableProps) {
+  return (
+    <div className="relative overflow-x-auto h-full">
+      <table className="w-full text-sm font-medium text-slate-600 text-left">
+        <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
+          <tr className="border-2 border-[#2096ed]">
+            <th scope="col" className="px-6 py-2 border border-slate-300"></th>
+            <th scope="col" className="px-6 py-2 border border-slate-300">
+              #
+            </th>
+            <th scope="col" className="px-6 py-2 border border-slate-300">
+              Preview
+            </th>
+            <th scope="col" className="px-6 py-2 border border-slate-300">
+              URL
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <EmbeddedDataRow onClick={onClick} />
+        </tbody>
+      </table>
+    </div>
+  );
+}
+*/
 
 function Dropup({ close, selectAction, openAddModal }: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
@@ -844,18 +680,15 @@ export default function PublicationsDataDisplay() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
-  const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
+  //@ts-ignore
+  const [publication, setPublication] = useState<Publicación>({});
   const [toEdit, setToEdit] = useState(false);
-  const [toAdd, setToAdd] = useState(true);
+  const [toAdd, setToAdd] = useState(false);
 
   const openAddModal = () => {
-    setIsAddOpen(true);
-  };
-
-  const closeAddModal = () => {
-    setIsAddOpen(false);
+    setToAdd(true);
   };
 
   const closeDropup = () => {
@@ -873,6 +706,12 @@ export default function PublicationsDataDisplay() {
   useEffect(() => {
     if (isOperationCompleted) {
       setLoading(true);
+      setNotFound(false);
+    }
+
+    if (!(toAdd && toEdit) && !loading && notFound) {
+      setLoading(true);
+      setNotFound(false);
     }
 
     PublicationService.getAll().then((data) => {
@@ -885,7 +724,7 @@ export default function PublicationsDataDisplay() {
       }
       setIsOperationCompleted(false);
     });
-  }, [isOperationCompleted]);
+  }, [isOperationCompleted, toEdit, toAdd]);
 
   return (
     <>
@@ -897,20 +736,16 @@ export default function PublicationsDataDisplay() {
               <>
                 Publicaciones{" "}
                 <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-                <span className="text-[#2096ed] underline">
-                  Crear publicación
-                </span>
+                <span className="text-[#2096ed]">Crear publicación</span>
               </>
             ) : toEdit ? (
               <>
                 Publicaciones{" "}
                 <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-                <span className="text-[#2096ed] underline">
-                  Editar publicación
-                </span>
+                <span className="text-[#2096ed]">Editar publicación</span>
               </>
             ) : (
-              <span className="text-[#2096ed] underline">Publicaciones</span>
+              <span className="text-[#2096ed]">Publicaciones</span>
             )}
           </div>
           <div>
@@ -942,6 +777,17 @@ export default function PublicationsDataDisplay() {
             }}
             setOperationAsCompleted={setAsCompleted}
           />
+        ) : toEdit ? (
+          <EditSection
+            isOpen={toEdit}
+            close={() => {
+              setToEdit(false);
+              //@ts-ignore
+              setPublication({});
+            }}
+            setOperationAsCompleted={setAsCompleted}
+            publicación={publication}
+          />
         ) : (
           <>
             {publications.length > 0 && loading == false && (
@@ -971,13 +817,7 @@ export default function PublicationsDataDisplay() {
                         scope="col"
                         className="px-6 py-3 border border-slate-300"
                       >
-                        Creación
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 border border-slate-300"
-                      >
-                        Actualización
+                        Creada
                       </th>
                       <th
                         scope="col"
@@ -1001,6 +841,9 @@ export default function PublicationsDataDisplay() {
                           publicación={publication}
                           setOperationAsCompleted={setAsCompleted}
                           key={publication.id}
+                          onClick={() => {
+                            setToEdit(true), setPublication(publication);
+                          }}
                         />
                       );
                     })}
@@ -1008,7 +851,7 @@ export default function PublicationsDataDisplay() {
                 </table>
               </div>
             )}
-            {notFound === true && (
+            {!(toEdit && toAdd) && notFound === true && (
               <div className="grid w-full h-4/5">
                 <div className="place-self-center  flex flex-col items-center">
                   <Face className="fill-[#2096ed] h-20 w-20" />
@@ -1050,15 +893,10 @@ export default function PublicationsDataDisplay() {
           </>
         )}
       </div>
-      {publications.length > 0 && loading == false && !(toAdd && toEdit) && (
+      {publications.length > 0 && loading == false && !toAdd && !toEdit && (
         <Pagination />
       )}
       <Toaster position="bottom-right" reverseOrder={false} />
-      <AddModal
-        isOpen={isAddOpen}
-        closeModal={closeAddModal}
-        setOperationAsCompleted={setAsCompleted}
-      />
     </>
   );
 }

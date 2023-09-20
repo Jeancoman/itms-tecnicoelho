@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "../../assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "../../assets/chevron-down-solid.svg";
-import { ReactComponent as Globe } from "../../assets/globe-solid.svg";
-import { ReactComponent as File } from "../../assets/file-image-solid.svg";
+import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
+import { ReactComponent as Globe } from "/public/assets/globe-solid.svg";
+import { ReactComponent as File } from "/public/assets/file-image-solid.svg";
 import Pagination from "../misc/pagination";
 import { ModalProps, DataRow, DropupProps, Action } from "../../types";
 

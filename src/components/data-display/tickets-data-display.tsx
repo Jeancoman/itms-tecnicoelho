@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "../../assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "../../assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "../../assets/thinking.svg";
-import { ReactComponent as Warning } from "../../assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/public/assets/thinking.svg";
+import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -21,6 +21,7 @@ import ElementService from "../../services/element-service";
 import TicketService from "../../services/ticket-service";
 import { useNavigate } from "react-router-dom";
 import Select from "../misc/select";
+import { format } from "date-fns";
 
 function EditModal({
   isOpen,
@@ -108,7 +109,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit max-h-[500px] rounded-xl shadow scrollbar-none"
+      className="w-2/5 h-fit rounded shadow scrollbar-none text-base"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar ticket</h1>
@@ -660,7 +661,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/5 h-fit rounded-xl shadow text-base"
     >
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -693,12 +694,12 @@ function DeleteModal({
           <button
             type="button"
             onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-            Continuar
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Completar
           </button>
         </div>
       </form>
@@ -746,9 +747,9 @@ function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
         {ticket?.elemento?.nombre}
       </td>
       <td className="px-6 py-3 border border-slate-300">
-        {String(ticket?.creado)}
+        {format(new Date(ticket?.creado!), "dd/MM/yyyy")}
       </td>
-      <td className="px-6 py-3 border border-slate-300">
+      <td className="px-6 py-3 border border-slate-300 w-[200px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -795,7 +796,7 @@ function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
             onClick={() => {
               navigate(`/tickets/${ticket?.id}/servicios`);
             }}
-            className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+            className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline py-1 px-2"
           >
             Mostrar servicios
           </button>
@@ -803,9 +804,9 @@ function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
         {action === "VIEW_PROBLEMS" && (
           <button
             onClick={() => {
-              navigate(`/ticket/${ticket?.id}/problemas`);
+              navigate(`/tickets/${ticket?.id}/problemas`);
             }}
-            className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+            className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline py-1 px-2"
           >
             Mostrar problemas
           </button>
@@ -982,29 +983,6 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           Mostrar problemas
         </div>
       </li>
-      <li>
-        <div
-          onClick={() => {
-            selectAction("VIEW_MESSAGES");
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Mostrar mensajes
-        </div>
-      </li>
       <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       <li>
         <div
@@ -1086,6 +1064,10 @@ export default function TicketDataDisplay() {
   };
 
   useEffect(() => {
+    if (isOperationCompleted) {
+      setNotFound(false);
+      setLoading(true);
+    }
     TicketService.getAll().then((data) => {
       if (data === false) {
         setNotFound(true);
@@ -1093,6 +1075,7 @@ export default function TicketDataDisplay() {
       } else {
         setTickets(data);
         setLoading(false);
+        setNotFound(false);
       }
       setIsOperationCompleted(false);
     });

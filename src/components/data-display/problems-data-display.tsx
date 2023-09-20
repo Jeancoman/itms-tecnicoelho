@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "../../assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "../../assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "../../assets/thinking.svg";
-import { ReactComponent as Warning } from "../../assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/public/assets/thinking.svg";
+import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -17,6 +17,7 @@ import ProblemService from "../../services/problem-service";
 import { useParams } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import Select from "../misc/select";
+import { format } from "date-fns";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id } = useParams();
@@ -32,6 +33,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     solución: "",
     prioridad: "BAJA",
     estado: "PENDIENTE",
+    ticket_id: Number(id),
   });
 
   const resetFormData = () => {
@@ -42,6 +44,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       solución: "",
       prioridad: "BAJA",
       estado: "PENDIENTE",
+      ticket_id: Number(id),
     });
     setSelectedPriority({
       value: "",
@@ -202,11 +205,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           <button
             type="button"
             onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -264,7 +267,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/4 h-fit rounded-md shadow-md scrollbar-none"
+      className="w-2/4 h-fit rounded-md shadow-md scrollbar-none text-base"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar problema</h1>
@@ -290,7 +293,7 @@ function EditModal({
           );
         }}
       >
-       <div className="flex gap-4">
+        <div className="flex gap-4">
           <input
             type="text"
             name="name"
@@ -384,15 +387,15 @@ function EditModal({
           value={formData.solución}
           className="border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 font-medium"
         />
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -440,7 +443,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/5 h-fit rounded-md shadow text-base"
     >
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -473,12 +476,12 @@ function DeleteModal({
           <button
             type="button"
             onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-            Continuar
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Completar
           </button>
         </div>
       </form>
@@ -506,7 +509,7 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
       >
         {problema?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">{problema?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">{problema?.nombre}</td>
       <td className="px-6 py-2 border border-slate-300">
         {problema?.prioridad === "BAJA" ? (
           <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
@@ -533,14 +536,14 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
           </div>
         )}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {problema?.descripción}
       </td>
-      <td className="px-6 py-4 border border-slate-300">{problema?.causa}</td>
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">{problema?.causa}</td>
       <td className="px-6 py-4 border border-slate-300">
-        {String(problema?.detectado)}
+        {format(new Date(problema?.detectado!), "dd/MM/yyyy")}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 w-[250px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada

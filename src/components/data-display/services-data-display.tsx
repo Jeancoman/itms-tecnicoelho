@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "../../assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "../../assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "../../assets/thinking.svg";
-import { ReactComponent as Warning } from "../../assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/public/assets/thinking.svg";
+import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -18,12 +18,13 @@ import ServiceService from "../../services/service-service";
 import toast, { Toaster } from "react-hot-toast";
 import Select from "../misc/select";
 import CategoryService from "../../services/category-service";
+import { format } from "date-fns";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id } = useParams();
   const ref = useRef<HTMLDialogElement>(null);
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<Categoría[]>([])
+  const [categories, setCategories] = useState<Categoría[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Selected>({
     value: -1,
     label: "Seleccionar categoría",
@@ -32,7 +33,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     nombre: "",
     descripción: "",
     estado: "PENDIENTE",
-    categoría_id: -1
+    categoría_id: -1,
+    ticket_id: Number(id),
   });
 
   const resetFormData = () => {
@@ -40,7 +42,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       nombre: "",
       descripción: "",
       estado: "PENDIENTE",
-      categoría_id: -1
+      categoría_id: -1,
+      ticket_id: Number(id),
     });
     setSelectedCategory({
       value: -1,
@@ -128,21 +131,24 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             }}
             placeholder="Nombre*"
             value={formData.nombre}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
+            required
           />
           <div className="relative w-2/4">
             {categories.length > 0 && (
               <Select
-                options={categories.map((category) => ({
-                  value: category.id,
-                  label: category.nombre,
-                  onClick: (value, label) => {
-                    setSelectedCategory({
-                      value,
-                      label,
-                    });
-                  },
-                }))}
+                options={categories
+                  .filter((category) => category.tipo === "SERVICIO")
+                  .map((category) => ({
+                    value: category.id,
+                    label: category.nombre,
+                    onClick: (value, label) => {
+                      setSelectedCategory({
+                        value,
+                        label,
+                      });
+                    },
+                  }))}
                 selected={selectedCategory}
                 onChange={() => {
                   setFormData({
@@ -204,17 +210,17 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             });
           }}
           value={formData.descripción}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="flex gap-2">
           <button
             type="button"
             onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -231,7 +237,7 @@ function EditModal({
 }: ModalProps) {
   const { id } = useParams();
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<Categoría[]>([])
+  const [categories, setCategories] = useState<Categoría[]>([]);
   const ref = useRef<HTMLDialogElement>(null);
   const [formData, setFormData] = useState<Servicio>(servicio!);
   const [selectedCategory, setSelectedCategory] = useState<Selected>({
@@ -283,7 +289,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/5 h-fit rounded-md shadow text-base"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar servicio</h1>
@@ -320,21 +326,23 @@ function EditModal({
             }}
             placeholder="Nombre*"
             value={formData.nombre}
-            className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
           />
           <div className="relative w-2/4">
             {categories.length > 0 && (
               <Select
-                options={categories.map((category) => ({
-                  value: category.id,
-                  label: category.nombre,
-                  onClick: (value, label) => {
-                    setSelectedCategory({
-                      value,
-                      label,
-                    });
-                  },
-                }))}
+                options={categories
+                  .filter((category) => category.tipo === "SERVICIO")
+                  .map((category) => ({
+                    value: category.id,
+                    label: category.nombre,
+                    onClick: (value, label) => {
+                      setSelectedCategory({
+                        value,
+                        label,
+                      });
+                    },
+                  }))}
                 selected={selectedCategory}
                 onChange={() => {
                   setFormData({
@@ -396,17 +404,17 @@ function EditModal({
             });
           }}
           value={formData.descripción}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="flex gap-2">
           <button
             type="button"
             onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -457,7 +465,7 @@ function DeleteModal({
       className="w-2/5 h-fit rounded-md shadow"
     >
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center text-base"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -487,12 +495,12 @@ function DeleteModal({
           <button
             type="button"
             onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-            Continuar
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Completar
           </button>
         </div>
       </form>
@@ -520,8 +528,10 @@ function DataRow({ action, setOperationAsCompleted, servicio }: DataRowProps) {
       >
         {servicio?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">{servicio?.nombre}</td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
+        {servicio?.nombre}
+      </td>
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {servicio?.descripción}
       </td>
       <td className="px-6 py-2 border border-slate-300">
@@ -540,12 +550,9 @@ function DataRow({ action, setOperationAsCompleted, servicio }: DataRowProps) {
         )}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {servicio?.categoría?.nombre}
+        {format(new Date(servicio?.añadido!), "dd/MM/yyyy")}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
-        {String(servicio?.añadido)}
-      </td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 w-[210px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -557,7 +564,7 @@ function DataRow({ action, setOperationAsCompleted, servicio }: DataRowProps) {
               onClick={() => {
                 setIsEditOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
             >
               Editar servicio
             </button>
@@ -801,6 +808,7 @@ export default function ServicesDataDisplay() {
       } else {
         setServices(data);
         setLoading(false);
+        setNotFound(false);
       }
       setIsOperationCompleted(false);
     });
@@ -853,9 +861,6 @@ export default function ServicesDataDisplay() {
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Estado
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Categoría
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Añadido

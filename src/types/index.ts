@@ -23,18 +23,35 @@ export type SectionProps = {
   close: () => void;
   setOperationAsCompleted: () => void;
   onClick?: () => void;
-  producto?: Producto;
+  venta?: Venta;
+  compra?: Compra;
   publicación?: Publicación;
+  action?: Action;
+}
+
+export type EmbeddedTableProps = {
+  onChange: (detalles: DetalleVenta[]) => void;
+  action?: Action;
+}
+
+export type EmbeddedDataRowProps = {
+  onChange: (detalle: DetalleVenta) => void;
+  producto?: Producto;
+  action?: Action;
 }
 
 export type DropupProps = {
   selectAction: (action: `${Action}`) => void;
+  selectSecondAction?: (action: `${Action}`) => void;
   close: () => void;
   openAddModal: () => void;
+  toEdit?: boolean;
+  toAdd?: boolean;
 };
 
 export type DataRowProps = {
   action: string;
+  onClick?: () => void;
   setOperationAsCompleted: () => void;
   cliente?: Cliente;
   usuario?: Usuario;
@@ -141,7 +158,9 @@ export type Action =
   | "CONFIRM_ORDER"
   | "PREVIEW"
   | "RESOLVE_PROBLEM"
-  | "QUERY_BY";
+  | "QUERY_BY"
+  | "ADD"
+  | "REDUCE"
 
 export type UsuarioRol = "EMPLEADO" | "ADMINISTRADOR" | "SUPERADMINISTRADOR";
 
@@ -309,6 +328,8 @@ export interface Producto {
   precio: number;
   stock: number;
   esPúblico: boolean;
+  categoría_id?: number;
+  categoría?: Categoría;
 }
 
 export interface Publicación {
@@ -337,20 +358,25 @@ export interface Proveedor {
 
 export interface Venta {
   id?: number;
-  fecha: Date;
-  número: string;
+  fecha?: Date;
   impuesto: number;
   subtotal: number;
   total: number;
+  cliente_id?: number;
+  cliente?: Cliente;
+  detalles?: DetalleVenta[]
 }
 
 export interface Compra {
   id?: number;
-  fecha: Date;
+  fecha?: Date;
   estado: CompraEstado;
   impuesto: number;
   subtotal: number;
   total: number;
+  proveedor_id: number;
+  proveedor?: Proveedor;
+  detalles?: DetalleCompra[]
 }
 
 export interface DetalleVenta {
