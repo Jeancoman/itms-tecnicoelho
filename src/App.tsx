@@ -4,7 +4,6 @@ import ClientsPage from "./pages/clients-page";
 import TicketsPage from "./pages/tickets-page";
 import ProvidersPage from "./pages/providers-page";
 import CategoriesPage from "./pages/categories-page";
-import ImagesPage from "./pages/images-page";
 import PurchasesPage from "./pages/purchases-page";
 import SalesPage from "./pages/sales-page";
 import PublicationsPage from "./pages/publications-page";
@@ -34,7 +33,6 @@ export default function App() {
         <Route path="/compras" element={<PurchasesPage />} />
         <Route path="/proveedores" element={<ProvidersPage />} />
         <Route path="/publicaciones" element={<PublicationsPage />} />
-        <Route path="/galeria" element={<ImagesPage />} />
         <Route path="/categorias" element={<CategoriesPage />} />
         <Route path="/mensajeria" />
         <Route path="/login" />

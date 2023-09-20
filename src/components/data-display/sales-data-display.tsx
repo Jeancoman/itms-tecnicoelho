@@ -9,7 +9,6 @@ import {
   DataRowProps,
   DropupProps,
   Action,
-  Publicación,
   SectionProps,
   Venta,
   EmbeddedDataRowProps,
@@ -19,7 +18,6 @@ import {
   DetalleVenta,
   Selected,
 } from "../../types";
-import PublicationService from "../../services/publication-service";
 import toast, { Toaster } from "react-hot-toast";
 import { format } from "date-fns";
 import ProductService from "../../services/producto-service";
@@ -251,9 +249,8 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
 function EditSection({
   close,
   setOperationAsCompleted,
-  publicación,
 }: SectionProps) {
-  const [formData, setFormData] = useState<Publicación>(publicación!);
+  const [formData, setFormData] = useState({});
 
   return (
     <form
@@ -262,23 +259,17 @@ function EditSection({
       onSubmit={(e) => {
         e.preventDefault();
         close();
-        const loadingToast = toast.loading("Editando publicación...");
-        PublicationService.update(publicación?.id!, formData).then((data) => {
-          toast.dismiss(loadingToast);
-          setOperationAsCompleted();
-          if (data === false) {
-            toast.error("Publicación no pudo ser editada.");
-          } else {
-            toast.success("Publicación editada con exito.");
-          }
-        });
+        setOperationAsCompleted()
+        setFormData({})
+        console.log(formData)
+        
       }}
     >
       <div className="h-full"></div>
       <div className="flex flex-col gap-4">
         <EmbeddedTable
           onChange={function (detalles): void {
-            throw new Error("Function not implemented.");
+            console.log(detalles);
           }}
         />
         <div className="flex h-full items-end">
