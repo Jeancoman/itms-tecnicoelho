@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "/public/assets/thinking.svg";
-import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/src/assets/report.svg";
+import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import Slugifier from "../../utils/slugifier";
 import Pagination from "../misc/pagination";
 import {
@@ -17,6 +17,8 @@ import PublicationService from "../../services/publication-service";
 import toast, { Toaster } from "react-hot-toast";
 import { Editor } from "@tinymce/tinymce-react";
 import { format } from "date-fns";
+import permissions from "../../utils/permissions";
+import session from "../../utils/session";
 
 function AddSection({ close, setOperationAsCompleted }: SectionProps) {
   const [formData, setFormData] = useState<Publicación>({
@@ -42,7 +44,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
       onSubmit={(e) => {
         e.preventDefault();
         close();
-        resetFormData()
+        resetFormData();
         const loadingToast = toast.loading("Creando publicación...");
         PublicationService.create(formData).then((data) => {
           toast.dismiss(loadingToast);
@@ -411,7 +413,7 @@ function DataRow({
           </div>
         )}
       </td>
-      <td className="px-6 py-4 border border-slate-300 w-[210px]">
+      <td className="px-6 py-3 border border-slate-300 w-[210px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -421,7 +423,7 @@ function DataRow({
           <>
             <button
               onClick={onClick}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Editar publicación
             </button>
@@ -433,7 +435,7 @@ function DataRow({
               onClick={() => {
                 setIsDeleteOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Eliminar publicación
             </button>
@@ -446,7 +448,7 @@ function DataRow({
           </>
         )}
         {action === "PREVIEW" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline">
+          <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg">
             Previsualizar publicación
           </button>
         )}
@@ -555,13 +557,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           border
         "
     >
-      <li>
-        <div
-          onClick={() => {
-            selectAction("EDIT");
-            close();
-          }}
-          className="
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.publicación && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("EDIT");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -574,17 +578,20 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Editar publicación
-        </div>
-      </li>
-      <li>
-        <div
-          onClick={() => {
-            selectAction("DELETE");
-            close();
-          }}
-          className="
+            >
+              Editar publicación
+            </div>
+          </li>
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        (permissions.find()?.eliminar.publicación && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("DELETE");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -597,17 +604,25 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Eliminar publicación
-        </div>
-      </li>
-      <li>
-        <div
-          onClick={() => {
-            selectAction("PREVIEW");
-            close();
-          }}
-          className="
+            >
+              Eliminar publicación
+            </div>
+          </li>
+        ))}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.publicación &&
+        permissions.find()?.eliminar.publicación && (
+          <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.crear.publicación && (
+          <li>
+            <div
+              onClick={() => {
+                openAddModal();
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -620,34 +635,11 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Previsualizar publicación
-        </div>
-      </li>
-      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      <li>
-        <div
-          onClick={() => {
-            openAddModal();
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Crear publicación
-        </div>
-      </li>
+            >
+              Crear publicación
+            </div>
+          </li>
+        )}
       <li>
         <div
           onClick={() => {
@@ -682,10 +674,12 @@ export default function PublicationsDataDisplay() {
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
-  //@ts-ignore
-  const [publication, setPublication] = useState<Publicación>({});
+  const [publication, setPublication] = useState<Publicación>();
   const [toEdit, setToEdit] = useState(false);
   const [toAdd, setToAdd] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(0);
+  const [current, setCurrent] = useState(0);
 
   const openAddModal = () => {
     setToAdd(true);
@@ -714,21 +708,23 @@ export default function PublicationsDataDisplay() {
       setNotFound(false);
     }
 
-    PublicationService.getAll().then((data) => {
+    PublicationService.getAll(page, 8).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
       } else {
-        setPublications(data);
+        setPublications(data.rows);
+        setPages(data.pages);
+        setCurrent(data.current);
         setLoading(false);
       }
       setIsOperationCompleted(false);
     });
-  }, [isOperationCompleted, toEdit, toAdd]);
+  }, [isOperationCompleted, toEdit, toAdd, page]);
 
   return (
     <>
-      <div className="absolute w-full h-full px-8 py-6">
+      <div className="absolute w-full h-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
@@ -768,7 +764,7 @@ export default function PublicationsDataDisplay() {
             </button>
           </div>
         </nav>
-        <hr className="border-1 border-slate-200 my-5" />
+        <hr className="border-1 border-slate-300 my-5" />
         {toAdd ? (
           <AddSection
             isOpen={toAdd}
@@ -782,8 +778,7 @@ export default function PublicationsDataDisplay() {
             isOpen={toEdit}
             close={() => {
               setToEdit(false);
-              //@ts-ignore
-              setPublication({});
+              setPublication(undefined);
             }}
             setOperationAsCompleted={setAsCompleted}
             publicación={publication}
@@ -871,7 +866,7 @@ export default function PublicationsDataDisplay() {
                   <div role="status">
                     <svg
                       aria-hidden="true"
-                      className="inline w-14 h-14 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
+                      className="inline w-14 h-14 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
                       viewBox="0 0 100 101"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
@@ -894,7 +889,20 @@ export default function PublicationsDataDisplay() {
         )}
       </div>
       {publications.length > 0 && loading == false && !toAdd && !toEdit && (
-        <Pagination />
+        <Pagination
+          pages={pages}
+          current={current}
+          next={() => {
+            if (current < pages && current !== pages) {
+              setPage(page + 1);
+            }
+          }}
+          prev={() => {
+            if (current > 1) {
+              setPage(page - 1);
+            }
+          }}
+        />
       )}
       <Toaster position="bottom-right" reverseOrder={false} />
     </>

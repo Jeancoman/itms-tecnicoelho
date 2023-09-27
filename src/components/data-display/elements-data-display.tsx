@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "/public/assets/thinking.svg";
-import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/src/assets/report.svg";
+import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -19,6 +19,8 @@ import { useParams } from "react-router-dom";
 import CategoryService from "../../services/category-service";
 import Select from "../misc/select";
 import { format } from "date-fns";
+import session from "../../utils/session";
+import permissions from "../../utils/permissions";
 
 function EditModal({
   isOpen,
@@ -53,12 +55,12 @@ function EditModal({
   useEffect(() => {
     if (categories.length === 0) {
       setLoading(true);
-      CategoryService.getAll().then((data) => {
+      CategoryService.getAll(1, 8).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
           setLoading(false);
-          setCategories(data);
+          setCategories(data.rows);
         }
       });
     }
@@ -263,12 +265,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   useEffect(() => {
     if (categories.length === 0) {
       setLoading(true);
-      CategoryService.getAll().then((data) => {
+      CategoryService.getAll(1, 8).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
           setLoading(false);
-          setCategories(data);
+          setCategories(data.rows);
         }
       });
     }
@@ -533,14 +535,25 @@ function DataRow({ action, elemento, setOperationAsCompleted }: DataRowProps) {
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {elemento?.descripción}
       </td>
-      <td className="px-6 py-4 border border-slate-300">{elemento?.estado}</td>
+      <td className="px-6 py-2 border border-slate-300">
+        {" "}
+        {elemento?.estado === "ACTIVO" ? (
+          <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
+            Activo
+          </div>
+        ) : (
+          <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg capitalize">
+            Inactivo
+          </div>
+        )}
+      </td>
       <td className="px-6 py-4 border border-slate-300">
         {elemento?.categoría?.nombre}
       </td>
       <td className="px-6 py-4 border border-slate-300">
         {format(new Date(elemento?.registrado!), "dd/MM/yyyy")}
       </td>
-      <td className="px-6 py-4 border border-slate-300 w-[200px]">
+      <td className="px-6 py-3 border border-slate-300 w-[200px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -552,7 +565,7 @@ function DataRow({ action, elemento, setOperationAsCompleted }: DataRowProps) {
               onClick={() => {
                 setIsEditOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Editar elemento
             </button>
@@ -570,7 +583,7 @@ function DataRow({ action, elemento, setOperationAsCompleted }: DataRowProps) {
               onClick={() => {
                 setIsDeleteOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Eliminar elemento
             </button>
@@ -628,13 +641,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           border
         "
     >
-      <li>
-        <div
-          onClick={() => {
-            selectAction("EDIT");
-            close();
-          }}
-          className="
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.cliente && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("EDIT");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -647,17 +662,20 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Editar elemento
-        </div>
-      </li>
-      <li>
-        <div
-          onClick={() => {
-            selectAction("DELETE");
-            close();
-          }}
-          className="
+            >
+              Editar elemento
+            </div>
+          </li>
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.eliminar.cliente && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("DELETE");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -670,18 +688,25 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Eliminar elemento
-        </div>
-      </li>
-      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      <li>
-        <div
-          onClick={() => {
-            openAddModal();
-            close();
-          }}
-          className="
+            >
+              Eliminar elemento
+            </div>
+          </li>
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        !permissions.find()?.editar.cliente &&
+        !permissions.find()?.eliminar.cliente && (
+          <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.crear.cliente && (
+          <li>
+            <div
+              onClick={() => {
+                openAddModal();
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -694,10 +719,11 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Añadir elemento
-        </div>
-      </li>
+            >
+              Añadir elemento
+            </div>
+          </li>
+        )}
       <li>
         <div
           onClick={() => {
@@ -734,6 +760,9 @@ export default function ElementsDataDisplay() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(0);
+  const [current, setCurrent] = useState(0);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -760,27 +789,32 @@ export default function ElementsDataDisplay() {
       setLoading(true);
     }
 
-    ElementService.getAll(Number(id)).then((data) => {
+    ElementService.getAll(Number(id), page, 8).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
+        setElements([]);
       } else {
-        setElements(data);
+        setElements(data.rows);
+        setPages(data.pages);
+        setCurrent(data.current);
+        setNotFound(false);
         setLoading(false);
       }
       setIsOperationCompleted(false);
     });
-  }, [isOperationCompleted]);
+  }, [isOperationCompleted, page]);
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-6">
+      <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" /> Clientes{" "}
             <Right className="w-3 h-3 inline" />{" "}
             <span className="text-[#2096ed] font-bold">{id}</span>{" "}
-            <Right className="w-3 h-3 inline" /> Elementos
+            <Right className="w-3 h-3 inline" />{" "}
+            <span className="text-[#2096ed]">Elementos</span>
           </div>
           <div>
             {isDropup && (
@@ -802,7 +836,7 @@ export default function ElementsDataDisplay() {
             </button>
           </div>
         </nav>
-        <hr className="border-1 border-slate-200 my-5" />
+        <hr className="border-1 border-slate-300 my-5" />
         {elements.length > 0 && loading == false && (
           <div className="relative overflow-x-auto">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
@@ -866,7 +900,7 @@ export default function ElementsDataDisplay() {
               <div role="status">
                 <svg
                   aria-hidden="true"
-                  className="inline w-14 h-14 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
+                  className="inline w-14 h-14 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
                   viewBox="0 0 100 101"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -886,7 +920,22 @@ export default function ElementsDataDisplay() {
           </div>
         )}
       </div>
-      {elements.length > 0 && loading == false && <Pagination />}
+      {elements.length > 0 && loading == false && (
+        <Pagination
+          pages={pages}
+          current={current}
+          next={() => {
+            if (current < pages && current !== pages) {
+              setPage(page + 1);
+            }
+          }}
+          prev={() => {
+            if (current > 1) {
+              setPage(page - 1);
+            }
+          }}
+        />
+      )}
       <Toaster position="bottom-right" reverseOrder={false} />
       <AddModal
         isOpen={isAddOpen}

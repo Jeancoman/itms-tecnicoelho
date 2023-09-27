@@ -1,17 +1,25 @@
-import { Problema } from "../types";
+import { Problema, Response } from "../types";
 
 export default class ProblemService {
-  static async getAll(ticket_id: number) {
+  static async getAll(ticket_id: number, page: number, size: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/problemas`
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/problemas?page=${page}&size=${size}`
       );
 
       if (response.status > 300) {
         return false;
       }
 
-      return (await response.json()) as Problema[];
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
     } catch {
       return false;
     }
@@ -20,7 +28,9 @@ export default class ProblemService {
   static async getById(ticket_id: number, id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/problemas/${id}`
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/problemas/${id}`
       );
 
       if (response.status > 300) {
@@ -36,7 +46,9 @@ export default class ProblemService {
   static async create(ticket_id: number, problem: Problema) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/problemas`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/problemas`,
         {
           method: "POST",
           headers: {
@@ -60,7 +72,9 @@ export default class ProblemService {
   static async update(ticket_id: number, id: number, problem: Problema) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/problemas/${id}`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/problemas/${id}`,
         {
           method: "PATCH",
           headers: {
@@ -84,7 +98,9 @@ export default class ProblemService {
   static async delete(ticket_id: number, id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/problemas/${id}`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/problemas/${id}`,
         {
           method: "DELETE",
           headers: {

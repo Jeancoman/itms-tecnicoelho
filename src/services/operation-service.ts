@@ -1,17 +1,30 @@
-import { Operación } from "../types";
+import { Operación, Response } from "../types";
 
 export default class OperationService {
-  static async getAll(ticket_id: number, service_id: number) {
+  static async getAll(
+    ticket_id: number,
+    service_id: number,
+    page: number,
+    size: number
+  ) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/servicios/${service_id}/operaciones`
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/servicios/${service_id}/operaciones?=page=${page}&size=${size}`
       );
 
       if (response.status > 300) {
         return false;
       }
 
-      return (await response.json()) as Operación[];
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
     } catch {
       return false;
     }
@@ -20,7 +33,9 @@ export default class OperationService {
   static async getById(ticket_id: number, service_id: number, id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/servicios/${service_id}/operaciones/${id}`
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/servicios/${service_id}/operaciones/${id}`
       );
 
       if (response.status > 300) {
@@ -33,10 +48,16 @@ export default class OperationService {
     }
   }
 
-  static async create(ticket_id: number, service_id: number, operation: Operación) {
+  static async create(
+    ticket_id: number,
+    service_id: number,
+    operation: Operación
+  ) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/${service_id}/operaciones`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/${service_id}/operaciones`,
         {
           method: "POST",
           headers: {
@@ -57,10 +78,17 @@ export default class OperationService {
     }
   }
 
-  static async update(ticket_id: number, service_id: number, id: number, operation: Operación) {
+  static async update(
+    ticket_id: number,
+    service_id: number,
+    id: number,
+    operation: Operación
+  ) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/servicios/${service_id}/operaciones/${id}`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/servicios/${service_id}/operaciones/${id}`,
         {
           method: "PATCH",
           headers: {
@@ -84,7 +112,9 @@ export default class OperationService {
   static async delete(ticket_id: number, service_id: number, id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/servicios/${service_id}/operaciones/${id}`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/servicios/${service_id}/operaciones/${id}`,
         {
           method: "DELETE",
           headers: {

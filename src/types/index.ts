@@ -16,6 +16,8 @@ export type ModalProps = {
   operación?: Operación;
   venta?: Venta;
   compra?: Compra;
+  plantilla?: Plantilla;
+  mensajería?: Mensajería;
 };
 
 export type SectionProps = {
@@ -27,24 +29,25 @@ export type SectionProps = {
   compra?: Compra;
   publicación?: Publicación;
   action?: Action;
-}
+};
 
 export type EmbeddedTableProps = {
   onChange: (detalles: DetalleVenta[]) => void;
   action?: Action;
-}
+};
 
 export type EmbeddedDataRowProps = {
   onChange: (detalle: DetalleVenta) => void;
   producto?: Producto;
   action?: Action;
-}
+};
 
 export type DropupProps = {
   selectAction: (action: `${Action}`) => void;
   selectSecondAction?: (action: `${Action}`) => void;
   close: () => void;
   openAddModal: () => void;
+  openOptionModal?: () => void;
   toEdit?: boolean;
   toAdd?: boolean;
 };
@@ -67,6 +70,7 @@ export type DataRowProps = {
   operación?: Operación;
   venta?: Venta;
   compra?: Compra;
+  plantilla?: Plantilla;
 };
 
 export type OptionProps = {
@@ -83,6 +87,10 @@ export type OptionGroupProps = {
   options: OptionProps[];
   close: () => void;
   closeOnOptionClick: () => void;
+  drop: boolean;
+  top: number;
+  left: number;
+  width: string;
 };
 
 export type SelectProps = {
@@ -90,13 +98,13 @@ export type SelectProps = {
   options: OptionProps[];
   onChange?: () => void;
   disable?: boolean;
+  small?: boolean;
 };
 
 export type Selected = {
   value: string | number | undefined;
   label: string | undefined;
 };
-
 
 export type LogicalOperator = "Y" | "O";
 
@@ -160,7 +168,7 @@ export type Action =
   | "RESOLVE_PROBLEM"
   | "QUERY_BY"
   | "ADD"
-  | "REDUCE"
+  | "REDUCE";
 
 export type UsuarioRol = "EMPLEADO" | "ADMINISTRADOR" | "SUPERADMINISTRADOR";
 
@@ -184,20 +192,24 @@ export type CategoríaTipo = "ELEMENTO" | "PRODUCTO" | "SERVICIO";
 
 export type CompraEstado = "PENDIENTE" | "CONFIRMADA";
 
-export type PlantillaEsDe = "TICKET" | "PROBLEMA" | "SERVICIO" |  "OPERACIÓN";
+export type PlantillaEsDe = "TICKET" | "PROBLEMA" | "SERVICIO" | "OPERACIÓN";
 
-export type PlantillaEvento = "CREACIÓN" |"MODIFICACIÓN" | "ELIMINACIÓN" | "ASOCIACIÓN";
+export type PlantillaEvento =
+  | "CREACIÓN"
+  | "MODIFICACIÓN"
+  | "ELIMINACIÓN"
+  | "ASOCIACIÓN";
 
 export type Opciones = {
   creación: {
     nunca: boolean;
     siempre: boolean;
-    mostrarAntes: boolean;
+    preguntar: boolean;
   };
   envio: {
     nunca: boolean;
     siempre: boolean;
-    preguntarAntes: boolean;
+    preguntar: boolean;
   };
 };
 
@@ -209,12 +221,14 @@ export interface Usuario {
   contraseña?: string;
   rol: UsuarioRol;
   último_login?: Date;
+  permiso?: Permisos;
 }
 
 export type Permiso = {
   cliente: boolean;
   ticket: boolean;
   elemento: boolean;
+  producto: boolean;
   problema: boolean;
   mensaje: boolean;
   servicio: boolean;
@@ -225,6 +239,8 @@ export type Permiso = {
   compra: boolean;
   publicación: boolean;
   proveedor: boolean;
+  reporte: boolean;
+  mensajería: boolean;
 };
 
 export interface Permisos {
@@ -233,6 +249,7 @@ export interface Permisos {
   crear: Permiso;
   editar: Permiso;
   eliminar: Permiso;
+  reporte: Permiso;
   usuario_id?: number;
 }
 
@@ -240,12 +257,13 @@ export interface Cliente {
   id?: number;
   nombre: string;
   apellido: string;
-  cédula?: string;
+  documento?: string;
   email?: string;
   telefono?: string;
   dirección?: string;
   enviarMensajes?: boolean;
   contraseña?: string;
+  readonly registrado?: Date;
 }
 
 export interface Elemento {
@@ -322,6 +340,7 @@ export interface Categoría {
 
 export interface Producto {
   id?: number;
+  código: string;
   slug: string;
   nombre: string;
   descripción?: string;
@@ -352,8 +371,10 @@ export interface OperaciónProducto {
 export interface Proveedor {
   id?: number;
   nombre: string;
+  documento?: string;
   descripción?: string;
   telefono?: string;
+  readonly registrando?: Date;
 }
 
 export interface Venta {
@@ -364,7 +385,7 @@ export interface Venta {
   total: number;
   cliente_id?: number;
   cliente?: Cliente;
-  detalles?: DetalleVenta[]
+  detalles?: DetalleVenta[];
 }
 
 export interface Compra {
@@ -376,7 +397,7 @@ export interface Compra {
   total: number;
   proveedor_id: number;
   proveedor?: Proveedor;
-  detalles?: DetalleCompra[]
+  detalles?: DetalleCompra[];
 }
 
 export interface DetalleVenta {
@@ -421,4 +442,29 @@ export interface Plantilla {
 export interface Mensajería {
   id: number;
   opciones: Opciones;
-  }
+}
+
+export type Response = {
+  count: number;
+  pages: number;
+  current: number;
+  rows: any[];
+};
+
+export type PaginationProps = {
+  pages: number;
+  current: number;
+  next: () => void;
+  prev: () => void;
+}
+
+export interface JwtPayload {
+  usuario: Usuario;
+  iat: number;
+  exp: number;
+}
+
+export interface Session {
+  usuario: Usuario;
+  token: string;
+}

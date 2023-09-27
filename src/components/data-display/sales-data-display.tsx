@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "/public/assets/thinking.svg";
-import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/src/assets/report.svg";
+import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -24,6 +24,8 @@ import ProductService from "../../services/producto-service";
 import SaleService from "../../services/sales-service";
 import ClientService from "../../services/client-service";
 import Select from "../misc/select";
+import permissions from "../../utils/permissions";
+import session from "../../utils/session";
 
 function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   const [loading, setLoading] = useState(true);
@@ -40,8 +42,6 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
     detalles: [],
   });
 
-  console.log(formData);
-
   const resetFormData = () => {
     setFormData({
       impuesto: 0,
@@ -55,32 +55,16 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   useEffect(() => {
     if (clients.length === 0) {
       setLoading(true);
-      ClientService.getAll().then((data) => {
+      ClientService.getAll(1, 100).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
-          setClients(data);
+          setClients(data.rows);
           setLoading(false);
         }
       });
     }
   }, []);
-
-  useEffect(() => {
-    let subtotal = 0;
-
-    if (formData.detalles) {
-      for (let detalle of formData.detalles) {
-        subtotal += detalle.subtotal;
-      }
-    }
-
-    setFormData({
-      ...formData,
-      subtotal: subtotal,
-      total: subtotal * (1 + formData.impuesto / 100),
-    });
-  }, [formData.detalles]);
 
   return (
     <form
@@ -99,13 +83,13 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
             toast.error("Venta no pudo ser registrada.");
           } else {
             toast.success("Venta registrada con exito.");
-            formData.detalles?.forEach(async detalle => {
+            formData.detalles?.forEach(async (detalle) => {
               //@ts-ignore
-             await ProductService.update(detalle.producto_id!, {
-              id: detalle.producto_id!,
-              stock: detalle?.producto?.stock! - detalle.cantidad,
-             })
-            })
+              await ProductService.update(detalle.producto_id!, {
+                id: detalle.producto_id!,
+                stock: detalle?.producto?.stock! - detalle.cantidad,
+              });
+            });
           }
         });
       }}
@@ -221,6 +205,20 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
               ...formData,
               detalles: detalles,
             });
+
+            let subtotal = 0;
+
+            if (detalles) {
+              for (let detalle of detalles) {
+                subtotal += detalle.subtotal;
+              }
+            }
+
+            setFormData({
+              ...formData,
+              subtotal: subtotal,
+              total: subtotal * (1 + formData.impuesto / 100),
+            });
           }}
           action={action}
         />
@@ -246,10 +244,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   );
 }
 
-function EditSection({
-  close,
-  setOperationAsCompleted,
-}: SectionProps) {
+function EditSection({ close, setOperationAsCompleted }: SectionProps) {
   const [formData, setFormData] = useState({});
 
   return (
@@ -259,10 +254,9 @@ function EditSection({
       onSubmit={(e) => {
         e.preventDefault();
         close();
-        setOperationAsCompleted()
-        setFormData({})
-        console.log(formData)
-        
+        setOperationAsCompleted();
+        setFormData({});
+        console.log(formData);
       }}
     >
       <div className="h-full"></div>
@@ -404,7 +398,7 @@ function DataRow({
       <td className="px-6 py-4 border border-slate-300">{venta?.impuesto}</td>
       <td className="px-6 py-2 border border-slate-300">{venta?.subtotal}</td>
       <td className="px-6 py-2 border border-slate-300">{venta?.total}</td>
-      <td className="px-6 py-4 border border-slate-300 w-[210px]">
+      <td className="px-6 py-2 border border-slate-300 w-[210px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -414,7 +408,7 @@ function DataRow({
           <>
             <button
               onClick={onClick}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Editar venta
             </button>
@@ -426,7 +420,7 @@ function DataRow({
               onClick={() => {
                 setIsDeleteOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Eliminar venta
             </button>
@@ -520,35 +514,30 @@ function EmbeddedTable({ onChange, action }: EmbeddedTableProps) {
 
   useEffect(() => {
     if (products.length === 0) {
-      ProductService.getAll().then((data) => {
+      ProductService.getAll(1, 100).then((data) => {
         if (data === false) {
           setNotFound(true);
           setLoading(false);
         } else {
-          setProducts(data);
+          setProducts(data.rows);
           setLoading(false);
           setNotFound(false);
         }
       });
     }
-
     onChange(detalles);
   }, [detalles]);
 
   const secondOnChange = (detalle: DetalleVenta) => {
     setDetalles((prevDetalles) => {
-      // Check if the object is already in the array
       const existingObjectIndex = prevDetalles.findIndex(
         (obj) => obj.producto_id === detalle.producto_id
       );
-
       if (existingObjectIndex >= 0) {
-        // If it exists, create a new array where we replace the existing object with our new one
         return prevDetalles.map((item, index) =>
           index === existingObjectIndex ? detalle : item
         );
       } else {
-        // If it doesn't exist, add our new object to the end of our array
         return [...prevDetalles, detalle];
       }
     });
@@ -757,13 +746,15 @@ function Dropup({
           border
         "
     >
-      <li>
-        <div
-          onClick={() => {
-            selectAction("EDIT");
-            close();
-          }}
-          className="
+       {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.venta && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("EDIT");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -776,17 +767,20 @@ function Dropup({
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Editar venta
-        </div>
-      </li>
-      <li>
-        <div
-          onClick={() => {
-            selectAction("DELETE");
-            close();
-          }}
-          className="
+            >
+              Editar venta
+            </div>
+          </li>
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        (permissions.find()?.eliminar.venta && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("DELETE");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -799,18 +793,25 @@ function Dropup({
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Eliminar venta
-        </div>
-      </li>
-      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      <li>
-        <div
-          onClick={() => {
-            openAddModal();
-            close();
-          }}
-          className="
+            >
+              Eliminar venta
+            </div>
+          </li>
+        ))}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.venta &&
+        permissions.find()?.eliminar.venta && (
+          <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.crear.venta && (
+          <li>
+            <div
+              onClick={() => {
+                openAddModal();
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -823,10 +824,11 @@ function Dropup({
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Registrar venta
-        </div>
-      </li>
+            >
+              Registrar venta
+            </div>
+          </li>
+        )}
       <li>
         <div
           onClick={() => {
@@ -862,10 +864,12 @@ export default function SalesDataDisplay() {
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
   const [secondAction, setSecondAction] = useState<`${Action}`>("ADD");
-  //@ts-ignore
-  const [sale, setSale] = useState<Venta>({});
+  const [sale, setSale] = useState<Venta>();
   const [toEdit, setToEdit] = useState(false);
   const [toAdd, setToAdd] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(0);
+  const [current, setCurrent] = useState(0);
 
   const openAddModal = () => {
     setToAdd(true);
@@ -898,23 +902,25 @@ export default function SalesDataDisplay() {
       setNotFound(false);
     }
 
-    SaleService.getAll().then((data) => {
+    SaleService.getAll(pages, 8).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
-        setSales([])
+        setSales([]);
       } else {
-        setSales(data);
+        setSales(data.rows);
+        setPages(data.pages);
+        setCurrent(data.current);
         setLoading(false);
         setNotFound(false);
       }
       setIsOperationCompleted(false);
     });
-  }, [isOperationCompleted, toEdit, toAdd]);
+  }, [isOperationCompleted, toEdit, toAdd, page]);
 
   return (
     <>
-      <div className="absolute w-full h-full px-8 py-6">
+      <div className="absolute w-full h-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
@@ -955,7 +961,7 @@ export default function SalesDataDisplay() {
             </button>
           </div>
         </nav>
-        <hr className="border-1 border-slate-200 my-5" />
+        <hr className="border-1 border-slate-300 my-5" />
         {toAdd ? (
           <AddSection
             isOpen={toAdd}
@@ -970,8 +976,7 @@ export default function SalesDataDisplay() {
             isOpen={toEdit}
             close={() => {
               setToEdit(false);
-              //@ts-ignore
-              setPublication({});
+              setSale(undefined);
             }}
             setOperationAsCompleted={setAsCompleted}
             venta={sale}
@@ -1065,7 +1070,7 @@ export default function SalesDataDisplay() {
                   <div role="status">
                     <svg
                       aria-hidden="true"
-                      className="inline w-14 h-14 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
+                      className="inline w-14 h-14 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
                       viewBox="0 0 100 101"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
@@ -1088,7 +1093,20 @@ export default function SalesDataDisplay() {
         )}
       </div>
       {sales.length > 0 && loading == false && !toAdd && !toEdit && (
-        <Pagination />
+        <Pagination
+          pages={pages}
+          current={current}
+          next={() => {
+            if (current < pages && current !== pages) {
+              setPage(page + 1);
+            }
+          }}
+          prev={() => {
+            if (current > 1) {
+              setPage(page - 1);
+            }
+          }}
+        />
       )}
       <Toaster position="bottom-right" reverseOrder={false} />
     </>

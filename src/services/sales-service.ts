@@ -1,17 +1,25 @@
-import { DetalleVenta, Venta } from "../types";
+import { DetalleVenta, Venta, Response } from "../types";
 
 export default class SaleService {
-  static async getAll() {
+  static async getAll(page: number, size: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/ventas/`
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/ventas?page=${page}&size=${size}`
       );
 
       if (response.status > 300) {
         return false;
       }
 
-      return (await response.json()) as Venta[];
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
     } catch {
       return false;
     }
@@ -104,7 +112,7 @@ export default class SaleService {
     }
   }
 
-   static async createDetails(id: number, details: DetalleVenta[]) {
+  static async createDetails(id: number, details: DetalleVenta[]) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/ventas/${id}/detalles`,

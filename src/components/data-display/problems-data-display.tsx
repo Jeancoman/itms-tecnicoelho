@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "/public/assets/thinking.svg";
-import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/src/assets/report.svg";
+import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -18,6 +18,8 @@ import { useParams } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import Select from "../misc/select";
 import { format } from "date-fns";
+import session from "../../utils/session";
+import permissions from "../../utils/permissions";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id } = useParams();
@@ -509,7 +511,9 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
       >
         {problema?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">{problema?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
+        {problema?.nombre}
+      </td>
       <td className="px-6 py-2 border border-slate-300">
         {problema?.prioridad === "BAJA" ? (
           <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
@@ -539,11 +543,13 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {problema?.descripción}
       </td>
-      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">{problema?.causa}</td>
+      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
+        {problema?.causa}
+      </td>
       <td className="px-6 py-4 border border-slate-300">
         {format(new Date(problema?.detectado!), "dd/MM/yyyy")}
       </td>
-      <td className="px-6 py-4 border border-slate-300 w-[250px]">
+      <td className="px-6 py-3 border border-slate-300 w-[250px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -555,7 +561,7 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
               onClick={() => {
                 setIsEditOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Editar problema
             </button>
@@ -573,7 +579,7 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
               onClick={() => {
                 setIsDeleteOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Eliminar problema
             </button>
@@ -586,7 +592,7 @@ function DataRow({ action, setOperationAsCompleted, problema }: DataRowProps) {
           </>
         )}
         {action === "RESOLVE_PROBLEM" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline">
+          <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg">
             Establecer como resuelto
           </button>
         )}
@@ -636,13 +642,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           border-none
         "
     >
-      <li>
-        <div
-          onClick={() => {
-            selectAction("EDIT");
-            close();
-          }}
-          className="
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.ticket && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("EDIT");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -655,17 +663,20 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Editar problema
-        </div>
-      </li>
-      <li>
-        <div
-          onClick={() => {
-            selectAction("DELETE");
-            close();
-          }}
-          className="
+            >
+              Editar problema
+            </div>
+          </li>
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.eliminar.ticket && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("DELETE");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -678,18 +689,25 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Eliminar problema
-        </div>
-      </li>
-      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      <li>
-        <div
-          onClick={() => {
-            selectAction("RESOLVE_PROBLEM");
-            close();
-          }}
-          className="
+            >
+              Eliminar problema
+            </div>
+          </li>
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.ticket &&
+        permissions.find()?.eliminar.ticket && (
+          <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.crear.ticket && (
+          <li>
+            <div
+              onClick={() => {
+                openAddModal();
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -702,34 +720,11 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Establecer como resuelto
-        </div>
-      </li>
-      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      <li>
-        <div
-          onClick={() => {
-            openAddModal();
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Registrar problema
-        </div>
-      </li>
+            >
+              Registrar problema
+            </div>
+          </li>
+        )}
       <li>
         <div
           onClick={() => {
@@ -766,6 +761,9 @@ export default function ProblemsDataDisplay() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(0);
+  const [current, setCurrent] = useState(0);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -792,17 +790,19 @@ export default function ProblemsDataDisplay() {
       setLoading(true);
     }
 
-    ProblemService.getAll(Number(id)).then((data) => {
+    ProblemService.getAll(Number(id), page, 8).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
       } else {
-        setProblems(data);
+        setProblems(data.rows);
+        setPages(data.pages);
+        setCurrent(data.current);
         setLoading(false);
       }
       setIsOperationCompleted(false);
     });
-  }, [isOperationCompleted]);
+  }, [isOperationCompleted, page]);
 
   return (
     <>
@@ -812,7 +812,8 @@ export default function ProblemsDataDisplay() {
             Menu <Right className="w-3 h-3 inline fill-slate-600" /> Tickets{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="font-bold text-[#2096ed]">{id}</span>{" "}
-            <Right className="w-3 h-3 inline fill-slate-600" /> Problemas
+            <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span className="text-[#2096ed]">Problemas</span>
           </div>
           <div>
             {isDropup && (
@@ -834,7 +835,7 @@ export default function ProblemsDataDisplay() {
             </button>
           </div>
         </nav>
-        <hr className="border-1 border-slate-200 my-5" />
+        <hr className="border-1 border-slate-300 my-5" />
         {problems.length > 0 && loading == false && (
           <div className="relative overflow-x-auto">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
@@ -901,7 +902,7 @@ export default function ProblemsDataDisplay() {
               <div role="status">
                 <svg
                   aria-hidden="true"
-                  className="inline w-14 h-14 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
+                  className="inline w-14 h-14 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
                   viewBox="0 0 100 101"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -921,7 +922,22 @@ export default function ProblemsDataDisplay() {
           </div>
         )}
       </div>
-      {problems.length > 0 && loading == false && <Pagination />}
+      {problems.length > 0 && loading == false && (
+        <Pagination
+          pages={pages}
+          current={current}
+          next={() => {
+            if (current < pages && current !== pages) {
+              setPage(page + 1);
+            }
+          }}
+          prev={() => {
+            if (current > 1) {
+              setPage(page - 1);
+            }
+          }}
+        />
+      )}
       <Toaster position="bottom-right" reverseOrder={false} />
       <AddModal
         isOpen={isAddOpen}

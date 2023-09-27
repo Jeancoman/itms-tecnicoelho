@@ -1,17 +1,25 @@
-import { Categoría } from "../types";
+import { Categoría, Response } from "../types";
 
 export default class CategoryService {
-  static async getAll() {
+  static async getAll(page: number, size: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/categorias/`
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/categorias?page=${page}&size=${size}`
       );
 
       if (response.status > 300) {
         return false;
       }
 
-      return (await response.json()) as Categoría[];
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
     } catch {
       return false;
     }

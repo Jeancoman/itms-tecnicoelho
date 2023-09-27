@@ -1,7 +1,22 @@
+import { useEffect } from "react";
 import UsersDataDisplay from "../components/data-display/users-data-display";
 import NavPanel from "../components/misc/nav-panel";
+import session from "../utils/session";
+import { useNavigate } from "react-router-dom";
 
 export default function UsersPage() {
+
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if(!session.find()){
+      navigate("/entrar")
+    } else {
+      if(session.find()?.usuario.rol !== "ADMINISTRADOR"){
+        navigate("/")
+      } 
+    }  
+  })
 
   return (
     <> 

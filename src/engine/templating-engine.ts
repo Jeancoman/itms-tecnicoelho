@@ -84,6 +84,8 @@ export default class TemplatingEngine {
 
     if (stripped.startsWith("'") && stripped.endsWith("'")) {
       return stripped.slice(1, -1);
+    } else if (stripped.startsWith(`"`) && stripped.endsWith(`"`)) {
+      return stripped.slice(1, -1);
     } else if (!isNaN(Number(stripped))) {
       return Number(stripped);
     }
@@ -193,57 +195,61 @@ export default class TemplatingEngine {
     });
   }
 
-  start(): string {
-    const commandBlock = this.parseTemplate(this.template).map(
-      (commandBlock) => {
-        if (commandBlock.type === "SI" || commandBlock.type === "SINO PERO") {
-          return {
-            ...commandBlock,
-            operations: this.parseCommand(commandBlock.command),
-          };
-        } else return commandBlock;
-      }
-    );
-
-    const DEFAULT = commandBlock.find(
-      (commandBlock) => commandBlock.type === "DEFAULT"
-    );
-
-    if (DEFAULT) return this.processTemplate(DEFAULT.template);
-
-    const SI = commandBlock.find((commandBlock) => commandBlock.type === "SI");
-
-    if (SI) {
-      const results = this.processOperations(SI.operations!);
-      const valid = this.processResults(results);
-      if (valid) return this.processTemplate(SI.template);
-    }
-
-    const SINO_PERO = commandBlock.filter(
-      (commandBlock) => commandBlock.type === "SINO PERO"
-    );
-
-    if (SINO_PERO.length > 0) {
-      let template: string | undefined;
-      for (let commandBlock of SINO_PERO) {
-        const results = this.processOperations(commandBlock.operations!);
-        const valid = this.processResults(results);
-        if (valid) {
-          template = commandBlock.template;
-          break;
+  start() {
+    try {
+      const commandBlock = this.parseTemplate(this.template).map(
+        (commandBlock) => {
+          if (commandBlock.type === "SI" || commandBlock.type === "SINO PERO") {
+            return {
+              ...commandBlock,
+              operations: this.parseCommand(commandBlock.command),
+            };
+          } else return commandBlock;
         }
+      );
+
+      const DEFAULT = commandBlock.find(
+        (commandBlock) => commandBlock.type === "DEFAULT"
+      );
+
+      if (DEFAULT) return this.processTemplate(DEFAULT.template);
+
+      const SI = commandBlock.find(
+        (commandBlock) => commandBlock.type === "SI"
+      );
+
+      if (SI) {
+        const results = this.processOperations(SI.operations!);
+        const valid = this.processResults(results);
+        if (valid) return this.processTemplate(SI.template);
       }
-      if (template) return this.processTemplate(template);
+
+      const SINO_PERO = commandBlock.filter(
+        (commandBlock) => commandBlock.type === "SINO PERO"
+      );
+
+      if (SINO_PERO.length > 0) {
+        let template: string | undefined;
+        for (let commandBlock of SINO_PERO) {
+          const results = this.processOperations(commandBlock.operations!);
+          const valid = this.processResults(results);
+          if (valid) {
+            template = commandBlock.template;
+            break;
+          }
+        }
+        if (template) return this.processTemplate(template);
+      }
+
+      const SINO = commandBlock.find(
+        (commandBlock) => commandBlock.type === "SINO"
+      );
+
+      if (SINO) {
+        return this.processTemplate(SINO.template);
+      }
+    } catch {
+      return false;
     }
-
-    const SINO = commandBlock.find(
-      (commandBlock) => commandBlock.type === "SINO"
-    );
-
-    if (SINO) {
-      return this.processTemplate(SINO.template);
-    }
-
-    return "There seems to be an processing error. This text should not have been returned";
   }
 }

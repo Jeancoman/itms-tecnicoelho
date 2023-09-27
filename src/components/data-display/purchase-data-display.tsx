@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "/public/assets/thinking.svg";
-import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/src/assets/report.svg";
+import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -14,9 +14,9 @@ import {
   EmbeddedDataRowProps,
   EmbeddedTableProps,
   Producto,
-  DetalleVenta,
   Selected,
   Proveedor,
+  DetalleCompra,
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
 import { format } from "date-fns";
@@ -24,11 +24,13 @@ import ProductService from "../../services/producto-service";
 import Provider from "../../services/provider-service";
 import Select from "../misc/select";
 import PurchaseService from "../../services/purchases-service";
+import permissions from "../../utils/permissions";
+import session from "../../utils/session";
 
 function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   const [loading, setLoading] = useState(true);
-  const [providers, setClients] = useState<Proveedor[]>([]);
-  const [selectedClient, setSelectedClient] = useState<Selected>({
+  const [providers, setProviders] = useState<Proveedor[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<Selected>({
     value: -1,
     label: "Seleccionar proveedor",
   });
@@ -37,11 +39,9 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
     subtotal: 0,
     total: 0,
     proveedor_id: -1,
-    estado: "CONFIRMADA",
+    estado: "PENDIENTE",
     detalles: [],
   });
-
-  console.log(formData);
 
   const resetFormData = () => {
     setFormData({
@@ -49,7 +49,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
       subtotal: 0,
       total: 0,
       proveedor_id: -1,
-      estado: "CONFIRMADA",
+      estado: "PENDIENTE",
       detalles: [],
     });
   };
@@ -57,32 +57,16 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   useEffect(() => {
     if (providers.length === 0) {
       setLoading(true);
-      Provider.getAll().then((data) => {
+      Provider.getAll(1, 100).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
-          setClients(data);
+          setProviders(data.rows);
           setLoading(false);
         }
       });
     }
   }, []);
-
-  useEffect(() => {
-    let subtotal = 0;
-
-    if (formData.detalles) {
-      for (let detalle of formData.detalles) {
-        subtotal += detalle.subtotal;
-      }
-    }
-
-    setFormData({
-      ...formData,
-      subtotal: subtotal,
-      total: subtotal * (1 + formData.impuesto / 100),
-    });
-  }, [formData.detalles]);
 
   return (
     <form
@@ -101,13 +85,6 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
             toast.error("Compra no pudo ser registrada.");
           } else {
             toast.success("Compra registrada con exito.");
-            formData.detalles?.forEach(async detalle => {
-              //@ts-ignore
-             await ProductService.update(detalle.producto_id!, {
-              id: detalle.producto_id!,
-              stock: detalle?.producto?.stock! + detalle.cantidad,
-             })
-            })
           }
         });
       }}
@@ -120,7 +97,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
             onChange={(e) => {
               setFormData({
                 ...formData,
-                impuesto: Number(e.target.value),
+                impuesto: parseInt(e.target.value),
               });
             }}
             value={formData.impuesto <= 0 ? "" : formData.impuesto}
@@ -136,17 +113,17 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
                   value: provider.id,
                   label: provider.nombre,
                   onClick: (value, label) => {
-                    setSelectedClient({
+                    setSelectedProvider({
                       value,
                       label,
                     });
                   },
                 }))}
-                selected={selectedClient}
+                selected={selectedProvider}
                 onChange={() => {
                   setFormData({
                     ...formData,
-                    proveedor_id: Number(selectedClient.value),
+                    proveedor_id: Number(selectedProvider.value),
                   });
                 }}
               />
@@ -223,6 +200,17 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
               ...formData,
               detalles: detalles,
             });
+            let subtotal = 0;
+            if (detalles) {
+              for (let detalle of detalles) {
+                subtotal += detalle.subtotal;
+              }
+            }
+            setFormData({
+              ...formData,
+              subtotal: subtotal,
+              total: subtotal * (1 + formData.impuesto / 100),
+            });
           }}
           action={action}
         />
@@ -248,10 +236,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   );
 }
 
-function EditSection({
-  close,
-  setOperationAsCompleted,
-}: SectionProps) {
+function EditSection({ close, setOperationAsCompleted }: SectionProps) {
   const [formData, setFormData] = useState({});
 
   return (
@@ -261,17 +246,16 @@ function EditSection({
       onSubmit={(e) => {
         e.preventDefault();
         close();
-        setOperationAsCompleted()
-        console.log(formData)
-      }
-    }
+        setOperationAsCompleted();
+        console.log(formData);
+      }}
     >
       <div className="h-full"></div>
       <div className="flex flex-col gap-4">
         <EmbeddedTable
           onChange={function (detalles): void {
             console.log(detalles);
-            setFormData({})
+            setFormData({});
           }}
         />
         <div className="flex h-full items-end">
@@ -406,7 +390,7 @@ function DataRow({
       <td className="px-6 py-4 border border-slate-300">{compra?.impuesto}</td>
       <td className="px-6 py-2 border border-slate-300">{compra?.subtotal}</td>
       <td className="px-6 py-2 border border-slate-300">{compra?.total}</td>
-      <td className="px-6 py-4 border border-slate-300 w-[210px]">
+      <td className="px-6 py-2 border border-slate-300 w-[210px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -416,7 +400,7 @@ function DataRow({
           <>
             <button
               onClick={onClick}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Editar compra
             </button>
@@ -428,7 +412,7 @@ function DataRow({
               onClick={() => {
                 setIsDeleteOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Eliminar compra
             </button>
@@ -449,7 +433,7 @@ function EmbeddedDataRow({ producto, action, onChange }: EmbeddedDataRowProps) {
   const precio = producto?.precio!;
   const subtotal = 0;
   const [cantidad, setCantidad] = useState(0);
-  const [detalle, setDetalle] = useState<DetalleVenta>({
+  const [detalle, setDetalle] = useState<DetalleCompra>({
     cantidad: cantidad,
     subtotal: subtotal,
     precioUnitario: precio,
@@ -479,15 +463,13 @@ function EmbeddedDataRow({ producto, action, onChange }: EmbeddedDataRowProps) {
         {producto?.nombre}
       </td>
       <td className="px-6 py-2 border border-slate-300">{producto?.precio}</td>
-      <td className="px-6 py-2 border border-slate-300">
-        {cantidad}
-      </td>
+      <td className="px-6 py-2 border border-slate-300">{cantidad}</td>
       <td className="px-6 py-4 border border-slate-300 w-[100px]">
         {action === "ADD" ? (
           <button
             type="button"
             onClick={() => {
-                setCantidad(cantidad + 1);
+              setCantidad(cantidad + 1);
             }}
             className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
           >
@@ -515,16 +497,16 @@ function EmbeddedTable({ onChange, action }: EmbeddedTableProps) {
   const [products, setProducts] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [detalles, setDetalles] = useState<DetalleVenta[]>([]);
+  const [detalles, setDetalles] = useState<DetalleCompra[]>([]);
 
   useEffect(() => {
     if (products.length === 0) {
-      ProductService.getAll().then((data) => {
+      ProductService.getAll(1, 100).then((data) => {
         if (data === false) {
           setNotFound(true);
           setLoading(false);
         } else {
-          setProducts(data);
+          setProducts(data.rows);
           setLoading(false);
           setNotFound(false);
         }
@@ -534,7 +516,7 @@ function EmbeddedTable({ onChange, action }: EmbeddedTableProps) {
     onChange(detalles);
   }, [detalles]);
 
-  const secondOnChange = (detalle: DetalleVenta) => {
+  const secondOnChange = (detalle: DetalleCompra) => {
     setDetalles((prevDetalles) => {
       // Check if the object is already in the array
       const existingObjectIndex = prevDetalles.findIndex(
@@ -756,13 +738,15 @@ function Dropup({
           border
         "
     >
-      <li>
-        <div
-          onClick={() => {
-            selectAction("EDIT");
-            close();
-          }}
-          className="
+       {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.compra && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("EDIT");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -775,17 +759,20 @@ function Dropup({
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Editar compra
-        </div>
-      </li>
-      <li>
-        <div
-          onClick={() => {
-            selectAction("DELETE");
-            close();
-          }}
-          className="
+            >
+              Editar compra
+            </div>
+          </li>
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        (permissions.find()?.eliminar.compra && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("DELETE");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -798,18 +785,25 @@ function Dropup({
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Eliminar compra
-        </div>
-      </li>
-      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      <li>
-        <div
-          onClick={() => {
-            openAddModal();
-            close();
-          }}
-          className="
+            >
+              Eliminar compra
+            </div>
+          </li>
+        ))}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.compra &&
+        permissions.find()?.eliminar.compra && (
+          <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.crear.compra && (
+          <li>
+            <div
+              onClick={() => {
+                openAddModal();
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -822,10 +816,11 @@ function Dropup({
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Registrar compra
-        </div>
-      </li>
+            >
+              Registrar compra
+            </div>
+          </li>
+        )}
       <li>
         <div
           onClick={() => {
@@ -861,10 +856,12 @@ export default function PurchaseDataDisplay() {
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
   const [secondAction, setSecondAction] = useState<`${Action}`>("ADD");
-  //@ts-ignore
-  const [sale, setSale] = useState<Compra>({});
+  const [purchase, setPurchase] = useState<Compra>();
   const [toEdit, setToEdit] = useState(false);
   const [toAdd, setToAdd] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(0);
+  const [current, setCurrent] = useState(0);
 
   const openAddModal = () => {
     setToAdd(true);
@@ -897,23 +894,25 @@ export default function PurchaseDataDisplay() {
       setNotFound(false);
     }
 
-    PurchaseService.getAll().then((data) => {
+    PurchaseService.getAll(page, 8).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
-        setPurchases([])
+        setPurchases([]);
       } else {
-        setPurchases(data);
+        setPurchases(data.rows);
+        setPages(data.pages);
+        setCurrent(data.current);
         setLoading(false);
         setNotFound(false);
       }
       setIsOperationCompleted(false);
     });
-  }, [isOperationCompleted, toEdit, toAdd]);
+  }, [isOperationCompleted, toEdit, toAdd, pages]);
 
   return (
     <>
-      <div className="absolute w-full h-full px-8 py-6">
+      <div className="absolute w-full h-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
@@ -954,7 +953,7 @@ export default function PurchaseDataDisplay() {
             </button>
           </div>
         </nav>
-        <hr className="border-1 border-slate-200 my-5" />
+        <hr className="border-1 border-slate-300 my-5" />
         {toAdd ? (
           <AddSection
             isOpen={toAdd}
@@ -969,11 +968,10 @@ export default function PurchaseDataDisplay() {
             isOpen={toEdit}
             close={() => {
               setToEdit(false);
-              //@ts-ignore
-              setPublication({});
+              setPurchase(undefined);
             }}
             setOperationAsCompleted={setAsCompleted}
-            compra={sale}
+            compra={purchase}
           />
         ) : (
           <>
@@ -1035,7 +1033,7 @@ export default function PurchaseDataDisplay() {
                           setOperationAsCompleted={setAsCompleted}
                           key={purchase.id}
                           onClick={() => {
-                            setToEdit(true), setSale(purchase);
+                            setToEdit(true), setPurchase(purchase);
                           }}
                         />
                       );
@@ -1064,7 +1062,7 @@ export default function PurchaseDataDisplay() {
                   <div role="status">
                     <svg
                       aria-hidden="true"
-                      className="inline w-14 h-14 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
+                      className="inline w-14 h-14 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
                       viewBox="0 0 100 101"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
@@ -1087,7 +1085,20 @@ export default function PurchaseDataDisplay() {
         )}
       </div>
       {purchases.length > 0 && loading == false && !toAdd && !toEdit && (
-        <Pagination />
+        <Pagination
+          pages={pages}
+          current={current}
+          next={() => {
+            if (current < pages && current !== pages) {
+              setPage(page + 1);
+            }
+          }}
+          prev={() => {
+            if (current > 1) {
+              setPage(page - 1);
+            }
+          }}
+        />
       )}
       <Toaster position="bottom-right" reverseOrder={false} />
     </>

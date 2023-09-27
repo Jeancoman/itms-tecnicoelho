@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "/public/assets/thinking.svg";
-import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/src/assets/report.svg";
+import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -10,17 +10,25 @@ import {
   DropupProps,
   Action,
   Cliente,
+  Selected,
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
 import ClientService from "../../services/client-service";
 import { useNavigate } from "react-router-dom";
+import Select from "../misc/select";
+import session from "../../utils/session";
+import permissions from "../../utils/permissions";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [documentType, setDocumentType] = useState<Selected>({
+    value: "V",
+    label: "V",
+  });
   const [formData, setFormData] = useState<Cliente>({
     nombre: "",
     apellido: "",
-    cédula: "",
+    documento: "",
     email: "",
     telefono: "",
     dirección: "",
@@ -32,7 +40,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     setFormData({
       nombre: "",
       apellido: "",
-      cédula: "",
+      documento: "",
       email: "",
       telefono: "",
       dirección: "",
@@ -84,8 +92,13 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
+          let updatedFormData = { ...formData };
+          updatedFormData.documento =
+            documentType.value === "V"
+              ? "V-" + formData.documento
+              : formData.documento;
           const loadingToast = toast.loading("Añadiendo cliente...");
-          ClientService.create(formData).then((data) => {
+          ClientService.create(updatedFormData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
@@ -125,19 +138,49 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           />
         </div>
         <div className="flex gap-4">
-          <input
-            type="text"
-            placeholder="Cédula*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                cédula: e.target.value,
-              });
-            }}
-            value={formData.cédula}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            required
-          />
+          <div className="flex w-2/4 gap-1">
+            <div className="relative w-[28%]">
+              <Select
+                options={[
+                  {
+                    value: "V",
+                    label: "V",
+                    onClick: (value, label) => {
+                      setDocumentType({
+                        value,
+                        label,
+                      });
+                    },
+                  },
+                  {
+                    value: "RIF",
+                    label: "RIF",
+                    onClick: (value, label) => {
+                      setDocumentType({
+                        value,
+                        label,
+                      });
+                    },
+                  },
+                ]}
+                selected={documentType}
+                small={true}
+              />
+            </div>
+            <input
+              type="text"
+              placeholder="Documento*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  documento: e.target.value,
+                });
+              }}
+              value={formData.documento}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-[72%]"
+              required
+            />
+          </div>
           <input
             type="tel"
             placeholder="Telefono"
@@ -236,9 +279,16 @@ function EditModal({
   cliente,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [documentType, setDocumentType] = useState<Selected>({
+    value: cliente?.documento?.startsWith("V") ? "V" : "RIF",
+    label: cliente?.documento?.startsWith("V") ? "V" : "RIF",
+  });
   const [formData, setFormData] = useState<Cliente>({
     ...cliente!,
     contraseña: "",
+    documento: cliente?.documento?.startsWith("V")
+      ? cliente?.documento?.slice(2)
+      : cliente?.documento,
   });
 
   useEffect(() => {
@@ -283,13 +333,12 @@ function EditModal({
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Editando cliente...");
-          const cleanedFormData = { ...formData };
-
-          if (formData.contraseña === "") {
-            delete cleanedFormData.contraseña;
-          }
-
-          ClientService.update(cliente?.id!, cleanedFormData).then((data) => {
+          let updatedFormData = { ...formData };
+          updatedFormData.documento =
+            documentType.value === "V"
+              ? "V-" + formData.documento
+              : formData.documento;
+          ClientService.update(cliente?.id!, updatedFormData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data) {
@@ -330,19 +379,49 @@ function EditModal({
           />
         </div>
         <div className="flex gap-4">
-          <input
-            type="text"
-            placeholder="Cédula"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                cédula: e.target.value,
-              });
-            }}
-            value={formData.cédula}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            required
-          />
+          <div className="flex w-2/4 gap-1">
+            <div className="relative w-[28%]">
+              <Select
+                options={[
+                  {
+                    value: "V",
+                    label: "V",
+                    onClick: (value, label) => {
+                      setDocumentType({
+                        value,
+                        label,
+                      });
+                    },
+                  },
+                  {
+                    value: "RIF",
+                    label: "RIF",
+                    onClick: (value, label) => {
+                      setDocumentType({
+                        value,
+                        label,
+                      });
+                    },
+                  },
+                ]}
+                selected={documentType}
+                small={true}
+              />
+            </div>
+            <input
+              type="text"
+              placeholder="Documento*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  documento: e.target.value,
+                });
+              }}
+              value={formData.documento}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-[72%]"
+              required
+            />
+          </div>
           <input
             type="tel"
             placeholder="Telefono"
@@ -417,7 +496,7 @@ function EditModal({
             </label>
           </div>
           <div className="flex gap-2">
-          <button
+            <button
               type="button"
               onClick={closeModal}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
@@ -541,7 +620,9 @@ function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
       </th>
       <td className="px-6 py-4 border border-slate-300">{cliente?.nombre}</td>
       <td className="px-6 py-4 border border-slate-300">{cliente?.apellido}</td>
-      <td className="px-6 py-4 border border-slate-300">{cliente?.cédula}</td>
+      <td className="px-6 py-4 border border-slate-300">
+        {cliente?.documento}
+      </td>
       <td className="px-6 py-4 border border-slate-300 max-w-[200px]">
         {cliente?.email}
       </td>
@@ -561,7 +642,7 @@ function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
               onClick={() => {
                 setIsEditOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Editar cliente
             </button>
@@ -579,7 +660,7 @@ function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
               onClick={() => {
                 setIsDeleteOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Eliminar cliente
             </button>
@@ -597,7 +678,7 @@ function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
               onClick={() => {
                 navigate(`/clientes/${cliente?.id}/elementos`);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Mostrar elementos
             </button>
@@ -649,13 +730,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           border
         "
     >
-      <li>
-        <div
-          onClick={() => {
-            selectAction("EDIT");
-            close();
-          }}
-          className="
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.cliente && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("EDIT");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -668,17 +751,20 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Editar cliente
-        </div>
-      </li>
-      <li>
-        <div
-          onClick={() => {
-            selectAction("DELETE");
-            close();
-          }}
-          className="
+            >
+              Editar cliente
+            </div>
+          </li>
+        )}
+      {session.find()?.usuario.rol == "ADMINISTRADOR" ||
+        permissions.find()?.eliminar.cliente && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("DELETE");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -691,11 +777,16 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Eliminar cliente
-        </div>
-      </li>
-      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+            >
+              Eliminar cliente
+            </div>
+          </li>
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.cliente &&
+        permissions.find()?.eliminar.cliente && (
+          <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+        )}
       <li>
         <div
           onClick={() => {
@@ -720,13 +811,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
         </div>
       </li>
       <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      <li>
-        <div
-          onClick={() => {
-            openAddModal();
-            close();
-          }}
-          className="
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.crear.cliente && (
+          <li>
+            <div
+              onClick={() => {
+                openAddModal();
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -739,10 +832,11 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Añadir cliente
-        </div>
-      </li>
+            >
+              Añadir cliente
+            </div>
+          </li>
+        )}
       <li>
         <div
           onClick={() => {
@@ -778,6 +872,9 @@ export default function ClientsDataDisplay() {
   const [isDropup, setIsDropup] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(0);
+  const [current, setCurrent] = useState(0);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -800,25 +897,28 @@ export default function ClientsDataDisplay() {
   };
 
   useEffect(() => {
-    ClientService.getAll().then((data) => {
+    ClientService.getAll(page, 8).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
       } else {
-        setClientes(data);
+        setClientes(data.rows);
+        setPages(data.pages);
+        setCurrent(data.current);
         setLoading(false);
-        setNotFound(false)
+        setNotFound(false);
       }
       setIsOperationCompleted(false);
     });
-  }, [isOperationCompleted]);
+  }, [isOperationCompleted, page]);
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-6">
+      <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Clientes
+            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span className="text-[#2096ed]">Clientes</span>
           </div>
           <div>
             {isDropup && (
@@ -840,7 +940,7 @@ export default function ClientsDataDisplay() {
             </button>
           </div>
         </nav>
-        <hr className="border-1 border-slate-200 my-5" />
+        <hr className="border-1 border-slate-300 my-5" />
         {clientes.length > 0 && loading == false && (
           <div className="relative overflow-x-auto">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
@@ -856,7 +956,7 @@ export default function ClientsDataDisplay() {
                     Apellido
                   </th>
                   <th scope="col" className="px-6 py-3 border-slate-300">
-                    Cédula
+                    Documento
                   </th>
                   <th scope="col" className="px-6 py-3 border-slate-300">
                     Email
@@ -867,7 +967,7 @@ export default function ClientsDataDisplay() {
                   <th scope="col" className="px-6 py-3 border-slate-300">
                     Dirección
                   </th>
-                  <th scope="col" className="px-8 py-3 border-slate-300">
+                  <th scope="col" className="px-6 py-3 border-slate-300">
                     Acción
                   </th>
                 </tr>
@@ -907,7 +1007,7 @@ export default function ClientsDataDisplay() {
               <div role="status">
                 <svg
                   aria-hidden="true"
-                  className="inline w-14 h-14 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
+                  className="inline w-14 h-14 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
                   viewBox="0 0 100 101"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -927,7 +1027,22 @@ export default function ClientsDataDisplay() {
           </div>
         )}
       </div>
-      {clientes.length > 0 && loading == false && <Pagination />}
+      {clientes.length > 0 && loading == false && (
+        <Pagination
+          pages={pages}
+          current={current}
+          next={() => {
+            if (current < pages && current !== pages) {
+              setPage(page + 1);
+            }
+          }}
+          prev={() => {
+            if (current > 1) {
+              setPage(page - 1);
+            }
+          }}
+        />
+      )}
       <Toaster position="bottom-right" reverseOrder={false} />
       <AddModal
         isOpen={isAddOpen}

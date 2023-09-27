@@ -2,8 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 @layer base {
-    html {
-      @apply overflow-hidden;
-    }
-    /* ... */
+  html {
+    @apply overflow-hidden;
   }
+  /* ... */
+}
+
+.hljs-keyword {
+  @apply text-[#2096ed];
+}
+.hljs-string {
+  @apply text-green-500;
+}
+.hljs-punctuation {
+  @apply text-purple-500;
+}
+.hljs-operator {
+  @apply text-[#2096ed];
+}
+.hljs-variable {
+  @apply text-purple-600;
+}

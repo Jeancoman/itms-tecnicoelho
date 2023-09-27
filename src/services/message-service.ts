@@ -1,17 +1,25 @@
-import { Mensaje } from "../types";
+import { Mensaje, Response } from "../types";
 
 export default class MessageService {
-  static async getAll(ticket_id: number) {
+  static async getAll(ticket_id: number, page: number, size: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/mensajes`
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/mensajes?page=${page}&size=${size}`
       );
 
       if (response.status > 300) {
         return false;
       }
 
-      return (await response.json()) as Mensaje[];
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
     } catch {
       return false;
     }
@@ -20,7 +28,9 @@ export default class MessageService {
   static async getById(ticket_id: number, id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/mensajes/${id}`
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/mensajes/${id}`
       );
 
       if (response.status > 300) {
@@ -60,7 +70,9 @@ export default class MessageService {
   static async update(ticket_id: number, id: number, message: Mensaje) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/mensajes/${id}`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/mensajes/${id}`,
         {
           method: "PATCH",
           headers: {
@@ -84,7 +96,9 @@ export default class MessageService {
   static async delete(ticket_id: number, id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket_id}/mensajes/${id}`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/mensajes/${id}`,
         {
           method: "DELETE",
           headers: {

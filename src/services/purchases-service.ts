@@ -1,17 +1,25 @@
-import { DetalleCompra, Compra } from "../types";
+import { DetalleCompra, Compra, Response } from "../types";
 
 export default class PurchaseService {
-  static async getAll() {
+  static async getAll(page: number, size: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/compras/`
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/compras?page=${page}&size=${size}`
       );
 
       if (response.status > 300) {
         return false;
       }
 
-      return (await response.json()) as Compra[];
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
     } catch {
       return false;
     }
@@ -104,7 +112,7 @@ export default class PurchaseService {
     }
   }
 
-   static async createDetails(id: number, details: DetalleCompra[]) {
+  static async createDetails(id: number, details: DetalleCompra[]) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/compras/${id}/detalles`,

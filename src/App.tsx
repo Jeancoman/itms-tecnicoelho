@@ -14,6 +14,8 @@ import UsersPage from "./pages/users-page";
 import ProductsPage from "./pages/products-page";
 import MessagesPage from "./pages/messages-page";
 import OperationsPage from "./pages/operations-page";
+import LoginPage from "./pages/login-page";
+import MessagingPage from "./pages/messaging-page";
 
 export default function App() {
   return (
@@ -34,8 +36,8 @@ export default function App() {
         <Route path="/proveedores" element={<ProvidersPage />} />
         <Route path="/publicaciones" element={<PublicationsPage />} />
         <Route path="/categorias" element={<CategoriesPage />} />
-        <Route path="/mensajeria" />
-        <Route path="/login" />
+        <Route path="/mensajeria" element={<MessagingPage />} />
+        <Route path="/entrar" element={<LoginPage />} />
       </Routes>
     </BrowserRouter>
   );

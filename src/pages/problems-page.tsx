@@ -1,7 +1,26 @@
+import { useNavigate } from "react-router-dom";
 import ProblemsDataDisplay from "../components/data-display/problems-data-display";
 import NavPanel from "../components/misc/nav-panel";
+import { useEffect } from "react";
+import session from "../utils/session";
+import permissions from "../utils/permissions";
 
 export default function ProblemsPage() {
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!session.find()) {
+      navigate("/entrar");
+    } else {
+      if (
+        session.find()?.usuario.rol !== "ADMINISTRADOR" &&
+        !permissions.find()?.ver.ticket
+      ) {
+        navigate("/");
+      }
+    }
+  });
 
   return (
     <> 

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "/public/assets/thinking.svg";
-import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/src/assets/report.svg";
+import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -14,6 +14,7 @@ import {
   Elemento,
   Selected,
   TicketTipo,
+  Mensaje,
 } from "../../types";
 import ClientService from "../../services/client-service";
 import toast, { Toaster } from "react-hot-toast";
@@ -22,6 +23,11 @@ import TicketService from "../../services/ticket-service";
 import { useNavigate } from "react-router-dom";
 import Select from "../misc/select";
 import { format } from "date-fns";
+import TemplateService from "../../services/template-service";
+import TemplatingEngine from "../../engine/templating-engine";
+import MessageService from "../../services/message-service";
+import session from "../../utils/session";
+import permissions from "../../utils/permissions";
 
 function EditModal({
   isOpen,
@@ -31,17 +37,14 @@ function EditModal({
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [formData, setFormData] = useState<Ticket>(ticket!);
-  const [loading, setLoading] = useState(true);
-  const [clients, setClients] = useState<Cliente[]>([]);
-  const [elements, setElements] = useState<Elemento[]>([]);
-  const [selectedClient, setSelectedClient] = useState<Selected>({
+  const [selectedClient, _setSelectedClient] = useState<Selected>({
     value: ticket?.elemento?.cliente_id,
     label:
       ticket?.elemento?.cliente?.nombre +
       " " +
       ticket?.elemento?.cliente?.apellido,
   });
-  const [selectedElement, setSelectedElement] = useState<Selected>({
+  const [selectedElement, _setSelectedElement] = useState<Selected>({
     value: ticket?.elemento_id,
     label: ticket?.elemento?.nombre,
   });
@@ -69,30 +72,6 @@ function EditModal({
       ref.current?.close();
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    if (clients.length === 0) {
-      setLoading(true);
-      ClientService.getAll().then((data) => {
-        if (data === false) {
-          setLoading(false);
-        } else {
-          setClients(data);
-          setLoading(false);
-        }
-      });
-    } else {
-      setLoading(true);
-      ElementService.getAll(selectedClient.value! as number).then((data) => {
-        if (data === false) {
-          setLoading(false);
-        } else {
-          setElements(data);
-          setLoading(false);
-        }
-      });
-    }
-  }, [selectedClient]);
 
   return (
     <dialog
@@ -176,130 +155,26 @@ function EditModal({
           />
         </div>
         <div className="relative">
-          {clients.length > 0 && (
-            <Select
-              options={clients.map((client) => ({
-                value: client.id,
-                label: client.nombre + " " + client.apellido,
-                onClick: (value, label) => {
-                  setSelectedClient({
-                    value,
-                    label,
-                  });
-                },
-              }))}
-              selected={selectedClient}
-            />
-          )}
-          {clients.length === 0 && loading === false && (
-            <>
-              <select
-                className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-                value={0}
-                disabled={true}
-              >
-                <option value={0}>Seleccionar cliente</option>
-              </select>
-              <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-            </>
-          )}
-          {clients.length === 0 && loading === true && (
-            <>
-              <select
-                className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
-                value={0}
-                disabled={true}
-              >
-                <option value={0}>Buscando clientes...</option>
-              </select>
-              <svg
-                aria-hidden="true"
-                className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
-                viewBox="0 0 100 101"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                  fill="currentFill"
-                />
-              </svg>
-              <span className="sr-only">Cargando...</span>
-            </>
-          )}
+          <select
+            className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+            value={selectedClient.value}
+            disabled={true}
+          >
+            <option value={selectedClient.value}>{selectedClient.label}</option>
+          </select>
+          <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
         </div>
         <div className="relative">
-          {clients.length > 0 && elements.length > 0 && (
-            <Select
-              onChange={() => {
-                setFormData({
-                  ...formData,
-                  elemento_id: selectedElement.value! as number,
-                });
-              }}
-              options={elements.map((element) => ({
-                value: element.id,
-                label: element.nombre,
-                onClick: (value, label) => {
-                  setSelectedElement({
-                    value,
-                    label,
-                  });
-                },
-              }))}
-              selected={selectedElement}
-            />
-          )}
-          {loading === false &&
-          clients.length > 0 &&
-          elements.length === 0 &&
-          (selectedClient.value! as number) > 0 ? (
-            <>
-              <select
-                className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-                value={0}
-                disabled={true}
-              >
-                <option value={0}>Seleccionar elemento</option>
-              </select>
-              <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-            </>
-          ) : null}
-          {loading === true &&
-          clients.length > 0 &&
-          elements.length === 0 &&
-          (selectedClient.value! as number) > 0 ? (
-            <>
-              <select
-                className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
-                value={0}
-                disabled={true}
-              >
-                <option value={0}>Buscando elementos...</option>
-              </select>
-              <svg
-                aria-hidden="true"
-                className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
-                viewBox="0 0 100 101"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                  fill="currentFill"
-                />
-              </svg>
-              <span className="sr-only">Cargando...</span>
-            </>
-          ) : null}
+          <select
+            className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+            value={selectedElement.value}
+            disabled={true}
+          >
+            <option value={selectedElement.value}>
+              {selectedElement.label}
+            </option>
+          </select>
+          <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
         </div>
         <div className="flex gap-2 justify-end">
           <button
@@ -378,26 +253,53 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   useEffect(() => {
     if (clients.length === 0) {
       setLoading(true);
-      ClientService.getAll().then((data) => {
+      ClientService.getAll(1, 100).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
-          setClients(data);
+          setClients(data.rows);
           setLoading(false);
         }
       });
     } else {
       setLoading(true);
-      ElementService.getAll(selectedClient.value! as number).then((data) => {
-        if (data === false) {
-          setLoading(false);
-        } else {
-          setElements(data);
-          setLoading(false);
+      ElementService.getAll(selectedClient.value! as number, 1, 100).then(
+        (data) => {
+          if (data === false) {
+            setLoading(false);
+          } else {
+            setElements(data.rows);
+            setLoading(false);
+          }
         }
-      });
+      );
     }
   }, [selectedClient]);
+
+  const renderTemplate = async (ticket_id: number) => {
+    const template = await TemplateService.getById(1);
+
+    if (template === false) {
+      return false;
+    } else if (!template.estaActiva) {
+      return;
+    }
+    const ticket = await TicketService.getById(ticket_id);
+
+    if (ticket === false) {
+      return false;
+    }
+
+    console.log(ticket);
+
+    const engine = new TemplatingEngine(template.contenido, {
+      cliente: ticket.elemento?.cliente,
+      ticket: ticket,
+      elemento: ticket.elemento,
+    });
+
+    return engine.start();
+  };
 
   return (
     <dialog
@@ -433,6 +335,25 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               toast.error("Ticket no pudo ser creado.");
             } else {
               toast.success("Ticket creado con exito.");
+              const messageToast = toast.loading("Creando mensaje...");
+              renderTemplate(data.id!).then((rendered) => {
+                if (rendered) {
+                  const message: Mensaje = {
+                    contenido: rendered,
+                    ticket_id: data.id!,
+                    estado: "NO_ENVIADO",
+                  };
+                  MessageService.create(data.id!, message).then((data) => {
+                    if (data) {
+                      toast.dismiss(messageToast);
+                      toast.success("Mensaje creado exitosamente.");
+                    }
+                  });
+                } else {
+                  toast.dismiss(messageToast);
+                  toast.error("Mensaje no pudo ser creado.");
+                }
+              });
             }
           });
         }}
@@ -761,7 +682,7 @@ function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
               onClick={() => {
                 setIsEditOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Editar ticket
             </button>
@@ -779,7 +700,7 @@ function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
               onClick={() => {
                 setIsDeleteOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Eliminar ticket
             </button>
@@ -796,7 +717,7 @@ function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
             onClick={() => {
               navigate(`/tickets/${ticket?.id}/servicios`);
             }}
-            className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline py-1 px-2"
+            className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
           >
             Mostrar servicios
           </button>
@@ -806,7 +727,7 @@ function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
             onClick={() => {
               navigate(`/tickets/${ticket?.id}/problemas`);
             }}
-            className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline py-1 px-2"
+            className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
           >
             Mostrar problemas
           </button>
@@ -814,9 +735,9 @@ function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
         {action === "VIEW_MESSAGES" && (
           <button
             onClick={() => {
-              navigate(`/ticket/${ticket?.id}/mensajes`);
+              navigate(`/tickets/${ticket?.id}/mensajes`);
             }}
-            className="font-medium text-[#2096ed] dark:text-blue-500 hover:underline"
+            className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
           >
             Mostrar mensajes
           </button>
@@ -867,13 +788,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           border
         "
     >
-      <li>
-        <div
-          onClick={() => {
-            selectAction("EDIT");
-            close();
-          }}
-          className="
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.ticket && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("EDIT");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -886,17 +809,20 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Editar ticket
-        </div>
-      </li>
-      <li>
-        <div
-          onClick={() => {
-            selectAction("DELETE");
-            close();
-          }}
-          className="
+            >
+              Editar ticket
+            </div>
+          </li>
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.eliminar.ticket && (
+          <li>
+            <div
+              onClick={() => {
+                selectAction("DELETE");
+                close();
+              }}
+              className="
               text-sm
               py-2
               px-4
@@ -909,34 +835,16 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Eliminar ticket
-        </div>
-      </li>
-      <li>
-        <div
-          onClick={() => {
-            selectAction("EDIT");
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Cerrar ticket
-        </div>
-      </li>
-      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+            >
+              Eliminar ticket
+            </div>
+          </li>
+        )}
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.ticket &&
+        permissions.find()?.eliminar.ticket && (
+          <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+        )}
       <li>
         <div
           onClick={() => {
@@ -983,11 +891,10 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           Mostrar problemas
         </div>
       </li>
-      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       <li>
         <div
           onClick={() => {
-            openAddModal();
+            selectAction("VIEW_MESSAGES");
             close();
           }}
           className="
@@ -1004,9 +911,36 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Crear ticket
+          Mostrar mensajes
         </div>
       </li>
+      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.crear.ticket && (
+          <li>
+            <div
+              onClick={() => {
+                openAddModal();
+                close();
+              }}
+              className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+            >
+              Crear ticket
+            </div>
+          </li>
+        )}
       <li>
         <div
           onClick={() => {
@@ -1042,6 +976,9 @@ export default function TicketDataDisplay() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(0);
+  const [current, setCurrent] = useState(0);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -1068,25 +1005,29 @@ export default function TicketDataDisplay() {
       setNotFound(false);
       setLoading(true);
     }
-    TicketService.getAll().then((data) => {
+    TicketService.getAll(page, 8).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
+        setTickets([]);
       } else {
-        setTickets(data);
+        setTickets(data.rows);
+        setPages(data.pages);
+        setCurrent(data.current);
         setLoading(false);
         setNotFound(false);
       }
       setIsOperationCompleted(false);
     });
-  }, [isOperationCompleted]);
+  }, [isOperationCompleted, page]);
 
   return (
     <>
-      <div className="absolute w-full h-full px-8 py-6">
+      <div className="absolute w-full h-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Tickets
+            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span className=" text-[#2096ed]">Tickets</span>
           </div>
           <div>
             {isDropup && (
@@ -1154,7 +1095,7 @@ export default function TicketDataDisplay() {
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">
-                Tickets no encontrados
+                Ningún ticket encontrado
               </p>
               <p className="font-medium text text-center mt-1">
                 Esto puede deberse a un error del servidor, o a que simplemente
@@ -1169,7 +1110,7 @@ export default function TicketDataDisplay() {
               <div role="status">
                 <svg
                   aria-hidden="true"
-                  className="inline w-14 h-14 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
+                  className="inline w-14 h-14 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
                   viewBox="0 0 100 101"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -1189,7 +1130,22 @@ export default function TicketDataDisplay() {
           </div>
         )}
       </div>
-      {tickets.length > 0 && loading == false && <Pagination />}
+      {tickets.length > 0 && loading == false && (
+        <Pagination
+          pages={pages}
+          current={current}
+          next={() => {
+            if (current < pages && current !== pages) {
+              setPage(page + 1);
+            }
+          }}
+          prev={() => {
+            if (current > 1) {
+              setPage(page - 1);
+            }
+          }}
+        />
+      )}
       <Toaster position="bottom-right" reverseOrder={false} />
       <AddModal
         isOpen={isAddOpen}

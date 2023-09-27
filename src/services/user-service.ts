@@ -1,17 +1,25 @@
-import { Permiso, Usuario } from "../types";
+import { Permisos, Usuario, Response } from "../types";
 
 export default class UserService {
-  static async getAll() {
+  static async getAll(page: number, size: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/`
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/usuarios?page=${page}&size=${size}`
       );
 
       if (response.status === 404) {
         return false;
       }
 
-      return (await response.json()) as Usuario[];
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
     } catch {
       return false;
     }
@@ -43,7 +51,55 @@ export default class UserService {
         return false;
       }
 
-      return (await response.json()) as Permiso[];
+      return (await response.json()) as Permisos;
+    } catch {
+      return false;
+    }
+  }
+
+  static async patchPermissionsById(id: number, permissions: Permisos) {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}/permisos`,
+        {
+          method: "PATCH",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(permissions),
+        }
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      return (await response.json()) as Permisos;
+    } catch {
+      return false;
+    }
+  }
+
+  static async postPermissionsById(id: number, permissions: Permisos) {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}/permisos`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(permissions),
+        }
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      return (await response.json()) as Permisos;
     } catch {
       return false;
     }
@@ -118,5 +174,31 @@ export default class UserService {
     } catch {
       return false;
     }
+  }
+
+  static async signIn(nombre_usuario: string, contraseña: string) {
+    try {
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nombre_usuario: nombre_usuario,
+          contraseña: contraseña,
+        }),
+      }
+    );
+
+    if (response.status > 300) {
+      return false;
+    }
+
+    return (await response.json()).token as string;
+  } catch {
+    return false
+  }
   }
 }

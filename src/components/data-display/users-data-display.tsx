@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ReactComponent as Right } from "/public/assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "/public/assets/chevron-down-solid.svg";
-import { ReactComponent as Face } from "/public/assets/thinking.svg";
-import { ReactComponent as Warning } from "/public/assets/circle-exclamation-solid.svg";
+import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
+import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
+import { ReactComponent as Face } from "/src/assets/report.svg";
+import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -12,6 +12,7 @@ import {
   Usuario,
   Selected,
   UsuarioRol,
+  Permisos,
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
 import UserService from "../../services/user-service";
@@ -19,6 +20,7 @@ import { format } from "date-fns";
 import Select from "../misc/select";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
+  const [last, setLast] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
   const [selectedRole, setSelectedRole] = useState<Selected>({
     value: "",
@@ -31,6 +33,99 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     rol: "EMPLEADO",
     contraseña: "",
   });
+  const [permisos, setPermisos] = useState<Permisos>();
+  let iniciales: Permisos = {
+    ver: {
+      cliente: false,
+      ticket: false,
+      elemento: false,
+      problema: false,
+      mensaje: false,
+      servicio: false,
+      operación: false,
+      categoría: false,
+      imagen: false,
+      venta: false,
+      compra: false,
+      publicación: false,
+      proveedor: false,
+      reporte: false,
+      mensajería: false,
+      producto: false,
+    },
+    crear: {
+      cliente: false,
+      ticket: false,
+      elemento: false,
+      problema: false,
+      mensaje: false,
+      servicio: false,
+      operación: false,
+      categoría: false,
+      imagen: false,
+      venta: false,
+      compra: false,
+      publicación: false,
+      proveedor: false,
+      reporte: false,
+      mensajería: false,
+      producto: false,
+    },
+    editar: {
+      cliente: false,
+      ticket: false,
+      elemento: false,
+      problema: false,
+      mensaje: false,
+      servicio: false,
+      operación: false,
+      categoría: false,
+      imagen: false,
+      venta: false,
+      compra: false,
+      publicación: false,
+      proveedor: false,
+      reporte: false,
+      mensajería: false,
+      producto: false,
+    },
+    eliminar: {
+      cliente: false,
+      ticket: false,
+      elemento: false,
+      problema: false,
+      mensaje: false,
+      servicio: false,
+      operación: false,
+      categoría: false,
+      imagen: false,
+      venta: false,
+      compra: false,
+      publicación: false,
+      proveedor: false,
+      reporte: false,
+      mensajería: false,
+      producto: false,
+    },
+    reporte: {
+      cliente: false,
+      ticket: false,
+      elemento: false,
+      problema: false,
+      mensaje: false,
+      servicio: false,
+      operación: false,
+      categoría: false,
+      imagen: false,
+      venta: false,
+      compra: false,
+      publicación: false,
+      proveedor: false,
+      reporte: false,
+      mensajería: false,
+      producto: false,
+    },
+  };
 
   const resetFormData = () => {
     setFormData({
@@ -40,6 +135,103 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       nombreUsuario: "",
       contraseña: "",
     });
+    setSelectedRole({
+      value: "",
+      label: "Seleccionar rol",
+    });
+    setLast(false);
+    iniciales = {
+      ver: {
+        cliente: false,
+        ticket: false,
+        elemento: false,
+        problema: false,
+        mensaje: false,
+        servicio: false,
+        operación: false,
+        categoría: false,
+        imagen: false,
+        venta: false,
+        compra: false,
+        publicación: false,
+        proveedor: false,
+        reporte: false,
+        mensajería: false,
+        producto: false,
+      },
+      crear: {
+        cliente: false,
+        ticket: false,
+        elemento: false,
+        problema: false,
+        mensaje: false,
+        servicio: false,
+        operación: false,
+        categoría: false,
+        imagen: false,
+        venta: false,
+        compra: false,
+        publicación: false,
+        proveedor: false,
+        reporte: false,
+        mensajería: false,
+        producto: false,
+      },
+      editar: {
+        cliente: false,
+        ticket: false,
+        elemento: false,
+        problema: false,
+        mensaje: false,
+        servicio: false,
+        operación: false,
+        categoría: false,
+        imagen: false,
+        venta: false,
+        compra: false,
+        publicación: false,
+        proveedor: false,
+        reporte: false,
+        mensajería: false,
+        producto: false,
+      },
+      eliminar: {
+        cliente: false,
+        ticket: false,
+        elemento: false,
+        problema: false,
+        mensaje: false,
+        servicio: false,
+        operación: false,
+        categoría: false,
+        imagen: false,
+        venta: false,
+        compra: false,
+        publicación: false,
+        proveedor: false,
+        reporte: false,
+        mensajería: false,
+        producto: false,
+      },
+      reporte: {
+        cliente: false,
+        ticket: false,
+        elemento: false,
+        problema: false,
+        mensaje: false,
+        servicio: false,
+        operación: false,
+        categoría: false,
+        imagen: false,
+        venta: false,
+        compra: false,
+        publicación: false,
+        proveedor: false,
+        reporte: false,
+        mensajería: false,
+        producto: false,
+      },
+    };
   };
 
   useEffect(() => {
@@ -92,108 +284,151 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             if (data === false) {
               toast.error("Usuario no pudo ser creado.");
             } else {
+              let createPermisos = { ...permisos };
+              createPermisos.usuario_id = data.id;
+              if (createPermisos) {
+                //@ts-ignore
+                UserService.postPermissionsById(data.id!, createPermisos);
+              }
               toast.success("Usuario creado con exito.");
             }
           });
         }}
       >
-        <div className="flex gap-4">
-          <input
-            type="text"
-            placeholder="Nombre"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
+        {last && selectedRole.value === "EMPLEADO" ? (
+          <PermissionPanel
+            permisos={iniciales}
+            onChange={(p) => {
+              setPermisos(p);
             }}
-            value={formData.nombre}
-            className="border p-2 rounded outline-none focus:border-[#2096ed]"
           />
-          <input
-            type="text"
-            placeholder="Apellido"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                apellido: e.target.value,
-              });
-            }}
-            value={formData.apellido}
-            className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          />
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Nombre de usuario*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombreUsuario: e.target.value,
-              });
-            }}
-            value={formData.nombreUsuario}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-          />
-          <div className="relative w-2/4">
-            <Select
-              onChange={() => {
+        ) : (
+          <>
+            <div className="flex gap-4 w-full">
+              <input
+                type="text"
+                placeholder="Nombre*"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    nombre: e.target.value,
+                  });
+                }}
+                value={formData.nombre}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4 border-slate-300"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Apellido*"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    apellido: e.target.value,
+                  });
+                }}
+                value={formData.apellido}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4 border-slate-300"
+                required
+              />
+            </div>
+            <div className="flex gap-4">
+              <input
+                type="text"
+                placeholder="Nombre de usuario*"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    nombreUsuario: e.target.value,
+                  });
+                }}
+                value={formData.nombreUsuario}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4 border-slate-300"
+              />
+              <div className="relative w-2/4">
+                <Select
+                  onChange={() => {
+                    setFormData({
+                      ...formData,
+                      rol: selectedRole.value as UsuarioRol,
+                    });
+                  }}
+                  options={[
+                    {
+                      value: "ADMINISTRADOR",
+                      label: "Administrador",
+                      onClick: (value, label) => {
+                        setSelectedRole({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "EMPLEADO",
+                      label: "Empleado",
+                      onClick: (value, label) => {
+                        setSelectedRole({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                  ]}
+                  selected={selectedRole}
+                />
+              </div>
+            </div>
+            <input
+              type="password"
+              placeholder="Contraseña*"
+              name="password"
+              onChange={(e) => {
                 setFormData({
                   ...formData,
-                  rol: selectedRole.value as UsuarioRol,
+                  contraseña: e.target.value,
                 });
               }}
-              options={[
-                {
-                  value: "ADMINISTRADOR",
-                  label: "Administrador",
-                  onClick: (value, label) => {
-                    setSelectedRole({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "EMPLEADO",
-                  label: "Empleado",
-                  onClick: (value, label) => {
-                    setSelectedRole({
-                      value,
-                      label,
-                    });
-                  },
-                },
-              ]}
-              selected={selectedRole}
+              value={formData.contraseña}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300"
             />
+          </>
+        )}
+        <div className="flex w-full justify-between">
+          {last === false && selectedRole.label === "Empleado" ? (
+            <button
+              type="button"
+              onClick={() => setLast(true)}
+              className="text-[#2096ed] bg-blue-100 font-semibold rounded-lg p-2 px-4 hover:bg-blue-200 transition ease-in-out delay-100 duration-300"
+            >
+              Permisos
+            </button>
+          ) : last === true && selectedRole.label === "Empleado" ? null : (
+            <div></div>
+          )}
+          {last === true && selectedRole.label === "Empleado" ? (
+            <button
+              type="button"
+              onClick={() => setLast(false)}
+              className="text-[#2096ed] bg-blue-100 font-semibold rounded-lg p-2 px-4 hover:bg-blue-200 transition ease-in-out delay-100 duration-300"
+            >
+              Volver
+            </button>
+          ) : (
+            <div></div>
+          )}
+          <div className="flex gap-2 justify-self-end justify-end">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
+            </button>
           </div>
-        </div>
-        <input
-          type="text"
-          placeholder="Nueva contraseña"
-          name="password"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              contraseña: e.target.value,
-            });
-          }}
-          value={formData.contraseña}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
-          >
-            Cancelar
-          </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-            Completar
-          </button>
         </div>
       </form>
     </dialog>
@@ -206,8 +441,9 @@ function EditModal({
   setOperationAsCompleted,
   usuario,
 }: ModalProps) {
+  const [last, setLast] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
-  const [selectedRole, setSelectedRole] = useState<Selected>({
+  const [selectedRole, _setSelectedRole] = useState<Selected>({
     value: usuario?.rol,
     label: usuario?.rol === "ADMINISTRADOR" ? "Administrador" : "Empleado",
   });
@@ -215,6 +451,9 @@ function EditModal({
     ...usuario!,
     contraseña: "",
   });
+  const [permisos, setPermisos] = useState<Permisos | undefined>(
+    formData.permiso!
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -257,17 +496,19 @@ function EditModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Editando usuario...");
           const cleanedFormData = { ...formData };
 
           if (formData.contraseña === "") {
             delete cleanedFormData.contraseña;
           }
-
+          const loadingToast = toast.loading("Editando usuario...");
           UserService.update(usuario?.id!, cleanedFormData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data) {
+              if (permisos) {
+                UserService.patchPermissionsById(formData.id!, permisos);
+              }
               toast.success("Usuario editado con exito.");
             } else {
               toast.error("Usuario no pudo ser editado.");
@@ -276,113 +517,117 @@ function EditModal({
           });
         }}
       >
-        <div className="flex gap-4">
-          <input
-            type="text"
-            placeholder="Nombre"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
+        {last ? (
+          <PermissionPanel
+            permisos={formData.permiso!}
+            onChange={(p) => {
+              setPermisos(p);
             }}
-            value={formData.nombre}
-            className="border p-2 rounded outline-none focus:border-[#2096ed]"
           />
-          <input
-            type="text"
-            placeholder="Apellido"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                apellido: e.target.value,
-              });
-            }}
-            value={formData.apellido}
-            className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          />
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Nombre de usuario*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombreUsuario: e.target.value,
-              });
-            }}
-            value={formData.nombreUsuario}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-          />
-          <div className="relative w-2/4">
-            <Select
-              onChange={() => {
+        ) : (
+          <>
+            <div className="flex gap-4 w-full">
+              <input
+                type="text"
+                placeholder="Nombre"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    nombre: e.target.value,
+                  });
+                }}
+                value={formData.nombre}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4 border-slate-300"
+              />
+              <input
+                type="text"
+                placeholder="Apellido"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    apellido: e.target.value,
+                  });
+                }}
+                value={formData.apellido}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4 border-slate-300"
+              />
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Nombre de usuario*"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    nombreUsuario: e.target.value,
+                  });
+                }}
+                value={formData.nombreUsuario}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4 border-slate-300"
+              />
+              <div className="relative w-2/4">
+                <select
+                  className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                  value={selectedRole.value}
+                  disabled={true}
+                >
+                  <option value={selectedRole.value}>
+                    {selectedRole.label}
+                  </option>
+                </select>
+                <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+              </div>
+            </div>
+            <input
+              type="text"
+              placeholder="Nueva contraseña"
+              name="password"
+              onChange={(e) => {
                 setFormData({
                   ...formData,
-                  rol: selectedRole.value as UsuarioRol,
+                  contraseña: e.target.value,
                 });
               }}
-              options={[
-                {
-                  value: "SUPERADMINISTRADOR",
-                  label: "Superadministrador",
-                  onClick: (value, label) => {
-                    setSelectedRole({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "ADMINISTRADOR",
-                  label: "Administrador",
-                  onClick: (value, label) => {
-                    setSelectedRole({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "EMPLEADO",
-                  label: "Empleado",
-                  onClick: (value, label) => {
-                    setSelectedRole({
-                      value,
-                      label,
-                    });
-                  },
-                },
-              ]}
-              selected={selectedRole}
+              value={formData.contraseña}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300"
             />
+          </>
+        )}
+        <div className="flex w-full justify-between">
+          {last === false && selectedRole.label === "Empleado" ? (
+            <button
+              type="button"
+              onClick={() => setLast(true)}
+              className="text-[#2096ed] bg-blue-100 font-semibold rounded-lg p-2 px-4 hover:bg-blue-200 transition ease-in-out delay-100 duration-300"
+            >
+              Permisos
+            </button>
+          ) : last === true && selectedRole.label === "Empleado" ? null : (
+            <div></div>
+          )}
+          {last === true && selectedRole.label === "Empleado" ? (
+            <button
+              type="button"
+              onClick={() => setLast(false)}
+              className="text-[#2096ed] bg-blue-100 font-semibold rounded-lg p-2 px-4 hover:bg-blue-200 transition ease-in-out delay-100 duration-300"
+            >
+              Volver
+            </button>
+          ) : (
+            <div></div>
+          )}
+          <div className="flex gap-2 justify-self-end justify-end">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
+            </button>
           </div>
-        </div>
-        <input
-          type="text"
-          placeholder="Nueva contraseña"
-          name="password"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              contraseña: e.target.value,
-            });
-          }}
-          value={formData.contraseña}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
-          >
-            Cancelar
-          </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-            Guardar
-          </button>
         </div>
       </form>
     </dialog>
@@ -516,7 +761,7 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
               onClick={() => {
                 setIsEditOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Editar usuario
             </button>
@@ -534,7 +779,7 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
               onClick={() => {
                 setIsDeleteOpen(true);
               }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg"
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
               Eliminar usuario
             </button>
@@ -544,13 +789,6 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
               closeModal={closeDeleteModal}
               setOperationAsCompleted={setOperationAsCompleted}
             />
-          </>
-        )}
-        {action === "VIEW_PERMISSIONS" && (
-          <>
-            <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 py-1 px-2 rounded-lg">
-              Editar permisos
-            </button>
           </>
         )}
       </td>
@@ -696,6 +934,1087 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
   );
 }
 
+type PermissionPanelProps = {
+  onChange: (permissions: Permisos) => void;
+  permisos: Permisos;
+};
+
+function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
+  const [permissions, setPermissions] = useState<Permisos>(permisos);
+  useEffect(() => {
+    onChange(permissions);
+  }, [permissions]);
+  return (
+    <div className="max-h-[300px] overflow-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100 scrollbar-rounded-xl text-sm">
+      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
+        Clientes
+      </div>
+      <div className="ml-5 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox1"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  cliente: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.cliente}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox1"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox2"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  cliente: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  cliente: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.cliente}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox2"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox3"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  cliente: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  cliente: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.cliente}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox3"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox4"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  cliente: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  cliente: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.cliente}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox4"
+          >
+            ELIMINAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox40"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                reporte: {
+                  ...permissions.reporte,
+                  cliente: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.reporte.cliente}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox40"
+          >
+            REPORTE
+          </label>
+        </div>
+      </div>
+      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
+        Tickets
+      </div>
+      <div className="ml-5 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox5"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  ticket: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.ticket}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox5"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox6"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  ticket: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  ticket: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.ticket}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox6"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox7"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  ticket: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  ticket: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.ticket}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox7"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox8"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  ticket: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  ticket: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.ticket}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox8"
+          >
+            ELIMINAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox41"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                reporte: {
+                  ...permissions.reporte,
+                  ticket: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.reporte.ticket}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox41"
+          >
+            REPORTE
+          </label>
+        </div>
+      </div>
+      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
+        Publicaciones
+      </div>
+      <div className="ml-5 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox9"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  publicación: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.publicación}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox9"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox10"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  publicación: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  publicación: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.publicación}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox10"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox11"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  publicación: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  publicación: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.publicación}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox11"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox12"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  publicación: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  publicación: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.publicación}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox12"
+          >
+            ELIMINAR
+          </label>
+        </div>
+      </div>
+      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
+        Productos
+      </div>
+      <div className="ml-5 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox13"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  producto: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.producto}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox13"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox14"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  producto: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  producto: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.producto}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox14"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox15"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  producto: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  producto: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.producto}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox15"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox16"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  producto: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  producto: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.producto}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox16"
+          >
+            ELIMINAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox42"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                reporte: {
+                  ...permissions.reporte,
+                  producto: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.reporte.producto}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox42"
+          >
+            REPORTE
+          </label>
+        </div>
+      </div>
+      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
+        Proveedores
+      </div>
+      <div className="ml-5 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox17"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  proveedor: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.proveedor}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox17"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox18"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  proveedor: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  proveedor: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.proveedor}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox18"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox19"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  proveedor: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  proveedor: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.proveedor}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox19"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox20"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  proveedor: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  proveedor: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.proveedor}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox20"
+          >
+            ELIMINAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox220"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                reporte: {
+                  ...permissions.reporte,
+                  proveedor: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.reporte.proveedor}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox220"
+          >
+            REPORTE
+          </label>
+        </div>
+      </div>
+      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
+        Ventas
+      </div>
+      <div className="ml-5 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox21"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  venta: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.venta}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox21"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox22"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  venta: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  venta: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.venta}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox22"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox23"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  venta: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  venta: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.venta}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox23"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox24"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  venta: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  venta: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.venta}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox24"
+          >
+            ELIMINAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox60"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                reporte: {
+                  ...permissions.reporte,
+                  venta: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.reporte.venta}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox60"
+          >
+            REPORTE
+          </label>
+        </div>
+      </div>
+      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
+        Compras
+      </div>
+      <div className="ml-5 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox25"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  compra: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.compra}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox25"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox26"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  compra: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  compra: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.compra}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox26"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox27"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  compra: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  compra: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.compra}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox27"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox28"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  compra: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  compra: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.compra}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox28"
+          >
+            ELIMINAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox100"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                reporte: {
+                  ...permissions.reporte,
+                  compra: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.reporte.compra}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox100"
+          >
+            REPORTE
+          </label>
+        </div>
+      </div>
+      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
+        Categorías
+      </div>
+      <div className="ml-5 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox29"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  categoría: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.categoría}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox29"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox30"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  categoría: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  categoría: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.categoría}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox30"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox31"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  categoría: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  categoría: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.categoría}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox31"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox32"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  categoría: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  categoría: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.categoría}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox32"
+          >
+            ELIMINAR
+          </label>
+        </div>
+      </div>
+      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
+        Mensajería
+      </div>
+      <div className="ml-5 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox33"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  mensajería: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.mensajería}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox33"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox34"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  mensajería: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  mensajería: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.mensajería}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox34"
+          >
+            EDITAR
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function UsersDataDisplay() {
   const [users, setUsers] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
@@ -704,6 +2023,9 @@ export default function UsersDataDisplay() {
   const [isDropup, setIsDropup] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(0);
+  const [current, setCurrent] = useState(0);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -726,22 +2048,29 @@ export default function UsersDataDisplay() {
   };
 
   useEffect(() => {
-    UserService.getAll().then((data) => {
+    if (isOperationCompleted) {
+      setLoading(true);
+    }
+
+    UserService.getAll(page, 8).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
+        setUsers([]);
       } else {
-        setUsers(data);
+        setUsers(data.rows);
+        setPages(data.pages);
+        setCurrent(data.current);
         setLoading(false);
         setNotFound(false);
       }
       setIsOperationCompleted(false);
     });
-  }, [isOperationCompleted]);
+  }, [isOperationCompleted, page]);
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-6">
+      <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
@@ -767,7 +2096,7 @@ export default function UsersDataDisplay() {
             </button>
           </div>
         </nav>
-        <hr className="border-1 border-slate-200 my-5" />
+        <hr className="border-1 border-slate-300 my-5" />
         {users.length > 0 && loading == false && (
           <div className="relative overflow-x-auto">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
@@ -791,7 +2120,7 @@ export default function UsersDataDisplay() {
                   <th scope="col" className="px-6 py-3 border-slate-300">
                     Último inicio de sesión
                   </th>
-                  <th scope="col" className="px-8 py-3 border-slate-300">
+                  <th scope="col" className="px-6 py-3 border-slate-300">
                     Acción
                   </th>
                 </tr>
@@ -831,7 +2160,7 @@ export default function UsersDataDisplay() {
               <div role="status">
                 <svg
                   aria-hidden="true"
-                  className="inline w-14 h-14 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
+                  className="inline w-14 h-14 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
                   viewBox="0 0 100 101"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -851,7 +2180,22 @@ export default function UsersDataDisplay() {
           </div>
         )}
       </div>
-      {users.length > 0 && loading == false && <Pagination />}
+      {users.length > 0 && loading == false && (
+        <Pagination
+          pages={pages}
+          current={current}
+          next={() => {
+            if (current < pages && current !== pages) {
+              setPage(page + 1);
+            }
+          }}
+          prev={() => {
+            if (current > 1) {
+              setPage(page - 1);
+            }
+          }}
+        />
+      )}
       <Toaster position="bottom-right" reverseOrder={false} />
       <AddModal
         isOpen={isAddOpen}

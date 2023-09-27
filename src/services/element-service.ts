@@ -1,19 +1,25 @@
-import { Elemento } from "../types";
+import { Elemento, Response } from "../types";
 
 export default class ElementService {
-  static async getAll(client_id: number) {
+  static async getAll(client_id: number, page: number, size: number) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/${client_id}/elementos`
+        }/api/clientes/${client_id}/elementos?page=${page}&size=${size}`
       );
 
       if (response.status > 300) {
         return false;
       }
 
-      return (await response.json()) as Elemento[];
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
     } catch {
       return false;
     }
@@ -91,26 +97,26 @@ export default class ElementService {
 
   static async delete(id: number, client_id: number) {
     try {
-    const response = await fetch(
-      `${
-        import.meta.env.VITE_BACKEND_URL
-      }/api/clientes/${client_id}/elementos/${id}`,
-      {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      }
-    );
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/clientes/${client_id}/elementos/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    if (response.status > 300) {
+      if (response.status > 300) {
+        return false;
+      }
+
+      return true;
+    } catch {
       return false;
     }
-
-    return true;
-  } catch {
-    return false;
   }
-  } 
 }

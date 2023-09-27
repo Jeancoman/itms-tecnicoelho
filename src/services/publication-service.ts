@@ -1,17 +1,25 @@
-import { Publicación } from "../types";
+import { Publicación, Response } from "../types";
 
 export default class PublicationService {
-  static async getAll() {
+  static async getAll(page: number, size: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/publicaciones/`
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/publicaciones?page=${page}&size=${size}`
       );
 
       if (response.status > 300) {
         return false;
       }
 
-      return (await response.json()) as Publicación[];
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
     } catch {
       return false;
     }
