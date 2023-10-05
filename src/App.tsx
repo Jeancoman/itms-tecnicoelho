@@ -16,8 +16,6 @@ import MessagesPage from "./pages/messages-page";
 import OperationsPage from "./pages/operations-page";
 import LoginPage from "./pages/login-page";
 import MessagingPage from "./pages/messaging-page";
-import ProvidersReportPage from "./pages/reports-pages/providers-report/providers-report-page";
-import TotalProvidersReportPage from "./pages/reports-pages/providers-report/total-providers-report-page";
 import SalePDFPage from "./pages/sale-pdf-page";
 
 export default function App() {
@@ -41,8 +39,6 @@ export default function App() {
         <Route path="/publicaciones" element={<PublicationsPage />} />
         <Route path="/categorias" element={<CategoriesPage />} />
         <Route path="/mensajeria" element={<MessagingPage />} />
-        <Route path="/reportes/proveedores" element={<ProvidersReportPage />} />
-        <Route path="/reportes/proveedores/totales" element={<TotalProvidersReportPage />} />
         <Route path="/entrar" element={<LoginPage />} />
       </Routes>
     </BrowserRouter>

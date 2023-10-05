@@ -172,7 +172,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
               <Select
                 options={clients.map((client) => ({
                   value: client.id,
-                  label: client.nombre + " " + client.apellido + ", " + cliente.documento,
+                  label: client.nombre + " " + client.apellido + ", " + client.documento,
                   onClick: (value, label) => {
                     setSelectedClient({
                       value,
@@ -464,7 +464,7 @@ function EditSection({
               <Select
                 options={clients.map((client) => ({
                   value: client.id,
-                  label: client.nombre + " " + client.apellido + ", " + cliente.documento,
+                  label: client.nombre + " " + client.apellido + ", " + client.documento,
                   onClick: (value, label) => {
                     setSelectedClient({
                       value,
