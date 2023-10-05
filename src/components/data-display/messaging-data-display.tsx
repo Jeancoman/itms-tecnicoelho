@@ -16,16 +16,17 @@ import TemplateService from "../../services/template-service";
 import MessagingOptionsService from "../../services/messaging-options-service";
 import Editor from "react-simple-code-editor";
 import hljs from "highlight.js/lib/core";
+import options from "../../utils/options";
 
-hljs.registerLanguage('tecniplantilla', () => {
+hljs.registerLanguage("tecniplantilla", () => {
   return {
     case_insensitive: false,
-    keywords: 'SI SINO SINO PERO DEFAULT FIN',
+    keywords: "SI SINO SINO PERO DEFAULT FIN",
     contains: [
       {
-        scope: 'string',
+        scope: "string",
         begin: '"',
-        end: '"'
+        end: '"',
       },
       {
         scope: "operator",
@@ -37,13 +38,10 @@ hljs.registerLanguage('tecniplantilla', () => {
         begin: /\{\{/,
         end: /\}\}/,
       },
-      hljs.COMMENT(
-        '/\\*', 
-        '\\*/', 
-      )
-    ]
-  }
-})
+      hljs.COMMENT("/\\*", "\\*/"),
+    ],
+  };
+});
 
 function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -98,15 +96,14 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
             if (data === false) {
               toast.error("Nensajería no pudo ser editada.");
             } else {
-              toast.success(
-                "Mensajería editada exitosamente."
-              );
+              options.set(formData.opciones);
+              toast.success("Mensajería editada exitosamente.");
             }
           });
         }}
       >
         <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
-          Creación automatica de mensajes
+          Creación automática de mensajes
         </div>
         <div className="ml-5 mt-2 flex gap-4">
           <div className="mb-[0.125rem] min-h-[1.5rem] block">
@@ -133,7 +130,7 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
               className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
               htmlFor="checkbox1"
             >
-              NUNCA
+              DESACTIVADO
             </label>
           </div>
           <div className="mb-[0.125rem] min-h-[1.5rem] block">
@@ -160,39 +157,12 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
               className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
               htmlFor="checkbox2"
             >
-              SIEMPRE
-            </label>
-          </div>
-          <div className="mb-[0.125rem] min-h-[1.5rem] block">
-            <input
-              className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-              type="checkbox"
-              id="checkbox3"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  opciones: {
-                    ...formData.opciones,
-                    creación: {
-                      nunca: false,
-                      siempre: false,
-                      preguntar: e.target.checked,
-                    },
-                  },
-                });
-              }}
-              checked={formData.opciones.creación.preguntar}
-            />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox3"
-            >
-              PREGUNTARME ANTES
+              ACTIVADA
             </label>
           </div>
         </div>
         <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
-          Envio automatico de mensajes
+          Envio automático de mensajes
         </div>
         <div className="ml-5 mt-2 flex gap-4">
           <div className="mb-[0.125rem] min-h-[1.5rem] block">
@@ -219,7 +189,7 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
               className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
               htmlFor="checkbox5"
             >
-              NUNCA
+              DESACTIVADO
             </label>
           </div>
           <div className="mb-[0.125rem] min-h-[1.5rem] block">
@@ -246,34 +216,7 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
               className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
               htmlFor="checkbox6"
             >
-              SIEMPRE
-            </label>
-          </div>
-          <div className="mb-[0.125rem] min-h-[1.5rem] block">
-            <input
-              className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-              type="checkbox"
-              id="checkbox7"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  opciones: {
-                    ...formData.opciones,
-                    envio: {
-                      nunca: false,
-                      siempre: false,
-                      preguntar: e.target.checked,
-                    },
-                  },
-                });
-              }}
-              checked={formData.opciones.envio.preguntar}
-            />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox7"
-            >
-              PREGUNTARME ANTES
+              ACTIVADO
             </label>
           </div>
         </div>
@@ -345,7 +288,6 @@ function EditModal({
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Editando plantilla...");
-
           TemplateService.update(plantilla?.id!, formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
@@ -368,8 +310,10 @@ function EditModal({
               })
             }
             highlight={(code) => {
-              console.log(hljs.highlight(code, { language: "tecniplantilla" }).value);
-              return hljs.highlight(code, { language: "tecniplantilla" }).value
+              console.log(
+                hljs.highlight(code, { language: "tecniplantilla" }).value
+              );
+              return hljs.highlight(code, { language: "tecniplantilla" }).value;
             }}
             padding={10}
             style={{
@@ -599,14 +543,12 @@ export default function MessagingDataDisplay() {
   };
 
   useEffect(() => {
-    if (isOperationCompleted) {
-      setLoading(true);
-    }
 
     TemplateService.getAll(page, 8).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
+        setTemplates([])
       } else {
         setTemplates(data.rows);
         setPages(data.pages);

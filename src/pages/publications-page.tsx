@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import PublicationsDataDisplay from "../components/data-display/publications-data-display";
 import NavPanel from "../components/misc/nav-panel";
 import session from "../utils/session";
@@ -9,18 +8,16 @@ export default function PublicationsPage() {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!session.find()) {
-      navigate("/entrar");
-    } else {
-      if (
-        session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-        !permissions.find()?.ver.publicación
-      ) {
-        navigate("/");
-      }
+  if (!session.find()) {
+    navigate("/entrar");
+  } else {
+    if (
+      session.find()?.usuario.rol !== "ADMINISTRADOR" &&
+      !permissions.find()?.ver.publicación
+    ) {
+      navigate("/");
     }
-  });
+  }
 
   return (
     <> 

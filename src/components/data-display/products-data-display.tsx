@@ -20,6 +20,9 @@ import CategoryService from "../../services/category-service";
 import Select from "../misc/select";
 import session from "../../utils/session";
 import permissions from "../../utils/permissions";
+import { useProductSearchParamStore } from "../../store/searchParamStore";
+import { useSearchedStore } from "../../store/searchedStore";
+import ExportCSV from "../misc/export-to-cvs";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -31,7 +34,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   });
   const [formData, setFormData] = useState<Producto>({
     slug: "",
-    código: "",
     nombre: "",
     descripción: "",
     precio: 0,
@@ -43,7 +45,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const resetFormData = () => {
     setFormData({
       slug: "",
-      código: "",
       nombre: "",
       descripción: "",
       precio: 0,
@@ -133,19 +134,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           onChange={(e) => {
             setFormData({
               ...formData,
-              código: e.target.value,
-            });
-          }}
-          value={formData.código}
-          placeholder="Código*"
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-        />
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
               nombre: e.target.value,
               slug: Slugifier.slugifyWithRandomString(e.target.value),
             });
@@ -170,19 +158,19 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             required
           />
           <input
-            type="tel"
+            type="number"
             placeholder="Precio*"
             onChange={(e) => {
               setFormData({
                 ...formData,
-                precio: !isNaN(parseFloat(e.target.value))
-                  ? parseFloat(e.target.value)
-                  : 0,
+                precio: !isNaN(Number(e.target.value))
+                  ? Number(e.target.value)
+                  : 0.00,
               });
             }}
-            value={formData.precio === 0 ? "" : formData.precio}
+            step="0.01" min="0"
+            value={formData.precio === 0 ? "" : String(formData.precio)}
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            min={0}
             required
           />
         </div>
@@ -432,19 +420,20 @@ function EditModal({
             min={0}
           />
           <input
-            type="tel"
+            type="number"
             placeholder="Precio*"
             onChange={(e) => {
               setFormData({
                 ...formData,
-                precio: !isNaN(parseFloat(e.target.value))
-                  ? parseFloat(e.target.value)
-                  : 0,
+                precio: !isNaN(Number(e.target.value))
+                  ? Number(e.target.value)
+                  : 0.00,
               });
             }}
-            value={formData.precio === 0 ? "" : formData.precio}
+            value={formData.precio === 0 ? "" : String(formData.precio)}
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
             min={0}
+            step="0.01"
             required
           />
         </div>
@@ -648,6 +637,175 @@ function DeleteModal({
   );
 }
 
+function SearchModal({ isOpen, closeModal }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
+    value: "",
+    label: "Seleccionar parametro de busqueda",
+  });
+  const setIsPrecise = useProductSearchParamStore(
+    (state) => state.setIsPrecise
+  );
+  const setTempIsPrecise = useProductSearchParamStore(
+    (state) => state.setTempIsPrecise
+  );
+  const tempIsPrecise = useProductSearchParamStore(
+    (state) => state.tempIsPrecise
+  );
+  const tempInput = useProductSearchParamStore((state) => state.tempInput);
+  const setInput = useProductSearchParamStore((state) => state.setInput);
+  const setTempInput = useProductSearchParamStore(
+    (state) => state.setTempInput
+  );
+  const setParam = useProductSearchParamStore((state) => state.setParam);
+  const incrementSearchCount = useProductSearchParamStore(
+    (state) => state.incrementSearchCount
+  );
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+
+  const resetSearch = () => {
+    setTempInput("");
+    setTempIsPrecise(false);
+    setSelectedSearchType({
+      value: "",
+      label: "Seleccionar parametro de busqueda",
+    });
+    setWasSearch(false);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          resetSearch();
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      resetSearch();
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-1/3 h-fit rounded-md shadow text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Buscar producto</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (selectedSearchType.value !== "") {
+            resetSearch();
+            incrementSearchCount();
+            closeModal();
+            setWasSearch(true);
+          }
+        }}
+      >
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setParam(selectedSearchType.value as string);
+            }}
+            options={[
+              {
+                value: "NOMBRE",
+                label: "Nombre",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "CÓDIGO",
+                label: "Código",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedSearchType}
+          />
+        </div>
+        <input
+          type="text"
+          placeholder={
+            selectedSearchType.value === "CÓDIGO"
+              ? "Introduzca código del producto"
+              : selectedSearchType.value === "NOMBRE"
+              ? "Introduzca nombre del producto"
+              : ""
+          }
+          value={tempInput}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          onChange={(e) => {
+            setInput(e.target.value);
+            setTempInput(e.target.value);
+          }}
+        />
+        <div className="flex w-full justify-between items-center">
+          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+            <input
+              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              type="checkbox"
+              onChange={(e) => {
+                setIsPrecise(e.target.checked);
+                setTempIsPrecise(e.target.checked);
+              }}
+              checked={tempIsPrecise}
+              id="checkbox"
+            />
+            <label
+              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+              htmlFor="checkbox"
+            >
+              ¿Busqueda exacta?
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Buscar
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
 function DataRow({ action, producto, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -679,7 +837,7 @@ function DataRow({ action, producto, setOperationAsCompleted }: DataRowProps) {
       </td>
       <td className="px-6 py-4 border border-slate-300">{producto?.precio}</td>
       <td className="px-6 py-4 border border-slate-300">{producto?.stock}</td>
-      <td className="px-6 py-3 border border-slate-300">
+      <td className="px-6 py-3 border border-slate-300 w-[200px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -726,7 +884,422 @@ function DataRow({ action, producto, setOperationAsCompleted }: DataRowProps) {
   );
 }
 
-function Dropup({ close, selectAction, openAddModal }: DropupProps) {
+function ReportModal({ isOpen, closeModal }: ModalProps) {
+  const [param, setParam] = useState("");
+  const [secondParam, setSecondParam] = useState("");
+  const [input, setInput] = useState("");
+  const [secondInput, setSecondInput] = useState("");
+  const ref = useRef<HTMLDialogElement>(null);
+  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
+    value: "",
+    label: "Seleccionar parametro de reporte",
+  });
+  const [selectedFecha, setSelectedFecha] = useState<Selected>({
+    value: "",
+    label: "Seleccionar tipo de reporte",
+  });
+
+  const resetSearch = () => {
+    setParam("");
+    setSecondInput("");
+    setSelectedSearchType({
+      value: "",
+      label: "Seleccionar parametro de reporte",
+    });
+    setSelectedFecha({
+      value: "",
+      label: "Seleccionar tipo de reporte",
+    });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          resetSearch();
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      resetSearch();
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-1/3 min-h-[200px] h-fit rounded-md shadow text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Generar reporte</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (selectedSearchType.value !== "") {
+            if (param === "VENDIDO_EN") {
+              const loadingToast = toast.loading("Generando reporte...");
+              if (secondParam !== "ENTRE") {
+                ProductService.getBySoldOn(secondParam).then((data) => {
+                  if (data === false) {
+                    toast.dismiss(loadingToast);
+                    toast.error("Error obteniendo datos.");
+                  } else {
+                    ExportCSV.handleDownload(
+                      data.rows.filter(venta => venta.venta_cantidad > 0).map((venta) => {
+                        return {
+                          Fecha: venta?.venta_fecha,
+                          Código: venta?.código,
+                          Nombre: venta?.nombre,
+                          Precio: venta?.precio,
+                          Cantidad: venta?.venta_cantidad,
+                          Total: venta?.venta_total,
+                          "Nombre del cliente":
+                            venta?.cliente_nombre +
+                            " " +
+                            venta?.cliente_apellido,
+                          "Documento del cliente": venta?.cliente_documento,
+                        };
+                      }),
+                      "reporte-de-productos-vendidos-" +
+                        new Date().toISOString()
+                    );
+                    toast.dismiss(loadingToast);
+                  }
+                  closeModal();
+                });
+              } else {
+                ProductService.getBySoldBetween(
+                  new Date(input).toISOString().split("T")[0],
+                  new Date(secondInput).toISOString().split("T")[0]
+                ).then((data) => {
+                  if (data === false) {
+                    toast.dismiss(loadingToast);
+                    toast.error("Error obteniendo datos.");
+                  } else {
+                    ExportCSV.handleDownload(
+                      data.rows.filter(venta => venta.venta_cantidad > 0).map((venta) => {
+                        return {
+                          Fecha: venta?.venta_fecha,
+                          Código: venta?.código,
+                          Nombre: venta?.nombre,
+                          Precio: venta?.precio,
+                          Cantidad: venta?.venta_cantidad,
+                          Total: venta?.venta_total,
+                          "Nombre del cliente":
+                            venta?.cliente_nombre +
+                            " " +
+                            venta?.cliente_apellido,
+                          "Documento del cliente": venta?.cliente_documento,
+                        };
+                      }),
+                      "reporte-de-productos-vendidos-" +
+                        new Date().toISOString()
+                    );
+                    toast.dismiss(loadingToast);
+                  }
+                  closeModal();
+                });
+              }
+            } else if (param === "COMPRADO_EN") {
+              const loadingToast = toast.loading("Generando reporte...");
+              if (secondParam !== "ENTRE") {
+                ProductService.getByPurchasedOn(secondParam).then((data) => {
+                  if (data === false) {
+                    toast.dismiss(loadingToast);
+                    toast.error("Error obteniendo datos.");
+                  } else {
+                    ExportCSV.handleDownload(
+                      data.rows.filter(venta => venta.compra_cantidad > 0).map((venta) => {
+                        return {
+                          Fecha: venta?.compra_fecha,
+                          Código: venta?.código,
+                          Nombre: venta?.nombre,
+                          Precio: venta?.precio,
+                          Cantidad: venta?.compra_cantidad,
+                          Total: venta?.compra_total,
+                          "Nombre del proveedor": venta?.proveedor_nombre,
+                          "Documento del proveedor": venta?.proveedor_documento,
+                        };
+                      }),
+                      "reporte-de-productos-comprados-" +
+                        new Date().toISOString()
+                    );
+                    toast.dismiss(loadingToast);
+                  }
+                  closeModal();
+                });
+              } else {
+                ProductService.getByPurchasedBetween(
+                  new Date(input).toISOString().split("T")[0],
+                  new Date(secondInput).toISOString().split("T")[0]
+                ).then((data) => {
+                  if (data === false) {
+                    toast.dismiss(loadingToast);
+                    toast.error("Error obteniendo datos.");
+                  } else {
+                    ExportCSV.handleDownload(
+                      data.rows.filter(venta => venta.compra_cantidad > 0).map((venta) => {
+                        return {
+                          Fecha: venta?.compra_fecha,
+                          Código: venta?.código,
+                          Nombre: venta?.nombre,
+                          Precio: venta?.precio,
+                          Cantidad: venta?.compra_cantidad,
+                          Total: venta?.compra_total,
+                          "Nombre del proveedor": venta?.proveedor_nombre,
+                          "Documento del proveedor": venta?.proveedor_documento,
+                        };
+                      }),
+                      "reporte-de-productos-comprados-" +
+                        new Date().toISOString()
+                    );
+                    toast.dismiss(loadingToast);
+                  }
+                  closeModal();
+                });
+              }
+            } else if (param === "MAS_VENDIDO") {
+              const loadingToast = toast.loading("Generando reporte...");
+              ProductService.getMoreSold().then((data) => {
+                if (data === false) {
+                  toast.dismiss(loadingToast);
+                  toast.error("Error obteniendo datos.");
+                } else {
+                  ExportCSV.handleDownload(
+                    data.map((venta: any) => {
+                      return {
+                        Código: venta?.código,
+                        Nombre: venta?.nombre,
+                        Precio: venta?.precio,
+                        Total: venta?.total_vendido,
+                      };
+                    }),
+                    "reporte-de-productos-mas-vendidos-" +
+                      new Date().toISOString()
+                  );
+                  toast.dismiss(loadingToast);
+                }
+                closeModal();
+              });
+            } else if (param === "MAS_COMPRADO") {
+              const loadingToast = toast.loading("Generando reporte...");
+              ProductService.getMoreSold().then((data) => {
+                if (data === false) {
+                  toast.dismiss(loadingToast);
+                  toast.error("Error obteniendo datos.");
+                } else {
+                  ExportCSV.handleDownload(
+                    data.map((venta: any) => {
+                      return {
+                        Código: venta?.código,
+                        Nombre: venta?.nombre,
+                        Precio: venta?.precio,
+                        Total: venta?.total_comprado,
+                      };
+                    }),
+                    "reporte-de-productos-mas-comprados-" +
+                      new Date().toISOString()
+                  );
+                  toast.dismiss(loadingToast);
+                }
+                closeModal();
+              });
+            }
+          }
+          closeModal();
+        }}
+      >
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setParam(selectedSearchType.value as string);
+            }}
+            options={[
+              {
+                value: "VENDIDO_EN",
+                label: "Fecha de  venta",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "COMPRADO_EN",
+                label: "Fecha de compra",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "MAS_VENDIDO",
+                label: "Más vendidos",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "MAS_COMPRADO",
+                label: "Más comprado",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedSearchType}
+          />
+        </div>
+        {selectedSearchType.value === "COMPRADO_EN" ||
+        selectedSearchType.value === "VENDIDO_EN" ? (
+          <div className="relative">
+            <Select
+              onChange={() => {
+                setSecondParam(selectedFecha.value as string);
+              }}
+              options={[
+                {
+                  value: "HOY",
+                  label: "Hoy",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "RECIENTEMENTE",
+                  label: "Recientemente",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ESTA_SEMANA",
+                  label: "Esta semana",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ESTE_MES",
+                  label: "Este mes",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ESTE_AÑO",
+                  label: "Este año",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ENTRE",
+                  label: "Entre las fechas",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedFecha}
+            />
+          </div>
+        ) : null}
+        {selectedFecha.value === "ENTRE" &&
+          (selectedSearchType.value === "COMPRADO_EN" ||
+        selectedSearchType.value === "VENDIDO_EN") ? (
+          <>
+            {" "}
+            <input
+              type="date"
+              placeholder="Fecha inicial"
+              value={input}
+              className="border p-2 rounded outline-none focus:border-[#2096ed]"
+              onChange={(e) => {
+                setInput(e.target.value);
+              }}
+            />
+            <input
+              type="date"
+              placeholder="Fecha final"
+              value={secondInput}
+              className="border p-2 rounded outline-none focus:border-[#2096ed]"
+              onChange={(e) => {
+                setSecondInput(e.target.value);
+              }}
+            />
+          </>
+        ) : null}
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cancelar
+          </button>
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Generar
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
+function Dropup({
+  close,
+  selectAction,
+  openAddModal,
+  openSearchModal,
+  openReportModal,
+}: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -768,15 +1341,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           border
         "
     >
-      {session.find()?.usuario.rol === "ADMINISTRADOR" &&
-        permissions.find()?.editar.producto && (
-          <li>
-            <div
-              onClick={() => {
-                selectAction("EDIT");
-                close();
-              }}
-              className="
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.producto) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("EDIT");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -789,20 +1362,20 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Editar producto
-            </div>
-          </li>
-        )}
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.eliminar.producto && (
-          <li>
-            <div
-              onClick={() => {
-                selectAction("DELETE");
-                close();
-              }}
-              className="
+          >
+            Editar producto
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.eliminar.producto) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("DELETE");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -815,25 +1388,25 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Eliminar producto
-            </div>
-          </li>
-        )}
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.editar.producto &&
-        permissions.find()?.eliminar.producto && (
-          <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-        )}
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.producto && (
-          <li>
-            <div
-              onClick={() => {
-                openAddModal();
-                close();
-              }}
-              className="
+          >
+            Eliminar producto
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        (permissions.find()?.editar.producto &&
+          permissions.find()?.eliminar.producto)) && (
+        <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.crear.producto) && (
+        <li>
+          <div
+            onClick={() => {
+              openAddModal();
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -846,15 +1419,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Añadir producto
-            </div>
-          </li>
-        )}
+          >
+            Añadir producto
+          </div>
+        </li>
+      )}
       <li>
         <div
           onClick={() => {
-            openAddModal();
+            openSearchModal?.();
             close();
           }}
           className="
@@ -874,6 +1447,29 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           Buscar producto
         </div>
       </li>
+      <li>
+        <div
+          onClick={() => {
+            openReportModal?.();
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Generar reporte
+        </div>
+      </li>
     </ul>
   );
 }
@@ -883,12 +1479,23 @@ export default function ProductsDataDisplay() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isSearch, setIsSearch] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
+  const searchCount = useProductSearchParamStore((state) => state.searchCount);
+  const resetSearchCount = useProductSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const input = useProductSearchParamStore((state) => state.input);
+  const param = useProductSearchParamStore((state) => state.param);
+  const isPrecise = useProductSearchParamStore((state) => state.isPrecise);
+  const wasSearch = useSearchedStore((state) => state.wasSearch);
+  const [isReport, setIsReport] = useState(false);
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -911,23 +1518,99 @@ export default function ProductsDataDisplay() {
   };
 
   useEffect(() => {
-    if (isOperationCompleted) {
-      setLoading(true);
-    }
-
-    ProductService.getAll(page, 8).then((data) => {
-      if (data === false) {
-        setNotFound(true);
-        setLoading(false);
-      } else {
-        setProducts(data.rows);
-        setPages(data.pages);
-        setCurrent(data.current);
-        setLoading(false);
+    if (searchCount === 0 || isOperationCompleted) {
+      ProductService.getAll(page, 8).then((data) => {
+        if (data === false) {
+          setNotFound(true);
+          setProducts([]);
+          setLoading(false);
+          resetSearchCount();
+          setWasSearch(false);
+        } else {
+          setProducts(data.rows);
+          setPages(data.pages);
+          setCurrent(data.current);
+          setLoading(false);
+          resetSearchCount();
+          setWasSearch(false);
+        }
+        setIsOperationCompleted(false);
+      });
+    } else {
+      if (isPrecise && wasSearch) {
+        const loadingToast = toast.loading("Buscando...");
+        if (param === "NOMBRE") {
+          ProductService.getByExactNombre(input, page, 8).then((data) => {
+            toast.dismiss(loadingToast);
+            if (data === false) {
+              setNotFound(true);
+              setProducts([]);
+              setLoading(false);
+            } else {
+              setProducts(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+            }
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "CÓDIGO") {
+          ProductService.getByExactCódigo(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setProducts([]);
+              setLoading(false);
+            } else {
+              setProducts(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        }
+      } else if (!isPrecise && wasSearch) {
+        const loadingToast = toast.loading("Buscando...");
+        if (param === "NOMBRE") {
+          ProductService.getByNombre(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setProducts([]);
+              setLoading(false);
+            } else {
+              setProducts(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "CÓDIGO") {
+          ProductService.getByCódigo(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setProducts([]);
+              setLoading(false);
+            } else {
+              setProducts(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        }
       }
-      setIsOperationCompleted(false);
-    });
-  }, [isOperationCompleted, page]);
+    }
+  }, [isOperationCompleted, searchCount, page]);
+
+  useEffect(() => {
+    setPage(1);
+    console.log(page);
+  }, [searchCount]);
 
   return (
     <>
@@ -935,7 +1618,12 @@ export default function ProductsDataDisplay() {
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-600" />{" "}
-            <span className="text-[#2096ed]">Productos</span>
+            <span
+              onClick={resetSearchCount}
+              className="text-[#2096ed] cursor-pointer"
+            >
+              Productos
+            </span>
           </div>
           <div>
             {isDropup && (
@@ -943,6 +1631,12 @@ export default function ProductsDataDisplay() {
                 close={closeDropup}
                 selectAction={selectAction}
                 openAddModal={openAddModal}
+                openSearchModal={() => {
+                  setIsSearch(true);
+                }}
+                openReportModal={() => {
+                  setIsReport(true);
+                }}
               />
             )}
             <button
@@ -1002,7 +1696,8 @@ export default function ProductsDataDisplay() {
             </table>
           </div>
         )}
-        {notFound === true && (
+        {(notFound === true ||
+          (products.length === 0 && loading === false)) && (
           <div className="grid w-full h-4/5">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
@@ -1010,8 +1705,9 @@ export default function ProductsDataDisplay() {
                 Ningún producto encontrado
               </p>
               <p className="font-medium text text-center mt-1">
-                Esto puede deberse a un error del servidor, o a que simplemente
-                no hay ningún producto registrado.
+                {searchCount === 0
+                  ? "Esto puede deberse a un error del servidor, o a que no hay ningún producto registrado."
+                  : "Esto puede deberse a un error del servidor, o a que ningún producto concuerda con tu busqueda."}
               </p>
             </div>
           </div>
@@ -1063,6 +1759,20 @@ export default function ProductsDataDisplay() {
         isOpen={isAddOpen}
         closeModal={closeAddModal}
         setOperationAsCompleted={setAsCompleted}
+      />
+      <SearchModal
+        isOpen={isSearch}
+        closeModal={() => setIsSearch(false)}
+        setOperationAsCompleted={function (): void {
+          throw new Error("Function not implemented.");
+        }}
+      />
+      <ReportModal
+        isOpen={isReport}
+        closeModal={() => setIsReport(false)}
+        setOperationAsCompleted={function (): void {
+          throw new Error("Function not implemented.");
+        }}
       />
     </>
   );

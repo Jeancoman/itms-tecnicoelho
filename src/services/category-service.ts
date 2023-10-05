@@ -41,6 +41,79 @@ export default class CategoryService {
     }
   }
 
+  
+  static async getByNombre(nombre: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/categorias/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByExactNombre(nombre: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/categorias/busqueda?tipo=EXACTA&nombre=${nombre}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByTipo(tipo: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/categorias/busqueda?tipo=${tipo}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
   static async create(categorie: Categoría) {
     try {
       const response = await fetch(

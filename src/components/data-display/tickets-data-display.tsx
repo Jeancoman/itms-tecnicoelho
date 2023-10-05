@@ -15,6 +15,7 @@ import {
   Selected,
   TicketTipo,
   Mensaje,
+  Categoría,
 } from "../../types";
 import ClientService from "../../services/client-service";
 import toast, { Toaster } from "react-hot-toast";
@@ -23,11 +24,15 @@ import TicketService from "../../services/ticket-service";
 import { useNavigate } from "react-router-dom";
 import Select from "../misc/select";
 import { format } from "date-fns";
-import TemplateService from "../../services/template-service";
-import TemplatingEngine from "../../engine/templating-engine";
 import MessageService from "../../services/message-service";
 import session from "../../utils/session";
 import permissions from "../../utils/permissions";
+import MessageRender from "../../services/message-render-service";
+import options from "../../utils/options";
+import { useTicketSearchParamStore } from "../../store/searchParamStore";
+import { useSearchedStore } from "../../store/searchedStore";
+import CategoryService from "../../services/category-service";
+import MessageSenderService from "../../services/message-sender-service";
 
 function EditModal({
   isOpen,
@@ -107,6 +112,81 @@ function EditModal({
               toast.error("Ticket no pudo ser editado.");
             } else {
               toast.success("Ticket editado con exito.");
+              if (options.find()?.creación.siempre) {
+                const messageToast = toast.loading("Creando mensaje...");
+                MessageRender.renderTicketModificationTemplate(
+                  ticket?.id!,
+                  formData
+                ).then((rendered) => {
+                  if (rendered) {
+                    if (rendered === "Plantilla desactivada") {
+                      toast.dismiss(messageToast);
+                      toast.error("La plantilla esta desactivada.");
+                      return;
+                    }
+
+                    const message: Mensaje = {
+                      contenido: rendered,
+                      ticket_id: ticket?.id!,
+                      estado: "NO_ENVIADO",
+                    };
+
+                    MessageService.create(ticket?.id!, message).then(
+                      (mensaje) => {
+                        if (mensaje) {
+                          toast.dismiss(messageToast);
+                          toast.success("Mensaje creado exitosamente.");
+                          TicketService.getById(ticket?.id!).then(
+                            (resTicket) => {
+                              if (resTicket) {
+                                if (
+                                  resTicket.elemento?.cliente?.enviarMensajes
+                                ) {
+                                  if (options.find()?.envio.siempre) {
+                                    const sendingToast = toast.loading(
+                                      "Enviando mensaje..."
+                                    );
+                                    MessageSenderService.send(
+                                      resTicket.elemento?.cliente.telefono ||
+                                        "",
+                                      rendered
+                                    ).then((res) => {
+                                      if (res) {
+                                        toast.dismiss(sendingToast);
+                                        toast.success(
+                                          "Mensaje enviado exitosamente."
+                                        );
+                                        MessageService.update(
+                                          ticket?.id!,
+                                          mensaje.id!,
+                                          //@ts-ignore
+                                          {
+                                            id: mensaje.id!,
+                                            estado: "ENVIADO",
+                                            ticket_id: ticket?.id
+                                          }
+                                        );
+                                      } else {
+                                        toast.dismiss(sendingToast);
+                                        toast.error(
+                                          "Mensaje no pudo ser enviado."
+                                        );
+                                      }
+                                    });
+                                  }
+                                }
+                              }
+                            }
+                          );
+                        }
+                      }
+                    );
+                  } else {
+                    toast.dismiss(messageToast);
+                    toast.error("Mensaje no pudo ser creado.");
+                  }
+                });
+              }
             }
           });
         }}
@@ -268,38 +348,13 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           if (data === false) {
             setLoading(false);
           } else {
-            setElements(data.rows);
+            setElements(data.rows.filter((elemento) => elemento.estado === "INACTIVO"));
             setLoading(false);
           }
         }
       );
     }
   }, [selectedClient]);
-
-  const renderTemplate = async (ticket_id: number) => {
-    const template = await TemplateService.getById(1);
-
-    if (template === false) {
-      return false;
-    } else if (!template.estaActiva) {
-      return;
-    }
-    const ticket = await TicketService.getById(ticket_id);
-
-    if (ticket === false) {
-      return false;
-    }
-
-    console.log(ticket);
-
-    const engine = new TemplatingEngine(template.contenido, {
-      cliente: ticket.elemento?.cliente,
-      ticket: ticket,
-      elemento: ticket.elemento,
-    });
-
-    return engine.start();
-  };
 
   return (
     <dialog
@@ -335,25 +390,75 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               toast.error("Ticket no pudo ser creado.");
             } else {
               toast.success("Ticket creado con exito.");
-              const messageToast = toast.loading("Creando mensaje...");
-              renderTemplate(data.id!).then((rendered) => {
-                if (rendered) {
-                  const message: Mensaje = {
-                    contenido: rendered,
-                    ticket_id: data.id!,
-                    estado: "NO_ENVIADO",
-                  };
-                  MessageService.create(data.id!, message).then((data) => {
-                    if (data) {
+              if (options.find()?.creación.siempre) {
+                const messageToast = toast.loading("Creando mensaje...");
+                MessageRender.renderTicketCreationTemplate(data.id!).then(
+                  (rendered) => {
+                    if (rendered) {
+                      if (rendered === "Plantilla desactivada") {
+                        toast.dismiss(messageToast);
+                        toast.error("La plantilla esta desactivada");
+                        return;
+                      }
+
+                      const message: Mensaje = {
+                        contenido: rendered,
+                        ticket_id: data.id!,
+                        estado: "NO_ENVIADO",
+                      };
+
+                      MessageService.create(data.id!, message).then(
+                        (mensaje) => {
+                          if (mensaje) {
+                            toast.dismiss(messageToast);
+                            toast.success("Mensaje creado exitosamente.");
+                            TicketService.getById(data.id!).then((ticket) => {
+                              if (ticket) {
+                                if (ticket.elemento?.cliente?.enviarMensajes) {
+                                  if (options.find()?.envio.siempre) {
+                                    const sendingToast = toast.loading(
+                                      "Enviando mensaje..."
+                                    );
+                                    MessageSenderService.send(
+                                      ticket.elemento?.cliente.telefono || "",
+                                      rendered
+                                    ).then((res) => {
+                                      if (res) {
+                                        toast.dismiss(sendingToast);
+                                        toast.success(
+                                          "Mensaje enviado exitosamente."
+                                        );
+                                        MessageService.update(
+                                          data.id!,
+                                          mensaje.id!,
+                                          //@ts-ignore
+                                          {
+                                            id: mensaje.id!,
+                                            estado: "ENVIADO",
+                                            ticket_id: data.id!
+                                          }
+                                        );
+                                      } else {
+                                        toast.dismiss(sendingToast);
+                                        toast.error(
+                                          "Mensaje no pudo ser enviado."
+                                        );
+                                      }
+                                    });
+                                  }
+                                }
+                              }
+                            });
+                          }
+                        }
+                      );
+                    } else {
                       toast.dismiss(messageToast);
-                      toast.success("Mensaje creado exitosamente.");
+                      toast.error("Mensaje no pudo ser creado.");
                     }
-                  });
-                } else {
-                  toast.dismiss(messageToast);
-                  toast.error("Mensaje no pudo ser creado.");
-                }
-              });
+                  }
+                );
+              }
             }
           });
         }}
@@ -406,7 +511,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             <Select
               options={clients.map((client) => ({
                 value: client.id,
-                label: client.nombre + " " + client.apellido,
+                label: `${client.nombre} ${client.apellido}, ${client.documento}`,
                 onClick: (value, label) => {
                   setSelectedClient({
                     value,
@@ -595,6 +700,45 @@ function DeleteModal({
             toast.dismiss(loadingToast);
             if (data) {
               toast.success("Ticket eliminado con exito.");
+              if (options.find()?.creación.siempre) {
+                const messageToast = toast.loading("Creando mensaje...");
+                MessageRender.renderTicketEliminationTemplate(ticket!).then(
+                  (rendered) => {
+                    if (rendered) {
+                      if (rendered === "Plantilla desactivada") {
+                        toast.dismiss(messageToast);
+                        toast.error("La plantilla esta desactivada");
+                        return;
+                      }
+                      toast.dismiss(messageToast);
+                      toast.success("Mensaje creado exitosamente.");
+
+                      if (ticket?.elemento?.cliente?.enviarMensajes) {
+                        if (options.find()?.envio.siempre) {
+                          const sendingToast = toast.loading(
+                            "Enviando mensaje..."
+                          );
+                          MessageSenderService.send(
+                            ticket?.elemento?.cliente.telefono || "",
+                            rendered
+                          ).then((res) => {
+                            if (res) {
+                              toast.dismiss(sendingToast);
+                              toast.success("Mensaje enviado exitosamente.");
+                            } else {
+                              toast.dismiss(sendingToast);
+                              toast.error("Mensaje no pudo ser enviado.");
+                            }
+                          });
+                        }
+                      }
+                    } else {
+                      toast.dismiss(messageToast);
+                      toast.error("Mensaje no pudo ser creado.");
+                    }
+                  }
+                );
+              }
             } else {
               toast.error("Ticket no pudo ser eliminado.");
             }
@@ -660,6 +804,11 @@ function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
           </div>
         )}
       </td>
+      <td className="px-6 py-2 border border-slate-300">
+      <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg capitalize">
+            {ticket?.tipo}
+          </div>
+      </td>
       <td className="px-6 py-3 border border-slate-300">
         {ticket?.elemento?.cliente?.nombre}{" "}
         {ticket?.elemento?.cliente?.apellido}
@@ -672,7 +821,7 @@ function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
       </td>
       <td className="px-6 py-3 border border-slate-300 w-[200px]">
         {action === "NONE" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
+          <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed py-1">
             Ninguna seleccionada
           </button>
         )}
@@ -747,7 +896,12 @@ function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
   );
 }
 
-function Dropup({ close, selectAction, openAddModal }: DropupProps) {
+function Dropup({
+  close,
+  selectAction,
+  openAddModal,
+  openSearchModal,
+}: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -788,15 +942,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           border
         "
     >
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.editar.ticket && (
-          <li>
-            <div
-              onClick={() => {
-                selectAction("EDIT");
-                close();
-              }}
-              className="
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.ticket) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("EDIT");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -809,20 +963,20 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Editar ticket
-            </div>
-          </li>
-        )}
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.eliminar.ticket && (
-          <li>
-            <div
-              onClick={() => {
-                selectAction("DELETE");
-                close();
-              }}
-              className="
+          >
+            Editar ticket
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.eliminar.ticket) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("DELETE");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -835,16 +989,16 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Eliminar ticket
-            </div>
-          </li>
-        )}
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.editar.ticket &&
-        permissions.find()?.eliminar.ticket && (
-          <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-        )}
+          >
+            Eliminar ticket
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        (permissions.find()?.editar.ticket &&
+          permissions.find()?.eliminar.ticket)) && (
+        <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+      )}
       <li>
         <div
           onClick={() => {
@@ -915,15 +1069,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
         </div>
       </li>
       <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.ticket && (
-          <li>
-            <div
-              onClick={() => {
-                openAddModal();
-                close();
-              }}
-              className="
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.crear.ticket) && (
+        <li>
+          <div
+            onClick={() => {
+              openAddModal();
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -936,15 +1090,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Crear ticket
-            </div>
-          </li>
-        )}
+          >
+            Crear ticket
+          </div>
+        </li>
+      )}
       <li>
         <div
           onClick={() => {
-            openAddModal();
+            openSearchModal?.();
             close();
           }}
           className="
@@ -961,10 +1115,496 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Hacer consulta
+          Buscar ticket
         </div>
       </li>
     </ul>
+  );
+}
+
+function SearchModal({ isOpen, closeModal }: ModalProps) {
+  const [loading, setLoading] = useState(true);
+  const [clients, setClients] = useState<Cliente[]>([]);
+  const [categories, setCategories] = useState<Categoría[]>([]);
+  const ref = useRef<HTMLDialogElement>(null);
+  const [selectedClient, setSelectedClient] = useState<Selected>({
+    value: -1,
+    label: "Seleccionar cliente",
+  });
+  const [selectedCategory, setSelectedCategory] = useState<Selected>({
+    value: -1,
+    label: "Seleccionar categoría",
+  });
+  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
+    value: "",
+    label: "Seleccionar parametro de busqueda",
+  });
+  const [selectedFecha, setSelectedFecha] = useState<Selected>({
+    value: "",
+    label: "Seleccionar tipo de busqueda",
+  });
+  const [selectedState, setSelectedState] = useState<Selected>({
+    value: "",
+    label: "Seleccionar estado de ticket",
+  });
+  const tempInput = useTicketSearchParamStore((state) => state.tempInput);
+  const secondTempInput = useTicketSearchParamStore(
+    (state) => state.secondTempInput
+  );
+  const setInput = useTicketSearchParamStore((state) => state.setInput);
+  const setTempInput = useTicketSearchParamStore((state) => state.setTempInput);
+  const setSecondInput = useTicketSearchParamStore(
+    (state) => state.setSecondInput
+  );
+  const setSecondTempInput = useTicketSearchParamStore(
+    (state) => state.setSecondTempInput
+  );
+  const setParam = useTicketSearchParamStore((state) => state.setParam);
+  const setSecondParam = useTicketSearchParamStore(
+    (state) => state.setSecondParam
+  );
+  const setSearchId = useTicketSearchParamStore((state) => state.setSearchId);
+  const incrementSearchCount = useTicketSearchParamStore(
+    (state) => state.incrementSearchCount
+  );
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+
+  const resetSearch = () => {
+    setTempInput("");
+    setSecondTempInput("");
+    setSelectedSearchType({
+      value: "",
+      label: "Seleccionar parametro de busqueda",
+    });
+    setSelectedFecha({
+      value: "",
+      label: "Seleccionar tipo de busqueda",
+    });
+    setSelectedClient({
+      value: -1,
+      label: "Seleccionar cliente",
+    });
+    setSelectedCategory({
+      value: -1,
+      label: "Seleccionar categoría",
+    });
+    setWasSearch(false);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          resetSearch();
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      resetSearch();
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (selectedSearchType.value === "CLIENTE") {
+      console.log("AQUI");
+      if (clients.length === 0) {
+        setLoading(true);
+        ClientService.getAll(1, 100).then((data) => {
+          if (data === false) {
+            setLoading(false);
+          } else {
+            setClients(data.rows);
+            setLoading(false);
+          }
+        });
+      }
+    } else if (selectedSearchType.value === "CATEGORÍA") {
+      if (categories.length === 0) {
+        setLoading(true);
+        CategoryService.getByTipo("ELEMENTO", 1, 100).then((data) => {
+          if (data === false) {
+            setLoading(false);
+          } else {
+            setCategories(data.rows);
+            setLoading(false);
+          }
+        });
+      }
+    }
+  }, [selectedSearchType]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-1/3 min-h-[200px] h-fit rounded-md shadow text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Buscar ticket</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (selectedSearchType.value !== "") {
+            resetSearch();
+            incrementSearchCount();
+            closeModal();
+            setWasSearch(true);
+          }
+        }}
+      >
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setParam(selectedSearchType.value as string);
+            }}
+            options={[
+              {
+                value: "ABIERTO",
+                label: "Fecha de apertura",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "CERRADO",
+                label: "Fecha de cierre",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "CLIENTE",
+                label: "Cliente",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "ESTADO",
+                label: "Estado",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "CATEGORÍA",
+                label: "Categoría de elemento",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedSearchType}
+          />
+        </div>
+        {selectedSearchType.value === "ESTADO" ? (
+          <div className="relative">
+            <Select
+              onChange={() => {
+                setInput(selectedState.value as string);
+                setSecondParam(selectedSearchType.value as string);
+              }}
+              options={[
+                {
+                  value: "ABIERTO",
+                  label: "Abierto",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "CERRADO",
+                  label: "Cerrado",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedState}
+            />
+          </div>
+        ) : null}
+        {selectedSearchType.value === "CATEGORÍA" ? (
+          <>
+            <div className="relative">
+              {categories.length > 0 && (
+                <Select
+                  options={categories.map((category) => ({
+                    value: category.id,
+                    label: `${category.nombre}`,
+                    onClick: (value, label) => {
+                      setSelectedCategory({
+                        value,
+                        label,
+                      });
+                    },
+                  }))}
+                  selected={selectedCategory}
+                  onChange={() => {
+                    setSearchId(selectedCategory.value as number);
+                  }}
+                />
+              )}
+              {categories.length === 0 && loading === false && (
+                <>
+                  <select
+                    className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                    value={0}
+                    disabled={true}
+                  >
+                    <option value={0}>Seleccionar categoría</option>
+                  </select>
+                  <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+                </>
+              )}
+              {categories.length === 0 && loading === true && (
+                <>
+                  <select
+                    className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                    value={0}
+                    disabled={true}
+                  >
+                    <option value={0}>Buscando categorías...</option>
+                  </select>
+                  <svg
+                    aria-hidden="true"
+                    className="inline w-4 h-4 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
+                    viewBox="0 0 100 101"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                      fill="currentFill"
+                    />
+                  </svg>
+                  <span className="sr-only">Cargando...</span>
+                </>
+              )}
+            </div>
+          </>
+        ) : null}
+        {selectedSearchType.value === "CLIENTE" ? (
+          <>
+            <div className="relative">
+              {clients.length > 0 && (
+                <Select
+                  options={clients.map((client) => ({
+                    value: client.id,
+                    label: `${client.nombre} ${client.apellido}, ${client.documento}`,
+                    onClick: (value, label) => {
+                      setSelectedClient({
+                        value,
+                        label,
+                      });
+                    },
+                  }))}
+                  selected={selectedClient}
+                  onChange={() => {
+                    setSearchId(selectedClient.value as number);
+                  }}
+                />
+              )}
+              {clients.length === 0 && loading === false && (
+                <>
+                  <select
+                    className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                    value={0}
+                    disabled={true}
+                  >
+                    <option value={0}>Seleccionar cliente</option>
+                  </select>
+                  <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+                </>
+              )}
+              {clients.length === 0 && loading === true && (
+                <>
+                  <select
+                    className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                    value={0}
+                    disabled={true}
+                  >
+                    <option value={0}>Buscando clientes...</option>
+                  </select>
+                  <svg
+                    aria-hidden="true"
+                    className="inline w-4 h-4 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
+                    viewBox="0 0 100 101"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                      fill="currentFill"
+                    />
+                  </svg>
+                  <span className="sr-only">Cargando...</span>
+                </>
+              )}
+            </div>
+          </>
+        ) : null}
+        {selectedSearchType.value === "ABIERTO" ||
+        selectedSearchType.value === "CERRADO" ? (
+          <div className="relative">
+            <Select
+              onChange={() => {
+                setSecondParam(selectedFecha.value as string);
+              }}
+              options={[
+                {
+                  value: "HOY",
+                  label: "Hoy",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "RECIENTEMENTE",
+                  label: "Recientemente",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ESTA_SEMANA",
+                  label: "Esta semana",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ESTE_MES",
+                  label: "Este mes",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ESTE_AÑO",
+                  label: "Este año",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ENTRE",
+                  label: "Entre las fechas",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedFecha}
+            />
+          </div>
+        ) : null}
+        {selectedFecha.value === "ENTRE" &&
+        (selectedSearchType.value === "ABIERTO" ||
+          selectedSearchType.value === "CERRADO") ? (
+          <>
+            {" "}
+            <input
+              type="date"
+              placeholder="Fecha inicial"
+              value={tempInput}
+              className="border p-2 rounded outline-none focus:border-[#2096ed]"
+              onChange={(e) => {
+                setInput(e.target.value);
+                setTempInput(e.target.value);
+              }}
+            />
+            <input
+              type="date"
+              placeholder="Fecha final"
+              value={secondTempInput}
+              className="border p-2 rounded outline-none focus:border-[#2096ed]"
+              onChange={(e) => {
+                setSecondInput(e.target.value);
+                setSecondTempInput(e.target.value);
+              }}
+            />
+          </>
+        ) : null}
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cancelar
+          </button>
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Buscar
+          </button>
+        </div>
+      </form>
+    </dialog>
   );
 }
 
@@ -979,6 +1619,18 @@ export default function TicketDataDisplay() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
+  const searchCount = useTicketSearchParamStore((state) => state.searchCount);
+  const resetSearchCount = useTicketSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const input = useTicketSearchParamStore((state) => state.input);
+  const param = useTicketSearchParamStore((state) => state.param);
+  const searchId = useTicketSearchParamStore((state) => state.searchId);
+  const secondInput = useTicketSearchParamStore((state) => state.secondInput);
+  const secondParam = useTicketSearchParamStore((state) => state.secondParam);
+  const [isSearch, setIsSearch] = useState(false);
+  const wasSearch = useSearchedStore((state) => state.wasSearch);
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -1001,25 +1653,210 @@ export default function TicketDataDisplay() {
   };
 
   useEffect(() => {
-    if (isOperationCompleted) {
-      setNotFound(false);
-      setLoading(true);
-    }
-    TicketService.getAll(page, 8).then((data) => {
-      if (data === false) {
-        setNotFound(true);
-        setLoading(false);
-        setTickets([]);
-      } else {
-        setTickets(data.rows);
-        setPages(data.pages);
-        setCurrent(data.current);
-        setLoading(false);
-        setNotFound(false);
+    if (searchCount === 0 || isOperationCompleted) {
+      TicketService.getAll(page, 8).then((data) => {
+        if (data === false) {
+          setNotFound(true);
+          setLoading(false);
+          setTickets([]);
+          resetSearchCount();
+          setWasSearch(false);
+        } else {
+          setTickets(data.rows);
+          setPages(data.pages);
+          setCurrent(data.current);
+          setLoading(false);
+          setNotFound(false);
+          resetSearchCount();
+          setWasSearch(false);
+        }
+        setIsOperationCompleted(false);
+      });
+    } else {
+      if (param === "CERRADO" || (param === "ABIERTO" && wasSearch)) {
+        const loadingToast = toast.loading("Buscando...");
+        if (secondParam === "HOY") {
+          TicketService.getToday(param, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setTickets([]);
+            } else {
+              setTickets(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (secondParam === "RECIENTEMENTE") {
+          TicketService.getRecent(param, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setTickets([]);
+            } else {
+              setTickets(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (secondParam === "ESTA_SEMANA") {
+          TicketService.getThisWeek(param, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setTickets([]);
+            } else {
+              setTickets(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (secondParam === "ESTE_MES") {
+          TicketService.getThisMonth(param, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setTickets([]);
+            } else {
+              setTickets(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (secondParam === "ESTE_AÑO") {
+          TicketService.getThisYear(param, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setTickets([]);
+            } else {
+              setTickets(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            setIsOperationCompleted(false);
+          });
+        } else if (secondParam === "ENTRE") {
+          if (param === "ABIERTO") {
+            TicketService.getOpenBetween(
+              new Date(input).toISOString().split("T")[0],
+              new Date(secondInput).toISOString().split("T")[0],
+              page,
+              8
+            ).then((data) => {
+              if (data === false) {
+                setNotFound(true);
+                setLoading(false);
+                setTickets([]);
+              } else {
+                setTickets(data.rows);
+                setPages(data.pages);
+                setCurrent(data.current);
+                setLoading(false);
+                setNotFound(false);
+              }
+              toast.dismiss(loadingToast);
+              setIsOperationCompleted(false);
+            });
+          } else {
+            TicketService.getClosedBetween(
+              new Date(input).toISOString().split("T")[0],
+              new Date(secondInput).toISOString().split("T")[0],
+              page,
+              8
+            ).then((data) => {
+              if (data === false) {
+                setNotFound(true);
+                setLoading(false);
+                setTickets([]);
+              } else {
+                setTickets(data.rows);
+                setPages(data.pages);
+                setCurrent(data.current);
+                setLoading(false);
+                setNotFound(false);
+              }
+              toast.dismiss(loadingToast);
+              setIsOperationCompleted(false);
+            });
+          }
+        }
+      } else if (param === "CLIENTE" && wasSearch) {
+        const loadingToast = toast.loading("Buscando...");
+        TicketService.getByClient(searchId, page, 8).then((data) => {
+          if (data === false) {
+            setNotFound(true);
+            setLoading(false);
+            setTickets([]);
+          } else {
+            setTickets(data.rows);
+            setPages(data.pages);
+            setCurrent(data.current);
+            setLoading(false);
+            setNotFound(false);
+          }
+          toast.dismiss(loadingToast);
+          setIsOperationCompleted(false);
+        });
+      } else if (param === "CATEGORÍA" && wasSearch) {
+        const loadingToast = toast.loading("Buscando...");
+        TicketService.getByCategory(searchId, page, 8).then((data) => {
+          if (data === false) {
+            setNotFound(true);
+            setLoading(false);
+            setTickets([]);
+          } else {
+            setTickets(data.rows);
+            setPages(data.pages);
+            setCurrent(data.current);
+            setLoading(false);
+            setNotFound(false);
+          }
+          toast.dismiss(loadingToast);
+          setIsOperationCompleted(false);
+        });
+      } else if (param === "ESTADO" && wasSearch) {
+        const loadingToast = toast.loading("Buscando...");
+        TicketService.getByState(input, page, 8).then((data) => {
+          if (data === false) {
+            setNotFound(true);
+            setLoading(false);
+            setTickets([]);
+          } else {
+            setTickets(data.rows);
+            setPages(data.pages);
+            setCurrent(data.current);
+            setLoading(false);
+            setNotFound(false);
+          }
+          toast.dismiss(loadingToast);
+          setIsOperationCompleted(false);
+        });
       }
-      setIsOperationCompleted(false);
-    });
-  }, [isOperationCompleted, page]);
+    }
+  }, [isOperationCompleted, searchCount, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchCount]);
 
   return (
     <>
@@ -1027,7 +1864,9 @@ export default function TicketDataDisplay() {
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className=" text-[#2096ed]">Tickets</span>
+            <span className="text-[#2096ed]" onClick={resetSearchCount}>
+              Tickets
+            </span>
           </div>
           <div>
             {isDropup && (
@@ -1035,6 +1874,9 @@ export default function TicketDataDisplay() {
                 close={closeDropup}
                 selectAction={selectAction}
                 openAddModal={openAddModal}
+                openSearchModal={() => {
+                  setIsSearch(true);
+                }}
               />
             )}
             <button
@@ -1054,12 +1896,15 @@ export default function TicketDataDisplay() {
           <div className="relative overflow-x-auto">
             <table className="w-full text-sm text-left border border-slate-300">
               <thead className="text-xs bg-[#2096ed] uppercase text-white">
-                <tr>
+                <tr className="border-2 border-[#2096ed]">
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     #
                   </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                  <th scope="col" className="px-6 py-3 border border-slate-300 text-center">
                     Estado
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300 text-center">
+                    Tipo
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Cliente
@@ -1090,7 +1935,7 @@ export default function TicketDataDisplay() {
             </table>
           </div>
         )}
-        {notFound === true && (
+        {(notFound === true || (tickets.length === 0 && loading === false)) && (
           <div className="grid w-full h-4/5 text-slate-600">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
@@ -1098,8 +1943,9 @@ export default function TicketDataDisplay() {
                 Ningún ticket encontrado
               </p>
               <p className="font-medium text text-center mt-1">
-                Esto puede deberse a un error del servidor, o a que simplemente
-                no hay ningún ticket registrado.
+                {searchCount === 0
+                  ? "Esto puede deberse a un error del servidor, o a que no hay ningún ticket registrado."
+                  : "Esto puede deberse a un error del servidor, o a que ningún ticket concuerda con tu busqueda"}
               </p>
             </div>
           </div>
@@ -1151,6 +1997,13 @@ export default function TicketDataDisplay() {
         isOpen={isAddOpen}
         closeModal={closeAddModal}
         setOperationAsCompleted={setAsCompleted}
+      />
+      <SearchModal
+        isOpen={isSearch}
+        closeModal={() => setIsSearch(false)}
+        setOperationAsCompleted={function (): void {
+          throw new Error("Function not implemented.");
+        }}
       />
     </>
   );

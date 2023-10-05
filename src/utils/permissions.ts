@@ -1,11 +1,11 @@
 import { Permisos } from "../types";
 
 const set = (permissions: Permisos) => {
-  sessionStorage.setItem("permissions", JSON.stringify(permissions));
+  localStorage.setItem("permissions", JSON.stringify(permissions));
 };
 
 const find = () => {
-  const permissions = sessionStorage.getItem("permissions");
+  const permissions = localStorage.getItem("permissions");
 
   if (permissions) {
     return JSON.parse(permissions) as Permisos;
@@ -15,7 +15,7 @@ const find = () => {
 };
 
 const revoke = () => {
-  sessionStorage.removeItem("permissions");
+  localStorage.removeItem("permissions");
 };
 
 const permissions = {

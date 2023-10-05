@@ -1,11 +1,11 @@
 import { Session } from "../types";
 
 const set = (session: Session) => {
-  sessionStorage.setItem("session", JSON.stringify(session));
+  localStorage.setItem("session", JSON.stringify(session));
 };
 
 const find = () => {
-  const session = sessionStorage.getItem("session");
+  const session = localStorage.getItem("session");
 
   if (session) {
     return JSON.parse(session) as Session;
@@ -15,7 +15,7 @@ const find = () => {
 };
 
 const revoke = () => {
-  sessionStorage.removeItem("session");
+  localStorage.removeItem("session");
 };
 
 const session = {

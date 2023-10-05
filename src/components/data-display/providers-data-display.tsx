@@ -17,6 +17,7 @@ import ProviderService from "../../services/provider-service";
 import Select from "../misc/select";
 import permissions from "../../utils/permissions";
 import session from "../../utils/session";
+import { useProviderSearchParamStore } from "../../store/searchParamStore";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const [documentType, setDocumentType] = useState<Selected>({
@@ -89,9 +90,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               ? "V-" + formData.documento
               : formData.documento;
           const loadingToast = toast.loading("Añadiendo proveedor...");
-          ProviderService.create(
-            updatedFormData
-          ).then((data) => {
+          ProviderService.create(updatedFormData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
@@ -259,10 +258,7 @@ function EditModal({
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Editando proveedor...");
-          ProviderService.update(
-            proveedor?.id!,
-            formData
-          ).then((data) => {
+          ProviderService.update(proveedor?.id!, formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data) {
@@ -454,6 +450,172 @@ function DeleteModal({
   );
 }
 
+function SearchModal({ isOpen, closeModal }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
+    value: "",
+    label: "Seleccionar parametro de busqueda",
+  });
+  const setIsPrecise = useProviderSearchParamStore(
+    (state) => state.setIsPrecise
+  );
+  const setTempIsPrecise = useProviderSearchParamStore(
+    (state) => state.setTempIsPrecise
+  );
+  const tempIsPrecise = useProviderSearchParamStore(
+    (state) => state.tempIsPrecise
+  );
+  const tempInput = useProviderSearchParamStore((state) => state.tempInput);
+  const setInput = useProviderSearchParamStore((state) => state.setInput);
+  const setTempInput = useProviderSearchParamStore(
+    (state) => state.setTempInput
+  );
+  const setParam = useProviderSearchParamStore((state) => state.setParam);
+  const incrementSearchCount = useProviderSearchParamStore(
+    (state) => state.incrementSearchCount
+  );
+
+  const resetSearch = () => {
+    setTempInput("");
+    setTempIsPrecise(false);
+    setSelectedSearchType({
+      value: "",
+      label: "Seleccionar parametro de busqueda",
+    });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          resetSearch();
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      resetSearch();
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-1/3 h-fit rounded-md shadow text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Buscar proveedor</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (selectedSearchType.value !== "") {
+            resetSearch();
+            incrementSearchCount();
+            closeModal();
+          }
+        }}
+      >
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setParam(selectedSearchType.value as string);
+            }}
+            options={[
+              {
+                value: "NOMBRE",
+                label: "Nombre",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "DOCUMENTO",
+                label: "Documento",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedSearchType}
+          />
+        </div>
+        <input
+          type="text"
+          placeholder={
+            selectedSearchType.value === "NOMBRE"
+              ? "Introduzca nombre del proveedor"
+              : selectedSearchType.value === "DOCUMENTO"
+              ? "Introduzca documento del proveedor"
+              : ""
+          }
+          value={tempInput}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          onChange={(e) => {
+            setInput(e.target.value);
+            setTempInput(e.target.value);
+          }}
+        />
+        <div className="flex w-full justify-between items-center">
+          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+            <input
+              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              type="checkbox"
+              onChange={(e) => {
+                setIsPrecise(e.target.checked);
+                setTempIsPrecise(e.target.checked);
+              }}
+              checked={tempIsPrecise}
+              id="checkbox"
+            />
+            <label
+              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+              htmlFor="checkbox"
+            >
+              ¿Busqueda exacta?
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Buscar
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
 function DataRow({ action, proveedor, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -528,7 +690,12 @@ function DataRow({ action, proveedor, setOperationAsCompleted }: DataRowProps) {
   );
 }
 
-function Dropup({ close, selectAction, openAddModal }: DropupProps) {
+function Dropup({
+  close,
+  selectAction,
+  openAddModal,
+  openSearchModal,
+}: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -569,15 +736,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           border
         "
     >
-      {session.find()?.usuario.rol === "ADMINISTRADOR" &&
-        permissions.find()?.editar.proveedor && (
-          <li>
-            <div
-              onClick={() => {
-                selectAction("EDIT");
-                close();
-              }}
-              className="
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.proveedor) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("EDIT");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -590,20 +757,20 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Editar proveedor
-            </div>
-          </li>
-        )}
-      {session.find()?.usuario.rol === "ADMINISTRADOR" &&
-        permissions.find()?.eliminar.proveedor && (
-          <li>
-            <div
-              onClick={() => {
-                selectAction("DELETE");
-                close();
-              }}
-              className="
+          >
+            Editar proveedor
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.eliminar.proveedor) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("DELETE");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -616,25 +783,25 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Eliminar proveedor
-            </div>
-          </li>
-        )}
-      {session.find()?.usuario.rol === "ADMINISTRADOR" &&
-        permissions.find()?.editar.proveedor &&
-        permissions.find()?.eliminar.proveedor && (
-          <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-        )}
-      {session.find()?.usuario.rol === "ADMINISTRADOR" &&
-        permissions.find()?.crear.proveedor && (
-          <li>
-            <div
-              onClick={() => {
-                openAddModal();
-                close();
-              }}
-              className="
+          >
+            Eliminar proveedor
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        (permissions.find()?.editar.proveedor &&
+          permissions.find()?.eliminar.proveedor)) && (
+        <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.crear.proveedor) && (
+        <li>
+          <div
+            onClick={() => {
+              openAddModal();
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -647,15 +814,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Añadir proveedor
-            </div>
-          </li>
-        )}
+          >
+            Añadir proveedor
+          </div>
+        </li>
+      )}
       <li>
         <div
           onClick={() => {
-            openAddModal();
+            openSearchModal?.();
             close();
           }}
           className="
@@ -684,12 +851,20 @@ export default function ProvidersDataDisplay() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
+  const [isSearch, setIsSearch] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
+  const searchCount = useProviderSearchParamStore((state) => state.searchCount);
+  const resetSearchCount = useProviderSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const input = useProviderSearchParamStore((state) => state.input);
+  const param = useProviderSearchParamStore((state) => state.param);
+  const isPrecise = useProviderSearchParamStore((state) => state.isPrecise);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -712,24 +887,93 @@ export default function ProvidersDataDisplay() {
   };
 
   useEffect(() => {
-    if (isOperationCompleted) {
-      setLoading(true);
-    }
-
-    ProviderService.getAll(page, 8).then((data) => {
-      if (data === false) {
-        setNotFound(true);
-        setLoading(false);
+    if (searchCount === 0) {
+      ProviderService.getAll(page, 8).then((data) => {
+        if (data === false) {
+          setNotFound(true);
+          setProviders([]);
+          setLoading(false);
+        } else {
+          setProviders(data.rows);
+          setPages(data.pages);
+          setCurrent(data.current);
+          setLoading(false);
+          setNotFound(false);
+        }
+        setIsOperationCompleted(false);
+      });
+    } else {
+      if (isPrecise) {
+        if (param === "NOMBRE") {
+          ProviderService.getByExactNombre(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setProviders([]);
+              setLoading(false);
+            } else {
+              setProviders(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "DOCUMENTO") {
+          ProviderService.getByExactDocumento(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setProviders([]);
+              setLoading(false);
+            } else {
+              setProviders(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            setIsOperationCompleted(false);
+          });
+        }
       } else {
-        setProviders(data.rows);
-        setPages(data.pages);
-        setCurrent(data.current);
-        setLoading(false);
-        setNotFound(false);
+        if (param === "NOMBRE") {
+          ProviderService.getByNombre(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setProviders([]);
+              setLoading(false);
+            } else {
+              setProviders(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "DOCUMENTO") {
+          ProviderService.getByDocumento(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setProviders([]);
+              setLoading(false);
+            } else {
+              setProviders(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            setIsOperationCompleted(false);
+          });
+        }
       }
-      setIsOperationCompleted(false);
-    });
+    }
   }, [isOperationCompleted, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchCount]);
 
   return (
     <>
@@ -737,7 +981,12 @@ export default function ProvidersDataDisplay() {
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]">Proveedores</span>
+            <span
+              onClick={resetSearchCount}
+              className="text-[#2096ed] cursor-pointer"
+            >
+              Proveedores
+            </span>
           </div>
           <div>
             {isDropup && (
@@ -745,6 +994,9 @@ export default function ProvidersDataDisplay() {
                 close={closeDropup}
                 selectAction={selectAction}
                 openAddModal={openAddModal}
+                openSearchModal={() => {
+                  setIsSearch(true);
+                }}
               />
             )}
             <button
@@ -797,7 +1049,8 @@ export default function ProvidersDataDisplay() {
             </table>
           </div>
         )}
-        {notFound === true && (
+        {(notFound === true ||
+          (providers.length === 0 && loading === false)) && (
           <div className="grid w-full h-4/5">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
@@ -805,8 +1058,9 @@ export default function ProvidersDataDisplay() {
                 Ningún proveedor encontrado
               </p>
               <p className="font-medium text text-center mt-1">
-                Esto puede deberse a un error del servidor, o a que simplemente
-                no hay ningún proveedor registrado.
+                {searchCount === 0
+                  ? "Esto puede deberse a un error del servidor, o a que no hay ningún proveedor registrado."
+                  : "Esto puede deberse a un error del servidor, o a que ningún proveedor concuerda con tu busqueda."}
               </p>
             </div>
           </div>
@@ -858,6 +1112,13 @@ export default function ProvidersDataDisplay() {
         isOpen={isAddOpen}
         closeModal={closeAddModal}
         setOperationAsCompleted={setAsCompleted}
+      />
+      <SearchModal
+        isOpen={isSearch}
+        closeModal={() => setIsSearch(false)}
+        setOperationAsCompleted={function (): void {
+          throw new Error("Function not implemented.");
+        }}
       />
     </>
   );

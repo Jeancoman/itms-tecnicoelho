@@ -12,6 +12,7 @@ import {
   Servicio,
   Selected,
   Categoría,
+  Mensaje,
 } from "../../types";
 import { useNavigate, useParams } from "react-router-dom";
 import ServiceService from "../../services/service-service";
@@ -21,6 +22,13 @@ import CategoryService from "../../services/category-service";
 import { format } from "date-fns";
 import session from "../../utils/session";
 import permissions from "../../utils/permissions";
+import options from "../../utils/options";
+import MessageRender from "../../services/message-render-service";
+import MessageService from "../../services/message-service";
+import TicketService from "../../services/ticket-service";
+import MessageSenderService from "../../services/message-sender-service";
+import { useServiceSearchParamStore } from "../../store/searchParamStore";
+import { useSearchedStore } from "../../store/searchedStore";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id } = useParams();
@@ -118,6 +126,81 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               toast.error("Servicio no pudo ser añadido.");
             } else {
               toast.success("Servicio añadido con exito.");
+              if (options.find()?.creación.siempre) {
+                const messageToast = toast.loading("Creando mensaje...");
+                MessageRender.renderServicioCreationTemplate(
+                  Number(id),
+                  data.id!
+                ).then((rendered) => {
+                  if (rendered) {
+                    if (rendered === "Plantilla desactivada") {
+                      toast.dismiss(messageToast);
+                      toast.error("La plantilla esta desactivada");
+                      return;
+                    }
+
+                    const message: Mensaje = {
+                      contenido: rendered,
+                      ticket_id: Number(id),
+                      estado: "NO_ENVIADO",
+                    };
+
+                    MessageService.create(Number(id), message).then(
+                      (mensaje) => {
+                        if (mensaje) {
+                          toast.dismiss(messageToast);
+                          toast.success("Mensaje creado exitosamente.");
+                          TicketService.getById(Number(id)).then(
+                            (resTicket) => {
+                              if (resTicket) {
+                                if (
+                                  resTicket.elemento?.cliente?.enviarMensajes
+                                ) {
+                                  if (options.find()?.envio.siempre) {
+                                    const sendingToast = toast.loading(
+                                      "Enviando mensaje..."
+                                    );
+                                    MessageSenderService.send(
+                                      resTicket.elemento?.cliente.telefono ||
+                                        "",
+                                      rendered
+                                    ).then((res) => {
+                                      if (res) {
+                                        toast.dismiss(sendingToast);
+                                        toast.success(
+                                          "Mensaje enviado exitosamente."
+                                        );
+                                        MessageService.update(
+                                          Number(id),
+                                          mensaje.id!,
+                                          //@ts-ignore
+                                          {
+                                            id: mensaje.id!,
+                                            estado: "ENVIADO",
+                                            ticket_id: Number(id),
+                                          }
+                                        );
+                                      } else {
+                                        toast.dismiss(sendingToast);
+                                        toast.error(
+                                          "Mensaje no pudo ser enviado."
+                                        );
+                                      }
+                                    });
+                                  }
+                                }
+                              }
+                            }
+                          );
+                        }
+                      }
+                    );
+                  } else {
+                    toast.dismiss(messageToast);
+                    toast.error("Mensaje no pudo ser creado.");
+                  }
+                });
+              }
             }
           });
         }}
@@ -246,6 +329,15 @@ function EditModal({
     value: formData.categoría_id,
     label: formData.categoría?.nombre,
   });
+  const [selectedState, setSelectedState] = useState<Selected>({
+    value: formData.estado,
+    label:
+      formData.estado === "INICIADO"
+        ? "Iniciado"
+        : formData.estado === "PENDIENTE"
+        ? "Pendiente"
+        : "Completado",
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -311,6 +403,82 @@ function EditModal({
                 toast.success("Servicio editado con exito.");
               } else {
                 toast.error("Servicio no pudo ser editado.");
+                if (options.find()?.creación.siempre) {
+                  const messageToast = toast.loading("Creando mensaje...");
+                  MessageRender.renderServicioModificationTemplate(
+                    Number(id),
+                    servicio?.id!,
+                    formData
+                  ).then((rendered) => {
+                    if (rendered) {
+                      if (rendered === "Plantilla desactivada") {
+                        toast.dismiss(messageToast);
+                        toast.error("La plantilla esta desactivada");
+                        return;
+                      }
+
+                      const message: Mensaje = {
+                        contenido: rendered,
+                        ticket_id: Number(id),
+                        estado: "NO_ENVIADO",
+                      };
+
+                      MessageService.create(Number(id), message).then(
+                        (mensaje) => {
+                          if (mensaje) {
+                            toast.dismiss(messageToast);
+                            toast.success("Mensaje creado exitosamente.");
+                            TicketService.getById(Number(id)).then(
+                              (resTicket) => {
+                                if (resTicket) {
+                                  if (
+                                    resTicket.elemento?.cliente?.enviarMensajes
+                                  ) {
+                                    if (options.find()?.envio.siempre) {
+                                      const sendingToast = toast.loading(
+                                        "Enviando mensaje..."
+                                      );
+                                      MessageSenderService.send(
+                                        resTicket.elemento?.cliente.telefono ||
+                                          "",
+                                        rendered
+                                      ).then((res) => {
+                                        if (res) {
+                                          toast.dismiss(sendingToast);
+                                          toast.success(
+                                            "Mensaje enviado exitosamente."
+                                          );
+                                          MessageService.update(
+                                            Number(id),
+                                            mensaje.id!,
+                                            //@ts-ignore
+                                            {
+                                              id: mensaje.id!,
+                                              estado: "ENVIADO",
+                                              ticket_id: Number(id),
+                                            }
+                                          );
+                                        } else {
+                                          toast.dismiss(sendingToast);
+                                          toast.error(
+                                            "Mensaje no pudo ser enviado."
+                                          );
+                                        }
+                                      });
+                                    }
+                                  }
+                                }
+                              }
+                            );
+                          }
+                        }
+                      );
+                    } else {
+                      toast.dismiss(messageToast);
+                      toast.error("Mensaje no pudo ser creado.");
+                    }
+                  });
+                }
               }
               setOperationAsCompleted();
             }
@@ -396,6 +564,66 @@ function EditModal({
             )}
           </div>
         </div>
+        {formData.estado === "PENDIENTE" ? (
+          <div className="relative">
+            <Select
+              options={[
+                {
+                  value: "INICIADO",
+                  label: "Iniciado",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "COMPLETADO",
+                  label: "Completado",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedState}
+            />
+          </div>
+        ) : null}
+        {formData.estado === "INICIADO" ? (
+          <div className="relative">
+            <Select
+              options={[
+                {
+                  value: "COMPLETADO",
+                  label: "Completado",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedState}
+            />
+          </div>
+        ) : null}
+        {formData.estado === "COMPLETADO" ? (
+          <div className="relative">
+            <select
+              className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+              value={0}
+              disabled={true}
+            >
+              <option value={0}>Completado</option>
+            </select>
+            <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+          </div>
+        ) : null}
         <textarea
           rows={3}
           placeholder="Descripción"
@@ -408,7 +636,7 @@ function EditModal({
           value={formData.descripción}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={closeModal}
@@ -477,6 +705,79 @@ function DeleteModal({
             toast.dismiss(loadingToast);
             if (data) {
               toast.success("Servicio eliminado con exito.");
+              if (options.find()?.creación.siempre) {
+                const messageToast = toast.loading("Creando mensaje...");
+                MessageRender.renderServicioEliminationTemplate(
+                  Number(id),
+                  servicio!
+                ).then((rendered) => {
+                  if (rendered) {
+                    if (rendered === "Plantilla desactivada") {
+                      toast.dismiss(messageToast);
+                      toast.error("La plantilla esta desactivada");
+                      return;
+                    }
+                    const message: Mensaje = {
+                      contenido: rendered,
+                      ticket_id: Number(id),
+                      estado: "NO_ENVIADO",
+                    };
+                    MessageService.create(Number(id), message).then(
+                      (mensaje) => {
+                        if (mensaje) {
+                          toast.dismiss(messageToast);
+                          toast.success("Mensaje creado exitosamente.");
+                          TicketService.getById(Number(id)).then(
+                            (resTicket) => {
+                              if (resTicket) {
+                                if (
+                                  resTicket.elemento?.cliente?.enviarMensajes
+                                ) {
+                                  if (options.find()?.envio.siempre) {
+                                    const sendingToast = toast.loading(
+                                      "Enviando mensaje..."
+                                    );
+                                    MessageSenderService.send(
+                                      resTicket.elemento?.cliente.telefono ||
+                                        "",
+                                      rendered
+                                    ).then((res) => {
+                                      if (res) {
+                                        toast.dismiss(sendingToast);
+                                        toast.success(
+                                          "Mensaje enviado exitosamente."
+                                        );
+                                        MessageService.update(
+                                          Number(id),
+                                          mensaje.id!,
+                                          //@ts-ignore
+                                          {
+                                            id: mensaje.id!,
+                                            estado: "ENVIADO",
+                                            ticket_id: Number(id),
+                                          }
+                                        );
+                                      } else {
+                                        toast.dismiss(sendingToast);
+                                        toast.error(
+                                          "Mensaje no pudo ser enviado."
+                                        );
+                                      }
+                                    });
+                                  }
+                                }
+                              }
+                            }
+                          );
+                        }
+                      }
+                    );
+                  } else {
+                    toast.dismiss(messageToast);
+                    toast.error("Mensaje no pudo ser creado.");
+                  }
+                });
+              }
             } else {
               toast.error("Servicio no pudo ser eliminado.");
             }
@@ -613,7 +914,12 @@ function DataRow({ action, setOperationAsCompleted, servicio }: DataRowProps) {
   );
 }
 
-function Dropup({ close, selectAction, openAddModal }: DropupProps) {
+function Dropup({
+  close,
+  selectAction,
+  openAddModal,
+  openSearchModal,
+}: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -654,15 +960,16 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           border-none
         "
     >
-      {session.find()?.usuario.rol === "ADMINISTRADOR" &&
-        permissions.find()?.editar.ticket && (
-          <li>
-            <div
-              onClick={() => {
-                selectAction("EDIT");
-                close();
-              }}
-              className="
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+        permissions.find()?.editar.ticket) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("EDIT");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -675,20 +982,21 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Editar servicio
-            </div>
-          </li>
-        )}
-      {session.find()?.usuario.rol === "ADMINISTRADOR" &&
-        permissions.find()?.eliminar.ticket && (
-          <li>
-            <div
-              onClick={() => {
-                selectAction("DELETE");
-                close();
-              }}
-              className="
+          >
+            Editar servicio
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+        permissions.find()?.eliminar.ticket) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("DELETE");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -701,16 +1009,17 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Eliminar servicio
-            </div>
-          </li>
-        )}
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.editar.ticket &&
-        permissions.find()?.eliminar.ticket && (
-          <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-        )}
+          >
+            Eliminar servicio
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+        (permissions.find()?.editar.ticket &&
+          permissions.find()?.eliminar.ticket)) && (
+        <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+      )}
       <li>
         <div
           onClick={() => {
@@ -735,15 +1044,16 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
         </div>
       </li>
       <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.ticket && (
-          <li>
-            <div
-              onClick={() => {
-                openAddModal();
-                close();
-              }}
-              className="
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+        permissions.find()?.crear.ticket) && (
+        <li>
+          <div
+            onClick={() => {
+              openAddModal();
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -756,15 +1066,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Añadir servicio
-            </div>
-          </li>
-        )}
+          >
+            Añadir servicio
+          </div>
+        </li>
+      )}
       <li>
         <div
           onClick={() => {
-            openAddModal();
+            openSearchModal?.();
             close();
           }}
           className="
@@ -781,10 +1091,273 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Hacer consulta
+          Buscar servicio
         </div>
       </li>
     </ul>
+  );
+}
+
+function SearchModal({ isOpen, closeModal }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [selectedState, setSelectedState] = useState<Selected>({
+    value: -1,
+    label: "Seleccionar estado",
+  });
+  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
+    value: "",
+    label: "Seleccionar parametro de busqueda",
+  });
+  const [selectedFecha, setSelectedFecha] = useState<Selected>({
+    value: "",
+    label: "Seleccionar tipo de busqueda",
+  });
+  const tempInput = useServiceSearchParamStore((state) => state.tempInput);
+  const secondTempInput = useServiceSearchParamStore(
+    (state) => state.secondTempInput
+  );
+  const setInput = useServiceSearchParamStore((state) => state.setInput);
+  const setTempInput = useServiceSearchParamStore(
+    (state) => state.setTempInput
+  );
+  const setSecondInput = useServiceSearchParamStore(
+    (state) => state.setSecondInput
+  );
+  const setSecondTempInput = useServiceSearchParamStore(
+    (state) => state.setSecondTempInput
+  );
+  const setParam = useServiceSearchParamStore((state) => state.setParam);
+  const setSecondParam = useServiceSearchParamStore(
+    (state) => state.setSecondParam
+  );
+  const incrementSearchCount = useServiceSearchParamStore(
+    (state) => state.incrementSearchCount
+  );
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+
+  const resetSearch = () => {
+    setTempInput("");
+    setSecondTempInput("");
+    setSelectedSearchType({
+      value: "",
+      label: "Seleccionar parametro de busqueda",
+    });
+    setSelectedFecha({
+      value: "",
+      label: "Seleccionar tipo de busqueda",
+    });
+    setSelectedState({
+      value: -1,
+      label: "Seleccionar estado",
+    });
+    setWasSearch(false);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          resetSearch();
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      resetSearch();
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-1/3 min-h-[200px] h-fit rounded-md shadow text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Buscar operación</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (selectedSearchType.value !== "") {
+            resetSearch();
+            incrementSearchCount();
+            closeModal();
+            setWasSearch(true);
+          }
+        }}
+      >
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setParam(selectedSearchType.value as string);
+            }}
+            options={[
+              {
+                value: "AÑADIDO",
+                label: "Fecha añadido",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "INICIADO",
+                label: "Fecha de inicio",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "COMPLETADO",
+                label: "Fecha completado",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "ESTADO",
+                label: "Estado",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedSearchType}
+          />
+        </div>
+        {selectedSearchType.value === "ESTADO" ? (
+          <div className="relative">
+            <Select
+              onChange={() => {
+                setInput(selectedState.value as string);
+              }}
+              options={[
+                {
+                  value: "AÑADIDO",
+                  label: "Añadido",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "INICIADO",
+                  label: "Iniciado",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "COMPLETADO",
+                  label: "Completado",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedState}
+            />
+          </div>
+        ) : null}
+        {selectedSearchType.value === "AÑADIDO" ||
+        selectedSearchType.value === "INICIADO" ||
+        selectedSearchType.value === "COMPLETADO" ? (
+          <div className="relative">
+            <Select
+              onChange={() => {
+                setSecondParam(selectedFecha.value as string);
+              }}
+              options={[
+                {
+                  value: "ENTRE",
+                  label: "Entre las fechas",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedFecha}
+            />
+          </div>
+        ) : null}
+        {selectedFecha.value === "ENTRE" ? (
+          <>
+            {" "}
+            <input
+              type="date"
+              placeholder="Fecha inicial"
+              value={tempInput}
+              className="border p-2 rounded outline-none focus:border-[#2096ed]"
+              onChange={(e) => {
+                setInput(e.target.value);
+                setTempInput(e.target.value);
+              }}
+            />
+            <input
+              type="date"
+              placeholder="Fecha final"
+              value={secondTempInput}
+              className="border p-2 rounded outline-none focus:border-[#2096ed]"
+              onChange={(e) => {
+                setSecondInput(e.target.value);
+                setSecondTempInput(e.target.value);
+              }}
+            />
+          </>
+        ) : null}
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cancelar
+          </button>
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Buscar
+          </button>
+        </div>
+      </form>
+    </dialog>
   );
 }
 
@@ -800,6 +1373,16 @@ export default function ServicesDataDisplay() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
+  const searchCount = useServiceSearchParamStore((state) => state.searchCount);
+  const resetSearchCount = useServiceSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const input = useServiceSearchParamStore((state) => state.input);
+  const param = useServiceSearchParamStore((state) => state.param);
+  const secondInput = useServiceSearchParamStore((state) => state.secondInput);
+  const [isSearch, setIsSearch] = useState(false);
+  const wasSearch = useSearchedStore((state) => state.wasSearch);
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -822,20 +1405,118 @@ export default function ServicesDataDisplay() {
   };
 
   useEffect(() => {
-    ServiceService.getAll(Number(id), page, 8).then((data) => {
-      if (data === false) {
-        setNotFound(true);
-        setLoading(false);
-      } else {
-        setServices(data.rows);
-        setPages(data.pages);
-        setCurrent(data.current);
-        setLoading(false);
-        setNotFound(false);
+    if (searchCount === 0 || isOperationCompleted) {
+      ServiceService.getAll(Number(id), page, 8).then((data) => {
+        if (data === false) {
+          setNotFound(true);
+          setLoading(false);
+          setServices([]);
+          resetSearchCount();
+          setWasSearch(false);
+        } else {
+          setServices(data.rows);
+          setPages(data.pages);
+          setCurrent(data.current);
+          setLoading(false);
+          setNotFound(false);
+          resetSearchCount();
+          setWasSearch(false);
+        }
+        setIsOperationCompleted(false);
+      });
+    } else {
+      if (wasSearch) {
+        const loadingToast = toast.loading("Buscando...");
+        if (param === "AÑADIDO") {
+          ServiceService.getBetweenAñadido(
+            Number(id),
+            new Date(input).toISOString().split("T")[0],
+            new Date(secondInput).toISOString().split("T")[0],
+            page,
+            8
+          ).then((data) => {
+            if (data === false) {
+              setServices([]);
+              setNotFound(true);
+              setLoading(false);
+            } else {
+              setServices(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "INICIADO") {
+          ServiceService.getBetweenIniciado(
+            Number(id),
+            new Date(input).toISOString().split("T")[0],
+            new Date(secondInput).toISOString().split("T")[0],
+            page,
+            8
+          ).then((data) => {
+            if (data === false) {
+              setServices([]);
+              setNotFound(true);
+              setLoading(false);
+            } else {
+              setServices(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "COMPLETADO") {
+          ServiceService.getBetweenCompletado(
+            Number(id),
+            new Date(input).toISOString().split("T")[0],
+            new Date(secondInput).toISOString().split("T")[0],
+            page,
+            8
+          ).then((data) => {
+            if (data === false) {
+              setServices([]);
+              setNotFound(true);
+              setLoading(false);
+            } else {
+              setServices(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "ESTADO") {
+          ServiceService.getByState(Number(id), input, page, 8).then((data) => {
+            if (data === false) {
+              setServices([]);
+              setNotFound(true);
+              setLoading(false);
+            } else {
+              setServices(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        }
       }
-      setIsOperationCompleted(false);
-    });
-  }, [isOperationCompleted, page]);
+    }
+  }, [isOperationCompleted, searchCount, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchCount]);
 
   return (
     <>
@@ -846,7 +1527,9 @@ export default function ServicesDataDisplay() {
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">{id}</span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]">Servicios</span>
+            <span className="text-[#2096ed]" onClick={resetSearchCount}>
+              Servicios
+            </span>
           </div>
           <div>
             {isDropup && (
@@ -854,6 +1537,9 @@ export default function ServicesDataDisplay() {
                 close={closeDropup}
                 selectAction={selectAction}
                 openAddModal={openAddModal}
+                openSearchModal={() => {
+                  setIsSearch(true);
+                }}
               />
             )}
             <button
@@ -909,7 +1595,8 @@ export default function ServicesDataDisplay() {
             </table>
           </div>
         )}
-        {notFound === true && (
+        {(notFound === true ||
+          (services.length === 0 && loading === false)) && (
           <div className="grid w-full h-4/5 text-slate-600">
             <div className="place-self-center flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
@@ -917,8 +1604,9 @@ export default function ServicesDataDisplay() {
                 Ningún servicio encontrado
               </p>
               <p className="font-medium text text-center mt-1">
-                Esto puede deberse a un error del servidor, o a que simplemente
-                este ticket no tenga ningún servicio registrado.
+                {searchCount === 0
+                  ? "Esto puede deberse a un error del servidor, o a que no hay ningún servicio registrado."
+                  : "Esto puede deberse a un error del servidor, o a que ningún servicio concuerda con tu busqueda"}
               </p>
             </div>
           </div>
@@ -970,6 +1658,13 @@ export default function ServicesDataDisplay() {
         isOpen={isAddOpen}
         closeModal={closeAddModal}
         setOperationAsCompleted={setAsCompleted}
+      />
+      <SearchModal
+        isOpen={isSearch}
+        closeModal={() => setIsSearch(false)}
+        setOperationAsCompleted={function (): void {
+          throw new Error("Function not implemented.");
+        }}
       />
     </>
   );

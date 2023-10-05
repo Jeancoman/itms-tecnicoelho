@@ -1,9 +1,9 @@
-import { useEffect } from "react";
 import ClientsDataDisplay from "../components/data-display/clients-data-display";
 import NavPanel from "../components/misc/nav-panel";
 import session from "../utils/session";
 import { useNavigate } from "react-router-dom";
 import permissions from "../utils/permissions";
+import { useEffect } from "react";
 
 export default function ClientsPage() {
   const navigate = useNavigate()
@@ -18,6 +18,17 @@ export default function ClientsPage() {
     }  
   })
 
+  if (!session.find()) {
+    return null;
+  } else {
+    if (
+      session.find()?.usuario.rol !== "ADMINISTRADOR" &&
+      !permissions.find()?.ver.cliente
+    ) {
+      return null;
+    }
+  }
+  
   return (
     <> 
       <div className="min-h-screen bg-white grid grid-cols-[1fr_5fr]">

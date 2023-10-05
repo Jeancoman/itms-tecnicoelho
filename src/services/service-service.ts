@@ -43,6 +43,102 @@ export default class ServiceService {
     }
   }
 
+  static async getBetweenAñadido(ticket_id: number, añadido_inicial: string, añadido_final: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&añadido_inicial=${añadido_inicial}&añadido_final=${añadido_final}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+    static async getBetweenIniciado(ticket_id: number, añadido_inicial: string, añadido_final: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&iniciado_inicial=${añadido_inicial}&iniciado_final=${añadido_final}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByState(ticket_id: number, estado: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&estado=${estado}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getBetweenCompletado(ticket_id: number, añadido_inicial: string, añadido_final: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&completado_inicial=${añadido_inicial}&completado_final=${añadido_final}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
   static async create(ticket_id: number, service: Servicio) {
     try {
       const response = await fetch(

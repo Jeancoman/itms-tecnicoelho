@@ -16,7 +16,11 @@ export default function LoginPage() {
     if (session.find()) {
       navigate("/");
     }
-  }, []);
+  })
+
+  if (session.find()) {
+    return null;
+  }
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

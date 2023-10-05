@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import ProvidersDataDisplay from "../components/data-display/providers-data-display";
 import NavPanel from "../components/misc/nav-panel";
 import { useNavigate } from "react-router-dom";
@@ -9,18 +8,16 @@ export default function ProvidersPage() {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!session.find()) {
-      navigate("/entrar");
-    } else {
-      if (
-        session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-        !permissions.find()?.ver.proveedor
-      ) {
-        navigate("/");
-      }
+  if (!session.find()) {
+    navigate("/entrar");
+  } else {
+    if (
+      session.find()?.usuario.rol !== "ADMINISTRADOR" &&
+      !permissions.find()?.ver.proveedor
+    ) {
+      navigate("/");
     }
-  });
+  }
 
   return (
     <> 

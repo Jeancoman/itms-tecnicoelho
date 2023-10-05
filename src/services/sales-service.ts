@@ -41,6 +41,183 @@ export default class SaleService {
     }
   }
 
+  static async getToday(page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/reportes/ventas/en?tipo=HOY&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getRecent(page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/reportes/ventas/en?tipo=RECIENTEMENTE&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getThisWeek(page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/reportes/ventas/en?tipo=ESTA_SEMANA&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getThisMonth(page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/reportes/ventas/en?tipo=ESTE_MES&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getThisYear(page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/reportes/ventas/en?tipo=ESTE_AÑO&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getBetween(
+    start: string,
+    end: string,
+    page: number,
+    size: number
+  ) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/ventas/busqueda?page=${page}&size=${size}&fecha_inicial=${start}&fecha_final=${end}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByClient(
+    cliente_id: number,
+    page: number,
+    size: number
+  ) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/ventas/busqueda?page=${page}&size=${size}&cliente_id=${cliente_id}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
   static async create(sale: Venta) {
     try {
       const response = await fetch(

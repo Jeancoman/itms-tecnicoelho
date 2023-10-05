@@ -41,6 +41,158 @@ export default class UserService {
     }
   }
 
+  static async getByNombre(nombre: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/usuarios/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByExactNombre(nombre: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/usuarios/busqueda?tipo=EXACTA&nombre=${nombre}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByApellido(apellido: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/usuarios/busqueda?exactitud=INEXACTA&apellido=${apellido}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByExactApellido(
+    apellido: string,
+    page: number,
+    size: number
+  ) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/usuarios/busqueda?exactitud=EXACTA&apellido=${apellido}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByNombreUsuario(usuario: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/usuarios/busqueda?exactitud=INEXACTA&usuario=${usuario}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByExactNombreUsuario(
+    usuario: string,
+    page: number,
+    size: number
+  ) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/usuarios/busqueda?exactitud=EXACTA&usuario=${usuario}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
   static async getPermissionsById(id: number) {
     try {
       const response = await fetch(
@@ -178,27 +330,27 @@ export default class UserService {
 
   static async signIn(nombre_usuario: string, contraseña: string) {
     try {
-    const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/login`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nombre_usuario: nombre_usuario,
-          contraseña: contraseña,
-        }),
-      }
-    );
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            nombre_usuario: nombre_usuario,
+            contraseña: contraseña,
+          }),
+        }
+      );
 
-    if (response.status > 300) {
+      if (response.status > 300) {
+        return false;
+      }
+
+      return (await response.json()).token as string;
+    } catch {
       return false;
     }
-
-    return (await response.json()).token as string;
-  } catch {
-    return false
-  }
   }
 }

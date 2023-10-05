@@ -18,6 +18,7 @@ export default function UsersPage() {
     }  
   })
 
+
   return (
     <> 
       <div className="h-screen bg-white grid grid-cols-[1fr_5fr]">

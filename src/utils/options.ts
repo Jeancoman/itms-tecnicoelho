@@ -1,11 +1,11 @@
 import { Opciones } from "../types";
 
 const set = (options: Opciones) => {
-  sessionStorage.setItem("options", JSON.stringify(options));
+  localStorage.setItem("options", JSON.stringify(options));
 };
 
 const find = () => {
-  const options = sessionStorage.getItem("options");
+  const options = localStorage.getItem("options");
 
   if (options) {
     return JSON.parse(options) as Opciones;
@@ -15,7 +15,7 @@ const find = () => {
 };
 
 const revoke = () => {
-  sessionStorage.removeItem("options");
+  localStorage.removeItem("options");
 };
 
 const options = {

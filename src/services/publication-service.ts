@@ -41,6 +41,54 @@ export default class PublicationService {
     }
   }
 
+  static async getByTitulo(titulo: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/clientes/busqueda?tipo=INEXACTA&titulo=${titulo}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByExactTitulo(titulo: string, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/clientes/busqueda?tipo=EXACTA&titulo=${titulo}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
   static async create(publicación: Publicación) {
     try {
       const response = await fetch(

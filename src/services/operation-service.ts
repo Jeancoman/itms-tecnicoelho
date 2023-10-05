@@ -48,6 +48,129 @@ export default class OperationService {
     }
   }
 
+  static async getBetweenAñadida(
+    ticket_id: number,
+    servicio_id: number,
+    añadido_inicial: string,
+    añadido_final: string,
+    page: number,
+    size: number
+  ) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/busqueda/servicios/${servicio_id}/operaciones?page=${page}&size=${size}&añadida_inicial=${añadido_inicial}&añadida_final=${añadido_final}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getBetweenInicial(
+    ticket_id: number,
+    servicio_id: number,
+    añadido_inicial: string,
+    añadido_final: string,
+    page: number,
+    size: number
+  ) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/busqueda/servicios/${servicio_id}/operaciones?page=${page}&size=${size}&iniciada_inicial=${añadido_inicial}&iniciada_final=${añadido_final}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getBetweenCompletada(
+    ticket_id: number,
+    servicio_id: number,
+    añadido_inicial: string,
+    añadido_final: string,
+    page: number,
+    size: number
+  ) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/busqueda/servicios/${servicio_id}/operaciones?page=${page}&size=${size}&completada_inicial=${añadido_inicial}&completada_final=${añadido_final}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByState(
+    ticket_id: number,
+    servicio_id: number,
+    state: string,
+    page: number,
+    size: number
+  ) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/busqueda/servicios/${servicio_id}/operaciones?page=${page}&size=${size}&estado=${state}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
   static async create(
     ticket_id: number,
     service_id: number,

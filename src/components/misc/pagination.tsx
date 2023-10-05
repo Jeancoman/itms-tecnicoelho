@@ -17,7 +17,7 @@ export default function Pagination({
           ["p-2 border rounded-lg border-[#2096ed] fill-[#2096ed] cursor-pointer hover:bg-blue-100"]:
             current > 1,
           ["p-2 border rounded-lg border-[#2096ed] fill-[#2096ed] cursor-not-allowed"]:
-            current === 1,
+            current <= 1,
         })}
       >
         <Left className="h-4 w-4" />

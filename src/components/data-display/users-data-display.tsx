@@ -16,8 +16,9 @@ import {
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
 import UserService from "../../services/user-service";
-import { format } from "date-fns";
 import Select from "../misc/select";
+import { useUserSearchParamStore } from "../../store/searchParamStore";
+import { useSearchedStore } from "../../store/searchedStore";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const [last, setLast] = useState(false);
@@ -496,13 +497,8 @@ function EditModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const cleanedFormData = { ...formData };
-
-          if (formData.contraseña === "") {
-            delete cleanedFormData.contraseña;
-          }
           const loadingToast = toast.loading("Editando usuario...");
-          UserService.update(usuario?.id!, cleanedFormData).then((data) => {
+          UserService.update(usuario?.id!, formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data) {
@@ -744,11 +740,6 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
         {usuario?.nombreUsuario}
       </td>
       <td className="px-6 py-4 border border-slate-300">{usuario?.rol}</td>
-      <td className="px-6 py-4 border border-slate-300">
-        {usuario?.último_login
-          ? format(usuario?.último_login, "dd/MM/yyyy")
-          : "Nunca"}
-      </td>
       <td className="px-6 py-3 w-52 border border-slate-300">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
@@ -796,7 +787,185 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
   );
 }
 
-function Dropup({ close, selectAction, openAddModal }: DropupProps) {
+function SearchModal({ isOpen, closeModal }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
+    value: "",
+    label: "Seleccionar parametro de busqueda",
+  });
+  const setIsPrecise = useUserSearchParamStore((state) => state.setIsPrecise);
+  const setTempIsPrecise = useUserSearchParamStore(
+    (state) => state.setTempIsPrecise
+  );
+  const tempIsPrecise = useUserSearchParamStore((state) => state.tempIsPrecise);
+  const tempInput = useUserSearchParamStore((state) => state.tempInput);
+  const setInput = useUserSearchParamStore((state) => state.setInput);
+  const setTempInput = useUserSearchParamStore((state) => state.setTempInput);
+  const setParam = useUserSearchParamStore((state) => state.setParam);
+  const incrementSearchCount = useUserSearchParamStore((state) => state.incrementSearchCount);
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+
+  const resetSearch = () => {
+    setTempInput("");
+    setTempIsPrecise(false);
+    setSelectedSearchType({
+      value: "",
+      label: "Seleccionar parametro de busqueda",
+    });
+    setWasSearch(false)
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          resetSearch();
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      resetSearch();
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-1/3 h-fit rounded-md shadow text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Buscar usuario</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (selectedSearchType.value !== "") {
+            resetSearch();
+            incrementSearchCount();
+            closeModal();
+            setWasSearch(true)
+          }
+        }}
+      >
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setParam(selectedSearchType.value as string);
+            }}
+            options={[
+              {
+                value: "NOMBRE",
+                label: "Nombre",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "APELLIDO",
+                label: "Apellido",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "NOMBRE_USUARIO",
+                label: "Nombre de usuario",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedSearchType}
+          />
+        </div>
+        <input
+          type="text"
+          placeholder={
+            selectedSearchType.value === "NOMBRE"
+              ? "Introduzca nombre del usuario"
+              : selectedSearchType.value === "APELLIDO"
+              ? "Introduzca apellido del usuario"
+              : selectedSearchType.value === "NOMBRE_USUARIO"
+              ? "Introduzca nombre de usuario del usuario"
+              : ""
+          }
+          value={tempInput}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          onChange={(e) => {
+            setInput(e.target.value);
+            setTempInput(e.target.value);
+          }}
+        />
+        <div className="flex w-full justify-between items-center">
+          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+            <input
+              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              type="checkbox"
+              onChange={(e) => {
+                setIsPrecise(e.target.checked);
+                setTempIsPrecise(e.target.checked);
+              }}
+              checked={tempIsPrecise}
+              id="checkbox"
+            />
+            <label
+              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+              htmlFor="checkbox"
+            >
+              ¿Busqueda exacta?
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Buscar
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
+function Dropup({
+  close,
+  selectAction,
+  openAddModal,
+  openSearchModal,
+}: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -910,7 +1079,7 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
       <li>
         <div
           onClick={() => {
-            openAddModal();
+            openSearchModal?.();
             close();
           }}
           className="
@@ -1054,29 +1223,6 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
             ELIMINAR
           </label>
         </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox40"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                reporte: {
-                  ...permissions.reporte,
-                  cliente: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.reporte.cliente}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox40"
-          >
-            REPORTE
-          </label>
-        </div>
       </div>
       <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
         Tickets
@@ -1184,29 +1330,6 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
             htmlFor="checkbox8"
           >
             ELIMINAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox41"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                reporte: {
-                  ...permissions.reporte,
-                  ticket: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.reporte.ticket}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox41"
-          >
-            REPORTE
           </label>
         </div>
       </div>
@@ -1427,29 +1550,6 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
             ELIMINAR
           </label>
         </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox42"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                reporte: {
-                  ...permissions.reporte,
-                  producto: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.reporte.producto}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox42"
-          >
-            REPORTE
-          </label>
-        </div>
       </div>
       <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
         Proveedores
@@ -1557,29 +1657,6 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
             htmlFor="checkbox20"
           >
             ELIMINAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox220"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                reporte: {
-                  ...permissions.reporte,
-                  proveedor: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.reporte.proveedor}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox220"
-          >
-            REPORTE
           </label>
         </div>
       </div>
@@ -1691,29 +1768,6 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
             ELIMINAR
           </label>
         </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox60"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                reporte: {
-                  ...permissions.reporte,
-                  venta: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.reporte.venta}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox60"
-          >
-            REPORTE
-          </label>
-        </div>
       </div>
       <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
         Compras
@@ -1821,29 +1875,6 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
             htmlFor="checkbox28"
           >
             ELIMINAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox100"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                reporte: {
-                  ...permissions.reporte,
-                  compra: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.reporte.compra}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox100"
-          >
-            REPORTE
           </label>
         </div>
       </div>
@@ -1956,61 +1987,6 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
           </label>
         </div>
       </div>
-      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
-        Mensajería
-      </div>
-      <div className="ml-5 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox33"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  mensajería: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.mensajería}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox33"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox34"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  mensajería: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  mensajería: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.mensajería}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox34"
-          >
-            EDITAR
-          </label>
-        </div>
-      </div>
     </div>
   );
 }
@@ -2019,6 +1995,7 @@ export default function UsersDataDisplay() {
   const [users, setUsers] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [isSearch, setIsSearch] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
@@ -2026,6 +2003,15 @@ export default function UsersDataDisplay() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
+  const searchCount = useUserSearchParamStore((state) => state.searchCount);
+  const resetSearchCount = useUserSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const input = useUserSearchParamStore((state) => state.input);
+  const param = useUserSearchParamStore((state) => state.param);
+  const isPrecise = useUserSearchParamStore((state) => state.isPrecise);
+  const wasSearch = useSearchedStore((state) => state.wasSearch);
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -2048,25 +2034,135 @@ export default function UsersDataDisplay() {
   };
 
   useEffect(() => {
-    if (isOperationCompleted) {
-      setLoading(true);
-    }
-
-    UserService.getAll(page, 8).then((data) => {
-      if (data === false) {
-        setNotFound(true);
-        setLoading(false);
-        setUsers([]);
-      } else {
-        setUsers(data.rows);
-        setPages(data.pages);
-        setCurrent(data.current);
-        setLoading(false);
-        setNotFound(false);
+    if (searchCount === 0 || isOperationCompleted) {
+      UserService.getAll(page, 8).then((data) => {
+        if (data === false) {
+          setNotFound(true);
+          setLoading(false);
+          setUsers([]);
+          setWasSearch(false);
+          resetSearchCount();
+        } else {
+          setUsers(data.rows);
+          setPages(data.pages);
+          setCurrent(data.current);
+          setLoading(false);
+          setNotFound(false);
+          setWasSearch(false);
+          resetSearchCount();
+        }
+        setIsOperationCompleted(false);
+      });
+    } else {
+      if (isPrecise && wasSearch) {
+        const loadingToast = toast.loading("Buscando...");
+        if (param === "NOMBRE") {
+          UserService.getByExactNombre(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setUsers([]);
+            } else {
+              setUsers(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "APELLIDO") {
+          UserService.getByExactApellido(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setUsers([]);
+            } else {
+              setUsers(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "NOMBRE_USUARIO") {
+          UserService.getByExactNombreUsuario(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setUsers([]);
+            } else {
+              setUsers(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        }
+      } else if (!isPrecise && wasSearch) {
+        const loadingToast = toast.loading("Buscando...");
+        if (param === "NOMBRE") {
+          UserService.getByNombre(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setUsers([]);
+            } else {
+              setUsers(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "APELLIDO") {
+          UserService.getByApellido(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setUsers([]);
+            } else {
+              setUsers(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "NOMBRE_USUARIO") {
+          UserService.getByNombreUsuario(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setUsers([]);
+            } else {
+              setUsers(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        }
       }
-      setIsOperationCompleted(false);
-    });
-  }, [isOperationCompleted, page]);
+    }
+  }, [isOperationCompleted, searchCount, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchCount]);
 
   return (
     <>
@@ -2074,7 +2170,12 @@ export default function UsersDataDisplay() {
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]">Usuarios</span>
+            <span
+              onClick={resetSearchCount}
+              className="text-[#2096ed] cursor-pointer"
+            >
+              Usuarios
+            </span>
           </div>
           <div>
             {isDropup && (
@@ -2082,6 +2183,9 @@ export default function UsersDataDisplay() {
                 close={closeDropup}
                 selectAction={selectAction}
                 openAddModal={openAddModal}
+                openSearchModal={() => {
+                  setIsSearch(true);
+                }}
               />
             )}
             <button
@@ -2102,25 +2206,22 @@ export default function UsersDataDisplay() {
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">
-                  <th scope="col" className="px-6 py-3 border-slate-300">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     #
                   </th>
-                  <th scope="col" className="px-6 py-3 border-slate-300">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Nombre
                   </th>
-                  <th scope="col" className="px-6 py-3 border-slate-300">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Apellido
                   </th>
-                  <th scope="col" className="px-6 py-3 border-slate-300">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Nombre de usuario
                   </th>
-                  <th scope="col" className="px-6 py-3 border-slate-300">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Rol
                   </th>
-                  <th scope="col" className="px-6 py-3 border-slate-300">
-                    Último inicio de sesión
-                  </th>
-                  <th scope="col" className="px-6 py-3 border-slate-300">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
                   </th>
                 </tr>
@@ -2140,7 +2241,7 @@ export default function UsersDataDisplay() {
             </table>
           </div>
         )}
-        {notFound === true && (
+        {(notFound === true || (users.length === 0 && loading === false)) && (
           <div className="grid w-full h-4/5">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
@@ -2148,8 +2249,9 @@ export default function UsersDataDisplay() {
                 Ningún usuario encontrado
               </p>
               <p className="font-medium text text-center mt-1">
-                Esto puede deberse a un error del servidor, o a que simplemente
-                no hay ningún usuario registrado.
+                {searchCount === 0
+                  ? "Esto puede deberse a un error del servidor, o a que no hay ningún usuario registrado."
+                  : "Esto puede deberse a un error del servidor, o a que ningún usuario concuerda con tu busqueda"}
               </p>
             </div>
           </div>
@@ -2201,6 +2303,13 @@ export default function UsersDataDisplay() {
         isOpen={isAddOpen}
         setOperationAsCompleted={setAsCompleted}
         closeModal={closeAddModal}
+      />
+      <SearchModal
+        isOpen={isSearch}
+        closeModal={() => setIsSearch(false)}
+        setOperationAsCompleted={function (): void {
+          throw new Error("Function not implemented.");
+        }}
       />
     </>
   );

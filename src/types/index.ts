@@ -34,11 +34,20 @@ export type SectionProps = {
 export type EmbeddedTableProps = {
   onChange: (detalles: DetalleVenta[]) => void;
   action?: Action;
+  searchTerm?: string;
+  products?: Producto[];
+  page?: number;
+  detalles_compra?: DetalleCompra[];
+  detalles_venta?: DetalleVenta[];
+  setPages?: (pages: number) => void;
+  setCurrent?: (current: number) => void;
 };
 
 export type EmbeddedDataRowProps = {
   onChange: (detalle: DetalleVenta) => void;
   producto?: Producto;
+  detalle_compra?: DetalleCompra;
+  detalle_venta?: DetalleVenta;
   action?: Action;
 };
 
@@ -48,6 +57,8 @@ export type DropupProps = {
   close: () => void;
   openAddModal: () => void;
   openOptionModal?: () => void;
+  openSearchModal?: () => void;
+  openReportModal?: () => void;
   toEdit?: boolean;
   toAdd?: boolean;
 };
@@ -190,8 +201,6 @@ export type OperaciónEstado = "PENDIENTE" | "INICIADA" | "COMPLETADA";
 
 export type CategoríaTipo = "ELEMENTO" | "PRODUCTO" | "SERVICIO";
 
-export type CompraEstado = "PENDIENTE" | "CONFIRMADA";
-
 export type PlantillaEsDe = "TICKET" | "PROBLEMA" | "SERVICIO" | "OPERACIÓN";
 
 export type PlantillaEvento =
@@ -293,6 +302,7 @@ export interface Servicio {
   descripción?: string;
   estado: ServicioEstado;
   readonly añadido?: Date;
+  iniciado?: Date;
   completado?: Date;
   ticket_id?: number;
   categoría_id?: number;
@@ -308,6 +318,7 @@ export interface Problema {
   prioridad: ProblemaPrioridad;
   estado: ProblemaEstado;
   readonly detectado?: Date;
+  resuelto?: Date;
   ticket_id?: number;
 }
 
@@ -326,7 +337,9 @@ export interface Operación {
   descripción?: string;
   resultado?: string;
   estado: OperaciónEstado;
+  necesidades?: string;
   readonly añadida?: Date;
+  iniciada?: Date;
   completada?: Date;
   servicio_id?: number;
 }
@@ -340,7 +353,7 @@ export interface Categoría {
 
 export interface Producto {
   id?: number;
-  código: string;
+  código?: string;
   slug: string;
   nombre: string;
   descripción?: string;
@@ -357,7 +370,7 @@ export interface Publicación {
   título: string;
   contenido: string;
   esPública: boolean;
-  creada?: Date;
+  readonly creada?: Date;
   modificada?: Date;
   imagen_id?: number;
   usuario_id?: number;
@@ -374,7 +387,7 @@ export interface Proveedor {
   documento?: string;
   descripción?: string;
   telefono?: string;
-  readonly registrando?: Date;
+  readonly registrado?: Date;
 }
 
 export interface Venta {
@@ -386,18 +399,19 @@ export interface Venta {
   cliente_id?: number;
   cliente?: Cliente;
   detalles?: DetalleVenta[];
+  productos?: Producto[];
 }
 
 export interface Compra {
   id?: number;
   fecha?: Date;
-  estado: CompraEstado;
   impuesto: number;
   subtotal: number;
   total: number;
   proveedor_id: number;
   proveedor?: Proveedor;
   detalles?: DetalleCompra[];
+  productos?: Producto[];
 }
 
 export interface DetalleVenta {
@@ -423,6 +437,7 @@ export interface Imagen {
   url: string;
   descripción?: string;
   esPública: boolean;
+  añadida?: Date;
 }
 
 export interface ImagenProducto {
@@ -442,6 +457,16 @@ export interface Plantilla {
 export interface Mensajería {
   id: number;
   opciones: Opciones;
+}
+
+export interface Seguimiento {
+  id?: number;
+  recibido?: Date;
+  notas_de_recibo?: string;
+  entregable_desde?: Date;
+  entregado?: Date;
+  notas_de_entrega?: String;
+  elemento_id?: number;
 }
 
 export type Response = {

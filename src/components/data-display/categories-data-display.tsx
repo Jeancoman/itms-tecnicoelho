@@ -18,6 +18,8 @@ import toast, { Toaster } from "react-hot-toast";
 import Select from "../misc/select";
 import permissions from "../../utils/permissions";
 import session from "../../utils/session";
+import { useCategorySearchParamStore } from "../../store/searchParamStore";
+import { useSearchedStore } from "../../store/searchedStore";
 
 function EditModal({
   isOpen,
@@ -419,6 +421,228 @@ function DeleteModal({
   );
 }
 
+function SearchModal({ isOpen, closeModal }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
+    value: "",
+    label: "Seleccionar parametro de busqueda",
+  });
+  const [selectedType, setSelectedType] = useState<Selected>({
+    value: "",
+    label: "Seleccionar tipo de categoría",
+  });
+  const setIsPrecise = useCategorySearchParamStore(
+    (state) => state.setIsPrecise
+  );
+  const setTempIsPrecise = useCategorySearchParamStore(
+    (state) => state.setTempIsPrecise
+  );
+  const tempIsPrecise = useCategorySearchParamStore(
+    (state) => state.tempIsPrecise
+  );
+  const tempInput = useCategorySearchParamStore((state) => state.tempInput);
+  const setInput = useCategorySearchParamStore((state) => state.setInput);
+  const setTempInput = useCategorySearchParamStore(
+    (state) => state.setTempInput
+  );
+  const setParam = useCategorySearchParamStore((state) => state.setParam);
+  const incrementSearchCount = useCategorySearchParamStore(
+    (state) => state.incrementSearchCount
+  );
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+
+  const resetSearch = () => {
+    setTempInput("");
+    setTempIsPrecise(false);
+    setSelectedSearchType({
+      value: "",
+      label: "Seleccionar parametro de busqueda",
+    });
+    setSelectedType({
+      value: "",
+      label: "Seleccionar tipo de categoría",
+    });
+    setWasSearch(false);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          resetSearch();
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      resetSearch();
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-1/3 h-fit rounded-md shadow text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Buscar categoría</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (selectedSearchType.value !== "") {
+            resetSearch();
+            incrementSearchCount();
+            closeModal();
+            setWasSearch(true);
+          }
+        }}
+      >
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setParam(selectedSearchType.value as string);
+            }}
+            options={[
+              {
+                value: "NOMBRE",
+                label: "Nombre",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "TIPO",
+                label: "Tipo",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedSearchType}
+          />
+        </div>
+        {selectedSearchType.value === "NOMBRE" ? (
+          <input
+            type="text"
+            placeholder={
+              selectedSearchType.value === "NOMBRE"
+                ? "Introduzca nombre del usuario"
+                : ""
+            }
+            value={tempInput}
+            className="border p-2 rounded outline-none focus:border-[#2096ed]"
+            onChange={(e) => {
+              setInput(e.target.value);
+              setTempInput(e.target.value);
+            }}
+          />
+        ) : null }
+        {
+          selectedSearchType.value === "TIPO" ? (
+            <div className="relative">
+            <Select
+              onChange={() => {
+                setInput(selectedType.value as string);
+              }}
+              options={[
+                {
+                  value: "ELEMENTO",
+                  label: "Elemento",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "SERVICIO",
+                  label: "Servicio",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "PRODUCTO",
+                  label: "Producto",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedType}
+            />
+          </div> 
+          ) : null
+        }
+        <div className="flex w-full justify-between items-center">
+          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+            <input
+              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              type="checkbox"
+              onChange={(e) => {
+                setIsPrecise(e.target.checked);
+                setTempIsPrecise(e.target.checked);
+              }}
+              checked={tempIsPrecise}
+              id="checkbox"
+              disabled={selectedSearchType.value !== "TIPO" && (selectedSearchType.value !== "") }
+            />
+            <label
+              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+              htmlFor="checkbox"
+            >
+              ¿Busqueda exacta?
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Buscar
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
 function DataRow({ action, categoría, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -491,7 +715,12 @@ function DataRow({ action, categoría, setOperationAsCompleted }: DataRowProps) 
   );
 }
 
-function Dropup({ close, selectAction, openAddModal }: DropupProps) {
+function Dropup({
+  close,
+  selectAction,
+  openAddModal,
+  openSearchModal,
+}: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -532,15 +761,16 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           border
         "
     >
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        (permissions.find()?.editar.categoría && (
-          <li>
-            <div
-              onClick={() => {
-                selectAction("EDIT");
-                close();
-              }}
-              className="
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+        permissions.find()?.editar.categoría) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("EDIT");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -553,20 +783,21 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Editar categoría
-            </div>
-          </li>
-        ))}
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        (permissions.find()?.eliminar.categoría && (
-          <li>
-            <div
-              onClick={() => {
-                selectAction("DELETE");
-                close();
-              }}
-              className="
+          >
+            Editar categoría
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+        permissions.find()?.eliminar.categoría) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("DELETE");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -579,25 +810,27 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Eliminar categoría
-            </div>
-          </li>
-        ))}
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+          >
+            Eliminar categoría
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
         (permissions.find()?.editar.categoría &&
-          permissions.find()?.eliminar.categoría && (
-            <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-          ))}
-      {session.find()?.usuario.rol !== "ADMINISTRADOR" ||
-        (permissions.find()?.crear.categoría && (
-          <li>
-            <div
-              onClick={() => {
-                openAddModal();
-                close();
-              }}
-              className="
+          permissions.find()?.eliminar.categoría)) && (
+        <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+        permissions.find()?.crear.categoría) && (
+        <li>
+          <div
+            onClick={() => {
+              openAddModal();
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -610,15 +843,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Crear categoría
-            </div>
-          </li>
-        ))}
+          >
+            Crear categoría
+          </div>
+        </li>
+      )}
       <li>
         <div
           onClick={() => {
-            openAddModal();
+            openSearchModal?.();
             close();
           }}
           className="
@@ -653,6 +886,16 @@ export default function CategoriesDataDisplay() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
+  const searchCount = useCategorySearchParamStore((state) => state.searchCount);
+  const resetSearchCount = useCategorySearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const input = useCategorySearchParamStore((state) => state.input);
+  const param = useCategorySearchParamStore((state) => state.param);
+  const isPrecise = useCategorySearchParamStore((state) => state.isPrecise);
+  const wasSearch = useSearchedStore((state) => state.wasSearch);
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const [isSearch, setIsSearch] = useState(false);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -675,24 +918,88 @@ export default function CategoriesDataDisplay() {
   };
 
   useEffect(() => {
-    if (isOperationCompleted) {
-      setLoading(true);
-    }
-
-    CategoryService.getAll(page, 8).then((data) => {
-      if (data === false) {
-        setNotFound(true);
-        setLoading(false);
-      } else {
-        setCategories(data.rows);
-        setPages(data.pages);
-        setCurrent(data.current);
-        setLoading(false);
-        setNotFound(false);
+    if (searchCount === 0 || isOperationCompleted) {
+      CategoryService.getAll(page, 8).then((data) => {
+        if (data === false) {
+          setNotFound(true);
+          setLoading(false);
+          setCategories([]);
+          setWasSearch(false);
+          resetSearchCount();
+        } else {
+          setCategories(data.rows);
+          setPages(data.pages);
+          setCurrent(data.current);
+          setLoading(false);
+          setNotFound(false);
+          setWasSearch(false);
+          resetSearchCount();
+        }
+        setIsOperationCompleted(false);
+      });
+    } else {
+      if (param === "TIPO") {
+        const loadingToast = toast.loading("Buscando...");
+        CategoryService.getByTipo(input, page, 8).then((data) => {
+          if (data === false) {
+            setNotFound(true);
+            setLoading(false);
+            setCategories([]);
+          } else {
+            setCategories(data.rows);
+            setPages(data.pages);
+            setCurrent(data.current);
+            setLoading(false);
+            setNotFound(false);
+          }
+          toast.dismiss(loadingToast);
+          setIsOperationCompleted(false);
+        });
+      } else if (isPrecise && wasSearch) {
+        const loadingToast = toast.loading("Buscando...");
+        if (param === "NOMBRE") {
+          CategoryService.getByExactNombre(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setCategories([]);
+            } else {
+              setCategories(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (!isPrecise && wasSearch) {
+          const loadingToast = toast.loading("Buscando...");
+          if (param === "NOMBRE") {
+            CategoryService.getByNombre(input, page, 8).then((data) => {
+              if (data === false) {
+                setNotFound(true);
+                setLoading(false);
+                setCategories([]);
+              } else {
+                setCategories(data.rows);
+                setPages(data.pages);
+                setCurrent(data.current);
+                setLoading(false);
+                setNotFound(false);
+              }
+              toast.dismiss(loadingToast);
+              setIsOperationCompleted(false);
+            });
+          }
+        }
       }
-      setIsOperationCompleted(false);
-    });
-  }, [isOperationCompleted, page]);
+    }
+  }, [isOperationCompleted, searchCount, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchCount]);
 
   return (
     <>
@@ -700,7 +1007,9 @@ export default function CategoriesDataDisplay() {
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]">Categorías</span>
+            <span className="text-[#2096ed]" onClick={resetSearchCount}>
+              Categorías
+            </span>
           </div>
           <div>
             {isDropup && (
@@ -708,6 +1017,9 @@ export default function CategoriesDataDisplay() {
                 close={closeDropup}
                 selectAction={selectAction}
                 openAddModal={openAddModal}
+                openSearchModal={() => {
+                  setIsSearch(true);
+                }}
               />
             )}
             <button
@@ -760,7 +1072,8 @@ export default function CategoriesDataDisplay() {
             </table>
           </div>
         )}
-        {notFound === true && (
+        {(notFound === true ||
+          (categories.length === 0 && loading === false)) && (
           <div className="grid w-full h-4/5">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
@@ -768,8 +1081,9 @@ export default function CategoriesDataDisplay() {
                 Ningúna categoría encontrada
               </p>
               <p className="font-medium text text-center mt-1">
-                Esto puede deberse a un error del servidor, o a que simplemente
-                no hay ningúna categoría registrada.
+                {searchCount === 0
+                  ? "Esto puede deberse a un error del servidor, o a que no hay ningúna categoría registrada."
+                  : "Esto puede deberse a un error del servidor, o a que ningúna categoría concuerda con tu busqueda"}
               </p>
             </div>
           </div>
@@ -821,6 +1135,13 @@ export default function CategoriesDataDisplay() {
         isOpen={isAddOpen}
         closeModal={closeAddModal}
         setOperationAsCompleted={setAsCompleted}
+      />
+      <SearchModal
+        isOpen={isSearch}
+        closeModal={() => setIsSearch(false)}
+        setOperationAsCompleted={function (): void {
+          throw new Error("Function not implemented.");
+        }}
       />
     </>
   );

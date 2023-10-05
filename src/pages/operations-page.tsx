@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import OperationsDataDisplay from "../components/data-display/operations-data-display";
 import NavPanel from "../components/misc/nav-panel";
-import { useEffect } from "react";
 import session from "../utils/session";
 import permissions from "../utils/permissions";
+import { useEffect } from "react";
 
 export default function OperationsPage() {
 
@@ -20,7 +20,7 @@ export default function OperationsPage() {
         navigate("/");
       }
     }
-  });
+  })
 
   return (
     <> 
