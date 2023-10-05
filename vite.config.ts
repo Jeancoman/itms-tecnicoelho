@@ -10,7 +10,7 @@ export default defineConfig({
     // Alternatively, we could add `<script>window.global = window;</script>` to index.html.
     // https://github.com/vitejs/vite/discussions/5912
     define: {
-      _global: ({})
+      _global: '({})'
   }
   },
 })
