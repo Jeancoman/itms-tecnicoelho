@@ -761,11 +761,11 @@ function DataRow({
           <>
             <button
               onClick={() => {
-                navigate("/ventas/" + venta?.id + "/pdf");
+                navigate("/ventas/" + venta?.id + "/factura");
               }}
               className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
-              Mostrar PDF
+              Mostrar factura
             </button>
           </>
         )}
@@ -823,18 +823,13 @@ function EmbeddedDataRow({
   return (
     <tr>
       <th
-        scope="row"
-        className="font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 text-center"
-      >
-        {producto?.id}
-      </th>
-      <td className="px-6 py-2 border border-slate-300 max-w-[150px] truncate">
+        scope="row" className="px-6 py-2 border border-slate-300 w-[50px] truncate">
         {producto?.código}
-      </td>
-      <td className="px-6 py-2 border border-slate-300 max-w-[150px] truncate">
+      </th>
+      <td className="px-6 py-2 border border-slate-300 w-[50px] truncate">
         {producto?.nombre}
       </td>
-      <td className="px-6 py-2 border border-slate-300">{producto?.precio}</td>
+      <td className="px-6 py-2 border border-slate-300 w-[50px]">{producto?.precio}</td>
       <td className="px-6 py-2 border border-slate-300 w-[1px]">
         {cantidad}/{max}
       </td>
@@ -945,9 +940,6 @@ function EmbeddedTable({
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
-                    #
-                  </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Código
                   </th>
@@ -2051,7 +2043,7 @@ function Dropup({
               cursor-pointer
             "
         >
-          Mostrar PDF
+          Mostrar factura
         </div>
       </li>
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||

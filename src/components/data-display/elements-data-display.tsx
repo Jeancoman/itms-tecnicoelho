@@ -648,9 +648,9 @@ function Dropup({
           border
         "
     >
-      {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        (permissions.find()?.editar.cliente && (
+        permissions.find()?.editar.cliente) && (
           <li>
             <div
               onClick={() => {
@@ -674,7 +674,7 @@ function Dropup({
               Editar elemento
             </div>
           </li>
-        ))}
+        )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
         permissions.find()?.eliminar.cliente) && (

@@ -3,18 +3,29 @@ import NavPanel from "../components/misc/nav-panel";
 import session from "../utils/session";
 import permissions from "../utils/permissions";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function MessagingPage() {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!session.find()) {
+      navigate("/entrar");
+    } else {
+      if (
+        session.find()?.usuario.rol !== "ADMINISTRADOR" &&
+        !permissions.find()?.ver.mensajería
+      ) {
+        navigate("/");
+      }
+    }
+  });
+
   if (!session.find()) {
-    navigate("/entrar");
+    return null;
   } else {
-    if (
-      session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-      !permissions.find()?.ver.mensajería
-    ) {
-      navigate("/");
+    if (session.find()?.usuario.rol !== "ADMINISTRADOR") {
+      return null;
     }
   }
 

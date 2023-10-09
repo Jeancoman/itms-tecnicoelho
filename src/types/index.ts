@@ -18,6 +18,7 @@ export type ModalProps = {
   compra?: Compra;
   plantilla?: Plantilla;
   mensajería?: Mensajería;
+  imagen?: Imagen
 };
 
 export type SectionProps = {
@@ -82,6 +83,7 @@ export type DataRowProps = {
   venta?: Venta;
   compra?: Compra;
   plantilla?: Plantilla;
+  imagen?: Imagen
 };
 
 export type OptionProps = {
@@ -187,7 +189,7 @@ export type ElementoEstado = "ACTIVO" | "INACTIVO";
 
 export type TicketEstado = "ABIERTO" | "CERRADO";
 
-export type TicketTipo = "DOMICILIO" | "TIENDA" | "REMOTO";
+export type ServicioTipo = "DOMICILIO" | "TIENDA" | "REMOTO";
 
 export type ServicioEstado = "PENDIENTE" | "INICIADO" | "COMPLETADO";
 
@@ -229,7 +231,9 @@ export interface Usuario {
   nombreUsuario: string;
   contraseña?: string;
   rol: UsuarioRol;
-  último_login?: Date;
+  creado_por?: {
+    lista: number[];
+  };
   permiso?: Permisos;
 }
 
@@ -290,7 +294,6 @@ export interface Elemento {
 export interface Ticket {
   id?: number;
   estado: TicketEstado;
-  tipo: TicketTipo;
   readonly creado?: Date;
   elemento_id?: number;
   elemento?: Elemento;
@@ -300,6 +303,7 @@ export interface Servicio {
   id?: number;
   nombre: string;
   descripción?: string;
+  tipo: ServicioTipo;
   estado: ServicioEstado;
   readonly añadido?: Date;
   iniciado?: Date;
@@ -481,7 +485,7 @@ export type PaginationProps = {
   current: number;
   next: () => void;
   prev: () => void;
-}
+};
 
 export interface JwtPayload {
   usuario: Usuario;

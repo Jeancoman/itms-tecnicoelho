@@ -13,7 +13,6 @@ import {
   Cliente,
   Elemento,
   Selected,
-  TicketTipo,
   Mensaje,
   Categoría,
 } from "../../types";
@@ -41,7 +40,7 @@ function EditModal({
   ticket,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
-  const [formData, setFormData] = useState<Ticket>(ticket!);
+  const [formData, _setFormData] = useState<Ticket>(ticket!);
   const [selectedClient, _setSelectedClient] = useState<Selected>({
     value: ticket?.elemento?.cliente_id,
     label:
@@ -53,14 +52,9 @@ function EditModal({
     value: ticket?.elemento_id,
     label: ticket?.elemento?.nombre,
   });
-  const [selectedType, setSelectedType] = useState<Selected>({
-    label:
-      ticket?.tipo === "DOMICILIO"
-        ? "Domicilio"
-        : ticket?.tipo === "TIENDA"
-        ? "Tienda"
-        : "Remoto",
-    value: ticket?.tipo,
+  const [selectedState, setSelectedState] = useState<Selected>({
+    value: ticket?.estado,
+    label: ticket?.estado === "ABIERTO" ? "Abierto" : "Cerrado",
   });
 
   useEffect(() => {
@@ -163,7 +157,7 @@ function EditModal({
                                           {
                                             id: mensaje.id!,
                                             estado: "ENVIADO",
-                                            ticket_id: ticket?.id
+                                            ticket_id: ticket?.id,
                                           }
                                         );
                                       } else {
@@ -191,49 +185,37 @@ function EditModal({
           });
         }}
       >
-        <div className="relative">
-          <Select
-            onChange={() => {
-              setFormData({
-                ...formData,
-                tipo: selectedType.value as TicketTipo,
-              });
-            }}
-            options={[
-              {
-                value: "DOMICILIO",
-                label: "Domicilio",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
+        {formData.estado === "ABIERTO" ? (
+          <div className="relative">
+            <Select
+              options={[
+                {
+                  value: "CERRADO",
+                  label: "Cerrado",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
                 },
-              },
-              {
-                value: "TIENDA",
-                label: "Tienda",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "REMOTO",
-                label: "Remoto",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
-            ]}
-            selected={selectedType}
-          />
-        </div>
+              ]}
+              selected={selectedState}
+            />
+          </div>
+        ) : null}
+        {formData.estado === "CERRADO" ? (
+          <div className="relative">
+            <select
+              className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+              value={0}
+              disabled={true}
+            >
+              <option value={0}>Cerrado</option>
+            </select>
+            <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+          </div>
+        ) : null}
         <div className="relative">
           <select
             className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
@@ -286,19 +268,13 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     value: -1,
     label: "Seleccionar elemento",
   });
-  const [selectedType, setSelectedType] = useState<Selected>({
-    label: "Seleccionar tipo",
-    value: "",
-  });
   const [formData, setFormData] = useState<Ticket>({
-    tipo: "TIENDA",
     estado: "ABIERTO",
     elemento_id: -1,
   });
 
   const resetFormData = () => {
     setFormData({
-      tipo: "TIENDA",
       estado: "ABIERTO",
       elemento_id: -1,
     });
@@ -310,7 +286,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       value: -1,
       label: "Seleccionar elemento",
     });
-    setSelectedType({ label: "Seleccionar tipo", value: "" });
   };
 
   useEffect(() => {
@@ -348,7 +323,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           if (data === false) {
             setLoading(false);
           } else {
-            setElements(data.rows.filter((elemento) => elemento.estado === "INACTIVO"));
+            setElements(
+              data.rows.filter((elemento) => elemento.estado === "INACTIVO")
+            );
             setLoading(false);
           }
         }
@@ -435,7 +412,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                                           {
                                             id: mensaje.id!,
                                             estado: "ENVIADO",
-                                            ticket_id: data.id!
+                                            ticket_id: data.id!,
                                           }
                                         );
                                       } else {
@@ -463,49 +440,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           });
         }}
       >
-        <div className="relative">
-          <Select
-            onChange={() => {
-              setFormData({
-                ...formData,
-                tipo: selectedType.value as TicketTipo,
-              });
-            }}
-            options={[
-              {
-                value: "DOMICILIO",
-                label: "Domicilio",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "TIENDA",
-                label: "Tienda",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "REMOTO",
-                label: "Remoto",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
-            ]}
-            selected={selectedType}
-          />
-        </div>
         <div className="relative">
           {clients.length > 0 && (
             <Select
@@ -803,11 +737,6 @@ function DataRow({ action, ticket, setOperationAsCompleted }: DataRowProps) {
             Cerrado
           </div>
         )}
-      </td>
-      <td className="px-6 py-2 border border-slate-300">
-      <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg capitalize">
-            {ticket?.tipo}
-          </div>
       </td>
       <td className="px-6 py-3 border border-slate-300">
         {ticket?.elemento?.cliente?.nombre}{" "}
@@ -1900,11 +1829,11 @@ export default function TicketDataDisplay() {
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     #
                   </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300 text-center">
+                  <th
+                    scope="col"
+                    className="px-6 py-3 border border-slate-300 text-center"
+                  >
                     Estado
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300 text-center">
-                    Tipo
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Cliente

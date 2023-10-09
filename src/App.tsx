@@ -17,6 +17,7 @@ import OperationsPage from "./pages/operations-page";
 import LoginPage from "./pages/login-page";
 import MessagingPage from "./pages/messaging-page";
 import SalePDFPage from "./pages/sale-pdf-page";
+import ImagesPage from "./pages/images-page";
 
 export default function App() {
   return (
@@ -33,12 +34,13 @@ export default function App() {
         <Route path="/tickets/:id/servicios/:service_id/operaciones" element={<OperationsPage />} />
         <Route path="/productos" element={<ProductsPage />} />
         <Route path="/ventas" element={<SalesPage />} />
-        <Route path="/ventas/:id/pdf" element={<SalePDFPage />} />
+        <Route path="/ventas/:id/factura" element={<SalePDFPage />} />
         <Route path="/compras" element={<PurchasesPage />} />
         <Route path="/proveedores" element={<ProvidersPage />} />
         <Route path="/publicaciones" element={<PublicationsPage />} />
         <Route path="/categorias" element={<CategoriesPage />} />
         <Route path="/mensajeria" element={<MessagingPage />} />
+        <Route path="/galeria" element={<ImagesPage />} />
         <Route path="/entrar" element={<LoginPage />} />
       </Routes>
     </BrowserRouter>

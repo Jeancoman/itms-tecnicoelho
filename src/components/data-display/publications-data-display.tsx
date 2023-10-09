@@ -33,6 +33,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
     título: "",
     contenido: "",
     esPública: false,
+    usuario_id: session.find()?.usuario.id
   });
 
   const resetFormData = () => {
@@ -41,6 +42,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
       título: "",
       contenido: "",
       esPública: false,
+      usuario_id: session.find()?.usuario.id
     });
   };
 
@@ -894,6 +896,7 @@ export default function PublicationsDataDisplay() {
           setLoading(false);
           resetSearchCount();
           setWasSearch(false);
+          setNotFound(false);
         }
         setIsOperationCompleted(false);
       });

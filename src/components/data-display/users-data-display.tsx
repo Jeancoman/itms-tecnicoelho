@@ -19,6 +19,8 @@ import UserService from "../../services/user-service";
 import Select from "../misc/select";
 import { useUserSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
+import { ReactComponent as On } from "/src/assets/visibility.svg";
+import { ReactComponent as Off } from "/src/assets/visibility_off.svg";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const [last, setLast] = useState(false);
@@ -35,6 +37,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     contraseña: "",
   });
   const [permisos, setPermisos] = useState<Permisos>();
+  const [visible, setVisible] = useState(false);
   let iniciales: Permisos = {
     ver: {
       cliente: false,
@@ -380,19 +383,33 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 />
               </div>
             </div>
-            <input
-              type="password"
-              placeholder="Contraseña*"
-              name="password"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  contraseña: e.target.value,
-                });
-              }}
-              value={formData.contraseña}
-              className="border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300"
-            />
+            <div className="relative w-full">
+              <input
+                type={visible ? "text" : "password"}
+                placeholder="Contraseña*"
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    contraseña: e.target.value,
+                  })
+                }
+                value={formData.contraseña}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
+                required
+                minLength={1}
+              />
+              {visible ? (
+                <On
+                  onClick={() => setVisible(false)}
+                  className="absolute top-2 right-4 fill-[#2096ed]"
+                />
+              ) : (
+                <Off
+                  onClick={() => setVisible(true)}
+                  className="absolute top-2 right-4 fill-[#2096ed]"
+                />
+              )}
+            </div>
           </>
         )}
         <div className="flex w-full justify-between">
@@ -455,6 +472,7 @@ function EditModal({
   const [permisos, setPermisos] = useState<Permisos | undefined>(
     formData.permiso!
   );
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -574,19 +592,33 @@ function EditModal({
                 <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
               </div>
             </div>
-            <input
-              type="text"
-              placeholder="Nueva contraseña"
-              name="password"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  contraseña: e.target.value,
-                });
-              }}
-              value={formData.contraseña}
-              className="border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300"
-            />
+            <div className="relative w-full">
+              <input
+                type={visible ? "text" : "password"}
+                placeholder="Nueva contraseña"
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    contraseña: e.target.value,
+                  })
+                }
+                value={formData.contraseña}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
+                required
+                minLength={1}
+              />
+              {visible ? (
+                <On
+                  onClick={() => setVisible(false)}
+                  className="absolute top-2 right-4 fill-[#2096ed]"
+                />
+              ) : (
+                <Off
+                  onClick={() => setVisible(true)}
+                  className="absolute top-2 right-4 fill-[#2096ed]"
+                />
+              )}
+            </div>
           </>
         )}
         <div className="flex w-full justify-between">
@@ -802,7 +834,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   const setInput = useUserSearchParamStore((state) => state.setInput);
   const setTempInput = useUserSearchParamStore((state) => state.setTempInput);
   const setParam = useUserSearchParamStore((state) => state.setParam);
-  const incrementSearchCount = useUserSearchParamStore((state) => state.incrementSearchCount);
+  const incrementSearchCount = useUserSearchParamStore(
+    (state) => state.incrementSearchCount
+  );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
 
   const resetSearch = () => {
@@ -812,7 +846,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: "",
       label: "Seleccionar parametro de busqueda",
     });
-    setWasSearch(false)
+    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -861,7 +895,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             resetSearch();
             incrementSearchCount();
             closeModal();
-            setWasSearch(true)
+            setWasSearch(true);
           }
         }}
       >

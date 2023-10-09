@@ -165,10 +165,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 ...formData,
                 precio: !isNaN(Number(e.target.value))
                   ? Number(e.target.value)
-                  : 0.00,
+                  : 0.0,
               });
             }}
-            step="0.01" min="0"
+            step="0.01"
+            min="0"
             value={formData.precio === 0 ? "" : String(formData.precio)}
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
             required
@@ -427,7 +428,7 @@ function EditModal({
                 ...formData,
                 precio: !isNaN(Number(e.target.value))
                   ? Number(e.target.value)
-                  : 0.00,
+                  : 0.0,
               });
             }}
             value={formData.precio === 0 ? "" : String(formData.precio)}
@@ -624,12 +625,12 @@ function DeleteModal({
           <button
             type="button"
             onClick={closeModal}
-            className="text-blue-500 bg-blue-200 font-semibold rounded-lg py-2 px-4"
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4">
-            Continuar
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Completar
           </button>
         </div>
       </form>
@@ -964,21 +965,23 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                     toast.error("Error obteniendo datos.");
                   } else {
                     ExportCSV.handleDownload(
-                      data.rows.filter(venta => venta.venta_cantidad > 0).map((venta) => {
-                        return {
-                          Fecha: venta?.venta_fecha,
-                          Código: venta?.código,
-                          Nombre: venta?.nombre,
-                          Precio: venta?.precio,
-                          Cantidad: venta?.venta_cantidad,
-                          Total: venta?.venta_total,
-                          "Nombre del cliente":
-                            venta?.cliente_nombre +
-                            " " +
-                            venta?.cliente_apellido,
-                          "Documento del cliente": venta?.cliente_documento,
-                        };
-                      }),
+                      data.rows
+                        .filter((venta) => venta.venta_cantidad > 0)
+                        .map((venta) => {
+                          return {
+                            Fecha: venta?.venta_fecha,
+                            Código: venta?.código,
+                            Nombre: venta?.nombre,
+                            Precio: venta?.precio,
+                            Cantidad: venta?.venta_cantidad,
+                            Total: venta?.venta_total,
+                            "Nombre del cliente":
+                              venta?.cliente_nombre +
+                              " " +
+                              venta?.cliente_apellido,
+                            "Documento del cliente": venta?.cliente_documento,
+                          };
+                        }),
                       "reporte-de-productos-vendidos-" +
                         new Date().toISOString()
                     );
@@ -996,21 +999,23 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                     toast.error("Error obteniendo datos.");
                   } else {
                     ExportCSV.handleDownload(
-                      data.rows.filter(venta => venta.venta_cantidad > 0).map((venta) => {
-                        return {
-                          Fecha: venta?.venta_fecha,
-                          Código: venta?.código,
-                          Nombre: venta?.nombre,
-                          Precio: venta?.precio,
-                          Cantidad: venta?.venta_cantidad,
-                          Total: venta?.venta_total,
-                          "Nombre del cliente":
-                            venta?.cliente_nombre +
-                            " " +
-                            venta?.cliente_apellido,
-                          "Documento del cliente": venta?.cliente_documento,
-                        };
-                      }),
+                      data.rows
+                        .filter((venta) => venta.venta_cantidad > 0)
+                        .map((venta) => {
+                          return {
+                            Fecha: venta?.venta_fecha,
+                            Código: venta?.código,
+                            Nombre: venta?.nombre,
+                            Precio: venta?.precio,
+                            Cantidad: venta?.venta_cantidad,
+                            Total: venta?.venta_total,
+                            "Nombre del cliente":
+                              venta?.cliente_nombre +
+                              " " +
+                              venta?.cliente_apellido,
+                            "Documento del cliente": venta?.cliente_documento,
+                          };
+                        }),
                       "reporte-de-productos-vendidos-" +
                         new Date().toISOString()
                     );
@@ -1028,18 +1033,21 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                     toast.error("Error obteniendo datos.");
                   } else {
                     ExportCSV.handleDownload(
-                      data.rows.filter(venta => venta.compra_cantidad > 0).map((venta) => {
-                        return {
-                          Fecha: venta?.compra_fecha,
-                          Código: venta?.código,
-                          Nombre: venta?.nombre,
-                          Precio: venta?.precio,
-                          Cantidad: venta?.compra_cantidad,
-                          Total: venta?.compra_total,
-                          "Nombre del proveedor": venta?.proveedor_nombre,
-                          "Documento del proveedor": venta?.proveedor_documento,
-                        };
-                      }),
+                      data.rows
+                        .filter((venta) => venta.compra_cantidad > 0)
+                        .map((venta) => {
+                          return {
+                            Fecha: venta?.compra_fecha,
+                            Código: venta?.código,
+                            Nombre: venta?.nombre,
+                            Precio: venta?.precio,
+                            Cantidad: venta?.compra_cantidad,
+                            Total: venta?.compra_total,
+                            "Nombre del proveedor": venta?.proveedor_nombre,
+                            "Documento del proveedor":
+                              venta?.proveedor_documento,
+                          };
+                        }),
                       "reporte-de-productos-comprados-" +
                         new Date().toISOString()
                     );
@@ -1057,18 +1065,21 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                     toast.error("Error obteniendo datos.");
                   } else {
                     ExportCSV.handleDownload(
-                      data.rows.filter(venta => venta.compra_cantidad > 0).map((venta) => {
-                        return {
-                          Fecha: venta?.compra_fecha,
-                          Código: venta?.código,
-                          Nombre: venta?.nombre,
-                          Precio: venta?.precio,
-                          Cantidad: venta?.compra_cantidad,
-                          Total: venta?.compra_total,
-                          "Nombre del proveedor": venta?.proveedor_nombre,
-                          "Documento del proveedor": venta?.proveedor_documento,
-                        };
-                      }),
+                      data.rows
+                        .filter((venta) => venta.compra_cantidad > 0)
+                        .map((venta) => {
+                          return {
+                            Fecha: venta?.compra_fecha,
+                            Código: venta?.código,
+                            Nombre: venta?.nombre,
+                            Precio: venta?.precio,
+                            Cantidad: venta?.compra_cantidad,
+                            Total: venta?.compra_total,
+                            "Nombre del proveedor": venta?.proveedor_nombre,
+                            "Documento del proveedor":
+                              venta?.proveedor_documento,
+                          };
+                        }),
                       "reporte-de-productos-comprados-" +
                         new Date().toISOString()
                     );
@@ -1252,8 +1263,8 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
           </div>
         ) : null}
         {selectedFecha.value === "ENTRE" &&
-          (selectedSearchType.value === "COMPRADO_EN" ||
-        selectedSearchType.value === "VENDIDO_EN") ? (
+        (selectedSearchType.value === "COMPRADO_EN" ||
+          selectedSearchType.value === "VENDIDO_EN") ? (
           <>
             {" "}
             <input

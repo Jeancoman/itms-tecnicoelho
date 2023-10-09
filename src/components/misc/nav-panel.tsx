@@ -14,11 +14,25 @@ import { ReactComponent as Logout } from "/src/assets/logout.svg";
 import { ReactComponent as Envelopes } from "/src/assets/envelopes-bulk-solid.svg";
 import { ReactComponent as House } from "/src/assets/home.svg";
 import { ReactComponent as Tag } from "/src/assets/tag.svg";
+import { ReactComponent as Library } from "/src/assets/library.svg";
 import { NavLink, useNavigate } from "react-router-dom";
 import session from "../../utils/session";
 import permissions from "../../utils/permissions";
 import { useColapsableInventoryStore } from "../../store/colapsableStore";
-import { useCategorySearchParamStore, useClientSearchParamStore, useOperationSearchParamStore, useProblemSearchParamStore, useProductSearchParamStore, useProviderSearchParamStore, usePublicationSearchParamStore, usePurchaseSearchParamStore, useSaleSearchParamStore, useServiceSearchParamStore, useTicketSearchParamStore, useUserSearchParamStore } from "../../store/searchParamStore";
+import {
+  useCategorySearchParamStore,
+  useClientSearchParamStore,
+  useOperationSearchParamStore,
+  useProblemSearchParamStore,
+  useProductSearchParamStore,
+  useProviderSearchParamStore,
+  usePublicationSearchParamStore,
+  usePurchaseSearchParamStore,
+  useSaleSearchParamStore,
+  useServiceSearchParamStore,
+  useTicketSearchParamStore,
+  useUserSearchParamStore,
+} from "../../store/searchParamStore";
 import options from "../../utils/options";
 
 export default function NavPanel() {
@@ -33,18 +47,18 @@ export default function NavPanel() {
   const resetProductSearchCount = useProductSearchParamStore(
     (state) => state.resetSearchCount
   );
-    const resetClientSearchCount = useClientSearchParamStore(
+  const resetClientSearchCount = useClientSearchParamStore(
     (state) => state.resetSearchCount
   );
 
-    const resetUserSearchCount = useUserSearchParamStore(
+  const resetUserSearchCount = useUserSearchParamStore(
     (state) => state.resetSearchCount
   );
 
   const resetProviderSearchCount = useProviderSearchParamStore(
     (state) => state.resetSearchCount
   );
-    const resetCategorySearchCount = useCategorySearchParamStore(
+  const resetCategorySearchCount = useCategorySearchParamStore(
     (state) => state.resetSearchCount
   );
 
@@ -64,28 +78,28 @@ export default function NavPanel() {
     (state) => state.resetSearchCount
   );
 
-    const resetServiceSearchCount = useServiceSearchParamStore(
+  const resetServiceSearchCount = useServiceSearchParamStore(
     (state) => state.resetSearchCount
   );
 
-    const resetOperationSearchCount = useOperationSearchParamStore(
+  const resetOperationSearchCount = useOperationSearchParamStore(
     (state) => state.resetSearchCount
   );
 
   const reset = () => {
-    resetProductSearchCount()
-    resetProblemSearchCount()
-    resetServiceSearchCount()
-    resetClientSearchCount()
-    resetTicketSearchCount()
-    resetOperationSearchCount()
-    resetSaleSearchCount()
-    resetPurchaseSearchCount()
-    resetCategorySearchCount()
-    resetProviderSearchCount()
-    resetPublicationSearchCount()
-    resetUserSearchCount()
-  }
+    resetProductSearchCount();
+    resetProblemSearchCount();
+    resetServiceSearchCount();
+    resetClientSearchCount();
+    resetTicketSearchCount();
+    resetOperationSearchCount();
+    resetSaleSearchCount();
+    resetPurchaseSearchCount();
+    resetCategorySearchCount();
+    resetProviderSearchCount();
+    resetPublicationSearchCount();
+    resetUserSearchCount();
+  };
 
   return (
     <aside className="pt-7 h-full shadow-md bg-[#2096ed] select-none">
@@ -307,6 +321,23 @@ export default function NavPanel() {
             <p>Este usuario</p>
           </div>
           */}
+          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+          permissions.find()?.ver.imagen ? (
+            <NavLink
+              to="/galeria"
+              onClick={reset}
+              className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+            >
+              <Library className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <p>Galería</p>
+            </NavLink>
+          ) : (
+            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+              <Tag className="h-6 w-6 fill-white " />
+              <p>No permitido</p>
+            </div>
+          )}
           {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
             session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
             permissions.find()?.ver.mensajería) && (
@@ -323,7 +354,7 @@ export default function NavPanel() {
             onClick={() => {
               session.revoke();
               permissions.revoke();
-              options.revoke()
+              options.revoke();
               navigate("/entrar");
             }}
             className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"

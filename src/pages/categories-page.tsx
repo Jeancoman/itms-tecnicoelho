@@ -19,7 +19,18 @@ export default function CategoriesPage() {
         navigate("/");
       }
     }
-  })
+  });
+
+  if (!session.find()) {
+    return null;
+  } else {
+    if (
+      session.find()?.usuario.rol !== "ADMINISTRADOR" &&
+      !permissions.find()?.ver.categoría
+    ) {
+      return null;
+    }
+  }
 
   return (
     <>

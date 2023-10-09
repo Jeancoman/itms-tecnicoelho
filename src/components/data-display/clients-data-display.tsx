@@ -20,6 +20,8 @@ import session from "../../utils/session";
 import permissions from "../../utils/permissions";
 import { useClientSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
+import { ReactComponent as On } from "/src/assets/visibility.svg";
+import { ReactComponent as Off } from "/src/assets/visibility_off.svg";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -37,6 +39,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     enviarMensajes: false,
     contraseña: "",
   });
+  const [visible, setVisible] = useState(false);
 
   const resetFormData = () => {
     setFormData({
@@ -111,7 +114,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           });
         }}
       >
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           <input
             type="text"
             placeholder="Nombre*"
@@ -139,7 +142,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             required
           />
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           <div className="flex w-2/4 gap-1">
             <div className="relative w-[28%]">
               <Select
@@ -221,20 +224,33 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           value={formData.dirección}
           className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed]"
         />
-        <input
-          type="text"
-          placeholder="Contraseña*"
-          name="password"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              contraseña: e.target.value,
-            });
-          }}
-          value={formData.contraseña}
-          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-        />
+        <div className="relative w-full">
+          <input
+            type={visible ? "text" : "password"}
+            placeholder="Contraseña"
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                contraseña: e.target.value,
+              })
+            }
+            value={formData.contraseña}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
+            required
+            minLength={1}
+          />
+          {visible ? (
+            <On
+              onClick={() => setVisible(false)}
+              className="absolute top-2 right-4 fill-[#2096ed]"
+            />
+          ) : (
+            <Off
+              onClick={() => setVisible(true)}
+              className="absolute top-2 right-4 fill-[#2096ed]"
+            />
+          )}
+        </div>
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
             <input
@@ -292,6 +308,7 @@ function EditModal({
       ? cliente?.documento?.slice(2)
       : cliente?.documento,
   });
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -352,7 +369,7 @@ function EditModal({
           });
         }}
       >
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           <input
             type="text"
             placeholder="Nombre"
@@ -380,7 +397,7 @@ function EditModal({
             required
           />
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           <div className="flex w-2/4 gap-1">
             <div className="relative w-[28%]">
               <Select
@@ -463,19 +480,33 @@ function EditModal({
           value={formData.dirección}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
-        <input
-          type="text"
-          placeholder="Nueva contraseña"
-          name="password"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              contraseña: e.target.value,
-            });
-          }}
-          value={formData.contraseña}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="relative w-full">
+          <input
+            type={visible ? "text" : "password"}
+            placeholder="Contraseña"
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                contraseña: e.target.value,
+              })
+            }
+            value={formData.contraseña}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
+            required
+            minLength={1}
+          />
+          {visible ? (
+            <On
+              onClick={() => setVisible(false)}
+              className="absolute top-2 right-4 fill-[#2096ed]"
+            />
+          ) : (
+            <Off
+              onClick={() => setVisible(true)}
+              className="absolute top-2 right-4 fill-[#2096ed]"
+            />
+          )}
+        </div>
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
             <input

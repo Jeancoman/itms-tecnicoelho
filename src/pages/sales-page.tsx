@@ -3,19 +3,33 @@ import SalesDataDisplay from "../components/data-display/sales-data-display";
 import NavPanel from "../components/misc/nav-panel";
 import session from "../utils/session";
 import permissions from "../utils/permissions";
+import { useEffect } from "react";
 
 export default function SalesPage() {
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!session.find()) {
+      navigate("/entrar");
+    } else {
+      if (
+        session.find()?.usuario.rol !== "ADMINISTRADOR" &&
+        !permissions.find()?.ver.venta
+      ) {
+        navigate("/");
+      }
+    }
+  })
+
   if (!session.find()) {
-    navigate("/entrar");
+    return null;
   } else {
     if (
       session.find()?.usuario.rol !== "ADMINISTRADOR" &&
       !permissions.find()?.ver.venta
     ) {
-      navigate("/");
+      return null;
     }
   }
 

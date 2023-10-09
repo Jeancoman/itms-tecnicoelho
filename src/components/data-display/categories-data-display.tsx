@@ -69,7 +69,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md scrollbar-none"
+      className="w-2/5 h-fit rounded-md shadow-md scrollbar-none text-base"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar categoría</h1>
@@ -102,7 +102,7 @@ function EditModal({
           }}
           placeholder="Nombre*"
           value={formData.nombre}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
           required
         />
         <textarea
@@ -115,7 +115,7 @@ function EditModal({
             });
           }}
           value={formData.descripción}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="relative">
           <Select
@@ -375,7 +375,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/5 h-fit rounded-xl shadow text-base"
     >
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"

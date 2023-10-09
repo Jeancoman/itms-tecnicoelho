@@ -1,13 +1,16 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Venta } from "../types";
 import SaleService from "../services/sales-service";
 import { useEffect, useState } from "react";
 import { usePDF } from "react-to-pdf";
+import session from "../utils/session";
+import permissions from "../utils/permissions";
 
 export default function SalePDFPage() {
   const { id } = useParams();
   const [venta, setVenta] = useState<Venta>();
   const { toPDF, targetRef } = usePDF({ filename: "page.pdf" });
+  const navigate = useNavigate();
 
   useEffect(() => {
     SaleService.getById(Number(id)).then((data) => {
@@ -16,6 +19,31 @@ export default function SalePDFPage() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (!session.find()) {
+      navigate("/entrar");
+    } else {
+      if (
+        session.find()?.usuario.rol !== "ADMINISTRADOR" &&
+        !permissions.find()?.ver.venta
+      ) {
+        navigate("/");
+      }
+    }
+  });
+
+  if (!session.find()) {
+    return null;
+  } else {
+    if (
+      session.find()?.usuario.rol !== "ADMINISTRADOR" &&
+      !permissions.find()?.ver.venta
+    ) {
+      return null;
+    }
+  }
+
   return (
     <>
       <button

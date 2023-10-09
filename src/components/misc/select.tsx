@@ -138,7 +138,7 @@ export default function Select({ selected, options, onChange, small }: SelectPro
         }}
         id="custom-select"
       >
-        <div id="custom-select-inside">{thisLabel}</div>
+        <div id="custom-select-inside" className="truncate">{thisLabel}</div>
         <Down
           id="custom-select-button"
           className={clsx({

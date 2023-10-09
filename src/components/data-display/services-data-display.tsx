@@ -13,6 +13,7 @@ import {
   Selected,
   Categoría,
   Mensaje,
+  ServicioTipo,
 } from "../../types";
 import { useNavigate, useParams } from "react-router-dom";
 import ServiceService from "../../services/service-service";
@@ -39,9 +40,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     value: -1,
     label: "Seleccionar categoría",
   });
+  const [selectedType, setSelectedType] = useState<Selected>({
+    label: "Seleccionar tipo",
+    value: "",
+  });
   const [formData, setFormData] = useState<Servicio>({
     nombre: "",
     descripción: "",
+    tipo: "TIENDA",
     estado: "PENDIENTE",
     categoría_id: -1,
     ticket_id: Number(id),
@@ -51,6 +57,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     setFormData({
       nombre: "",
       descripción: "",
+      tipo: "TIENDA",
       estado: "PENDIENTE",
       categoría_id: -1,
       ticket_id: Number(id),
@@ -58,6 +65,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     setSelectedCategory({
       value: -1,
       label: "Seleccionar categoría",
+    });
+    setSelectedType({
+      label: "Seleccionar tipo",
+      value: "",
     });
   };
 
@@ -205,20 +216,63 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           });
         }}
       >
+        <input
+          type="text"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              nombre: e.target.value,
+            });
+          }}
+          placeholder="Nombre*"
+          value={formData.nombre}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          required
+        />
         <div className="flex gap-2">
-          <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            placeholder="Nombre*"
-            value={formData.nombre}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            required
-          />
+          <div className="relative w-2/4">
+            <Select
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  tipo: selectedType.value as ServicioTipo,
+                });
+              }}
+              options={[
+                {
+                  value: "DOMICILIO",
+                  label: "Domicilio",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "TIENDA",
+                  label: "Tienda",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "REMOTO",
+                  label: "Remoto",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedType}
+            />
+          </div>
           <div className="relative w-2/4">
             {categories.length > 0 && (
               <Select
@@ -297,7 +351,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           value={formData.descripción}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={closeModal}
@@ -337,6 +391,15 @@ function EditModal({
         : formData.estado === "PENDIENTE"
         ? "Pendiente"
         : "Completado",
+  });
+  const [selectedType, setSelectedType] = useState<Selected>({
+    label:
+      servicio?.tipo === "DOMICILIO"
+        ? "Domicilio"
+        : servicio?.tipo === "TIENDA"
+        ? "Tienda"
+        : "Remoto",
+    value: servicio?.tipo,
   });
 
   useEffect(() => {
@@ -485,8 +548,7 @@ function EditModal({
           );
         }}
       >
-        <div className="flex gap-2">
-          <input
+                  <input
             type="text"
             onChange={(e) => {
               setFormData({
@@ -496,8 +558,52 @@ function EditModal({
             }}
             placeholder="Nombre*"
             value={formData.nombre}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
+            className="border p-2 rounded outline-none focus:border-[#2096ed]"
           />
+        <div className="flex gap-2">
+        <div className="relative w-2/4">
+          <Select
+            onChange={() => {
+              setFormData({
+                ...formData,
+                tipo: selectedType.value as ServicioTipo,
+              });
+            }}
+            options={[
+              {
+                value: "DOMICILIO",
+                label: "Domicilio",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "TIENDA",
+                label: "Tienda",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "REMOTO",
+                label: "Remoto",
+                onClick: (value, label) => {
+                  setSelectedType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedType}
+          />
+        </div>
           <div className="relative w-2/4">
             {categories.length > 0 && (
               <Select
@@ -840,6 +946,11 @@ function DataRow({ action, setOperationAsCompleted, servicio }: DataRowProps) {
         {servicio?.descripción}
       </td>
       <td className="px-6 py-2 border border-slate-300">
+        <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg capitalize">
+          {servicio?.tipo}
+        </div>
+      </td>
+      <td className="px-6 py-2 border border-slate-300">
         {servicio?.estado === "COMPLETADO" ? (
           <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
             Completado
@@ -902,7 +1013,7 @@ function DataRow({ action, setOperationAsCompleted, servicio }: DataRowProps) {
         {action === "VIEW_OPERATIONS" && (
           <button
             onClick={() => {
-              navigate(`/ticket/${id}/servicios/${servicio?.id}/operaciones`);
+              navigate(`/tickets/${id}/servicios/${servicio?.id}/operaciones`);
             }}
             className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
           >
@@ -1188,7 +1299,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       className="w-1/3 min-h-[200px] h-fit rounded-md shadow text-base"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Buscar operación</h1>
+        <h1 className="text-xl font-bold text-white">Buscar servicio</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -1568,6 +1679,9 @@ export default function ServicesDataDisplay() {
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Descripción
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Tipo
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Estado

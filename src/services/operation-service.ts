@@ -180,7 +180,7 @@ export default class OperationService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/${service_id}/operaciones`,
+        }/api/tickets/${ticket_id}/servicios/${service_id}/operaciones`,
         {
           method: "POST",
           headers: {

@@ -9,30 +9,27 @@ import {
   DataRowProps,
   DropupProps,
   Action,
-  Mensaje,
-  MensajeEstado,
-  Selected,
+  Imagen,
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
-import MessageService from "../../services/message-service";
-import { useParams } from "react-router-dom";
-import { format } from "date-fns";
+import ImageService from "../../services/image-service";
 import permissions from "../../utils/permissions";
 import session from "../../utils/session";
-import Select from "../misc/select";
+import { format } from "date-fns";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
-  const { id } = useParams();
   const ref = useRef<HTMLDialogElement>(null);
-  const [formData, setFormData] = useState<Mensaje>({
-    contenido: "",
-    estado: "NO_ENVIADO",
+  const [formData, setFormData] = useState<Imagen>({
+    url: "",
+    descripción: "",
+    esPública: true,
   });
 
   const resetFormData = () => {
     setFormData({
-      contenido: "",
-      estado: "NO_ENVIADO",
+      url: "",
+      descripción: "",
+      esPública: true,
     });
   };
 
@@ -68,10 +65,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/5 h-fit rounded-md shadow-md"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Crear mensaje</h1>
+        <h1 className="text-xl font-bold text-white">Añadir imagen</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
@@ -79,29 +76,43 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Creando mensaje...");
-          MessageService.create(Number(id), formData).then((data) => {
+          const loadingToast = toast.loading("Añadiendo imagen...");
+          ImageService.create(formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
-              toast.error("Mensaje no pudo ser creado.");
+              toast.error("Imagen no pudo ser añadida.");
             } else {
-              toast.success("Mensaje creado con exito.");
+              toast.success("Imagen añadida con exito.");
             }
           });
         }}
       >
-        <textarea
-          rows={3}
-          placeholder="Contenido*"
+        <input
+          type="url"
+          placeholder="URL*"
           onChange={(e) => {
             setFormData({
               ...formData,
-              contenido: e.target.value,
+              url: e.target.value,
             });
           }}
-          value={formData.contenido}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          value={formData.url}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          required
+          name="name"
+        />
+        <textarea
+          rows={3}
+          placeholder="Descripción"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              descripción: e.target.value,
+            });
+          }}
+          value={formData.descripción}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="flex gap-2 justify-end">
           <button
@@ -124,15 +135,10 @@ function EditModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  mensaje,
+  imagen,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
-  const { id } = useParams();
-  const [formData, setFormData] = useState<Mensaje>({ ...mensaje! });
-  const [selectedState, setSelectedState] = useState<Selected>({
-    value: formData.estado,
-    label: formData.estado === "ENVIADO" ? "Enviado" : "No enviado",
-  });
+  const [formData, setFormData] = useState<Imagen>(imagen!);
 
   useEffect(() => {
     if (isOpen) {
@@ -167,7 +173,7 @@ function EditModal({
       className="w-2/5 h-fit rounded-md shadow-md text-base"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar mensaje</h1>
+        <h1 className="text-xl font-bold text-white">Editar imagen</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
@@ -175,65 +181,42 @@ function EditModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Editando mensaje...");
-          MessageService.update(Number(id), mensaje?.id!, formData).then(
-            (data) => {
-              toast.dismiss(loadingToast);
-              setOperationAsCompleted();
-              if (data) {
-                toast.success("Mensaje editado con exito.");
-              } else {
-                toast.error("Mensaje no pudo ser editado.");
-              }
-              setOperationAsCompleted();
+          const loadingToast = toast.loading("Editando imagen...");
+          ImageService.update(imagen?.id!, formData).then((data) => {
+            toast.dismiss(loadingToast);
+            setOperationAsCompleted();
+            if (data) {
+              toast.success("Imagen editada con exito.");
+            } else {
+              toast.error("Imagen no pudo ser editada.");
             }
-          );
+            setOperationAsCompleted();
+          });
         }}
       >
-        <div className="relative">
-          <Select
-            onChange={() => {
-              setFormData({
-                ...formData,
-                estado: selectedState.value as MensajeEstado,
-              });
-            }}
-            options={[
-              {
-                value: "ENVIADO",
-                label: "Enviado",
-                onClick: (value, label) => {
-                  setSelectedState({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "NO_ENVIADO",
-                label: "No enviado",
-                onClick: (value, label) => {
-                  setSelectedState({
-                    value,
-                    label,
-                  });
-                },
-              },
-            ]}
-            selected={selectedState}
-          />
-        </div>
-
-        <textarea
-          rows={3}
-          placeholder="Contenido*"
+        <input
+          type="url"
+          placeholder="URL*"
           onChange={(e) => {
             setFormData({
               ...formData,
-              contenido: e.target.value,
+              url: e.target.value,
             });
           }}
-          value={formData.contenido}
+          value={formData.url}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          required
+        />
+        <textarea
+          rows={3}
+          placeholder="Descripción"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              descripción: e.target.value,
+            });
+          }}
+          value={formData.descripción}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="flex gap-2 justify-end">
@@ -257,9 +240,8 @@ function DeleteModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  mensaje,
+  imagen,
 }: ModalProps) {
-  const { id } = useParams();
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -300,13 +282,13 @@ function DeleteModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Eliminando mensaje...");
-          MessageService.delete(Number(id), mensaje?.id!).then((data) => {
+          const loadingToast = toast.loading("Eliminando imagen...");
+          ImageService.delete(imagen?.id!).then((data) => {
             toast.dismiss(loadingToast);
             if (data) {
-              toast.success("Mensaje eliminado con exito.");
+              toast.success("Imagen eliminada con exito.");
             } else {
-              toast.error("Mensaje no pudo ser eliminado.");
+              toast.error("Imagen no pudo ser eliminado.");
             }
             setOperationAsCompleted();
           });
@@ -338,7 +320,7 @@ function DeleteModal({
   );
 }
 
-function DataRow({ action, mensaje, setOperationAsCompleted }: DataRowProps) {
+function DataRow({ action, imagen, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
@@ -356,24 +338,14 @@ function DataRow({ action, mensaje, setOperationAsCompleted }: DataRowProps) {
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
       >
-        {mensaje?.id}
+        {imagen?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300 truncate max-w-xs">
-        {mensaje?.contenido}
-      </td>
-      <td className="px-6 py-2 border border-slate-300">
-        {mensaje?.estado === "ENVIADO" ? (
-          <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg">
-            Enviado
-          </div>
-        ) : (
-          <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg">
-            No enviado
-          </div>
-        )}
+      <td className="px-6 py-4 border border-slate-300">{imagen?.url}</td>
+      <td className="px-6 py-4 border border-slate-300">
+        {imagen?.descripción}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {format(new Date(mensaje?.creado!), "dd/MM/yyyy")}
+        {format(new Date(imagen?.añadida!), "dd/MM/yyyy")}
       </td>
       <td className="px-6 py-3 border border-slate-300 w-[200px]">
         {action === "NONE" && (
@@ -389,10 +361,10 @@ function DataRow({ action, mensaje, setOperationAsCompleted }: DataRowProps) {
               }}
               className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
-              Editar mensaje
+              Editar imagen
             </button>
             <EditModal
-              mensaje={mensaje}
+              imagen={imagen}
               isOpen={isEditOpen}
               closeModal={closeEditModal}
               setOperationAsCompleted={setOperationAsCompleted}
@@ -407,10 +379,10 @@ function DataRow({ action, mensaje, setOperationAsCompleted }: DataRowProps) {
               }}
               className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
-              Eliminar mensaje
+              Eliminar imagen
             </button>
             <DeleteModal
-              mensaje={mensaje}
+              imagen={imagen}
               isOpen={isDeleteOpen}
               closeModal={closeDeleteModal}
               setOperationAsCompleted={setOperationAsCompleted}
@@ -422,7 +394,12 @@ function DataRow({ action, mensaje, setOperationAsCompleted }: DataRowProps) {
   );
 }
 
-function Dropup({ close, selectAction, openAddModal }: DropupProps) {
+function Dropup({
+  close,
+  selectAction,
+  openAddModal,
+  openSearchModal,
+}: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -457,15 +434,14 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           text-left
           rounded-lg
           shadow-lg
-          mt-1
+          mt-2
           m-0
           bg-clip-padding
           border
         "
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.editar.ticket) && (
+        permissions.find()?.editar.imagen) && (
         <li>
           <div
             onClick={() => {
@@ -486,13 +462,12 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
           >
-            Editar mensaje
+            Editar imagen
           </div>
         </li>
       )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.eliminar.ticket) && (
+        permissions.find()?.eliminar.imagen) && (
         <li>
           <div
             onClick={() => {
@@ -513,19 +488,17 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
           >
-            Eliminar mensaje
+            Eliminar imagen
           </div>
         </li>
       )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        (permissions.find()?.editar.ticket &&
-          permissions.find()?.eliminar.ticket)) && (
+        (permissions.find()?.editar.imagen &&
+          permissions.find()?.eliminar.imagen)) && (
         <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.crear.ticket) && (
+        permissions.find()?.crear.imagen) && (
         <li>
           <div
             onClick={() => {
@@ -546,14 +519,14 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
           >
-            Crear mensaje
+            Añadir imagen
           </div>
         </li>
       )}
       <li>
         <div
           onClick={() => {
-            openAddModal();
+            openSearchModal?.();
             close();
           }}
           className="
@@ -570,16 +543,15 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
               cursor-pointer
             "
         >
-          Buscar mensaje
+          Buscar imagen
         </div>
       </li>
     </ul>
   );
 }
 
-export default function MessagesDataDisplay() {
-  const { id } = useParams();
-  const [messages, setMessages] = useState<Mensaje[]>([]);
+export default function ImagesDataDisplay() {
+  const [images, setImages] = useState<Imagen[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
@@ -611,16 +583,17 @@ export default function MessagesDataDisplay() {
   };
 
   useEffect(() => {
-    MessageService.getAll(Number(id), page, 8).then((data) => {
+    ImageService.getAll(page, 8).then((data) => {
       if (data === false) {
         setNotFound(true);
+        setImages([]);
         setLoading(false);
-        setMessages([]);
       } else {
-        setMessages(data.rows);
+        setImages(data.rows);
         setPages(data.pages);
         setCurrent(data.current);
         setLoading(false);
+        setNotFound(false);
       }
       setIsOperationCompleted(false);
     });
@@ -632,11 +605,7 @@ export default function MessagesDataDisplay() {
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]">Tickets</span>{" "}
-            <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]">#{id}</span>{" "}
-            <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]">Mensajes</span>
+            <span className="text-[#2096ed] cursor-pointer">Galería</span>
           </div>
           <div>
             {isDropup && (
@@ -659,7 +628,7 @@ export default function MessagesDataDisplay() {
           </div>
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
-        {messages.length > 0 && loading == false && (
+        {images.length > 0 && loading == false && (
           <div className="relative overflow-x-auto">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
@@ -668,16 +637,13 @@ export default function MessagesDataDisplay() {
                     #
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Contenido
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 border border-slate-300 text-center"
-                  >
-                    Estado
+                    URL
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Creado
+                    Descripción
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Añadida
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
@@ -685,13 +651,13 @@ export default function MessagesDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {messages.map((message) => {
+                {images.map((image) => {
                   return (
                     <DataRow
                       action={action}
-                      mensaje={message}
+                      imagen={image}
                       setOperationAsCompleted={setAsCompleted}
-                      key={message.id}
+                      key={image.id}
                     />
                   );
                 })}
@@ -699,16 +665,16 @@ export default function MessagesDataDisplay() {
             </table>
           </div>
         )}
-        {notFound === true && (
+        {(notFound === true || (images.length === 0 && loading === false)) && (
           <div className="grid w-full h-4/5">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">
-                Ningún mensaje encontrado
+                Ningúna imagen encontrada
               </p>
               <p className="font-medium text text-center mt-1">
-                Esto puede deberse a un error del servidor, o a que simplemente
-                no hay ningún mensaje registrado.
+                Esto puede deberse a un error del servidor, o a que no hay
+                ningúna imagen registrada.
               </p>
             </div>
           </div>
@@ -739,7 +705,7 @@ export default function MessagesDataDisplay() {
           </div>
         )}
       </div>
-      {messages.length > 0 && loading == false && (
+      {images.length > 0 && loading == false && (
         <Pagination
           pages={pages}
           current={current}

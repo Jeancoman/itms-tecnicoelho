@@ -911,7 +911,7 @@ function Dropup({
           mt-1
           m-0
           bg-clip-padding
-          border-none
+          border
         "
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||

@@ -26,6 +26,7 @@ import MessageSenderService from "../../services/message-sender-service";
 import { useOperationSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import Select from "../misc/select";
+import { format } from "date-fns";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id, service_id } = useParams();
@@ -35,6 +36,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     descripción: "",
     necesidades: "",
     estado: "PENDIENTE",
+    servicio_id: Number(service_id),
   });
 
   const resetFormData = () => {
@@ -43,6 +45,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       descripción: "",
       necesidades: "",
       estado: "PENDIENTE",
+      servicio_id: Number(service_id),
     });
   };
 
@@ -191,7 +194,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           }}
           placeholder="Nombre*"
           value={formData.nombre}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <textarea
           rows={3}
@@ -203,7 +206,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             });
           }}
           value={formData.descripción}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <textarea
           rows={3}
@@ -215,7 +218,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             });
           }}
           value={formData.necesidades}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="flex gap-2 justify-end">
           <button
@@ -283,7 +286,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/5 h-fit rounded-md shadow"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar operación</h1>
@@ -399,7 +402,7 @@ function EditModal({
           }}
           placeholder="Nombre*"
           value={formData.nombre}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed] w-2/4"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <textarea
           rows={3}
@@ -411,7 +414,7 @@ function EditModal({
             });
           }}
           value={formData.descripción}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         {formData.estado === "PENDIENTE" ? (
           <div className="relative">
@@ -483,7 +486,7 @@ function EditModal({
             });
           }}
           value={formData.necesidades}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="flex gap-2 justify-end">
           <button
@@ -708,9 +711,9 @@ function DataRow({ action, setOperationAsCompleted, operación }: DataRowProps) 
         )}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {String(operación?.añadida)}
+        {format(new Date(operación?.añadida!), "dd/MM/yyyy")}
       </td>
-      <td className="px-6 py-3 border border-slate-300">
+      <td className="px-6 py-3 border border-slate-300 w-[200px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
@@ -1413,9 +1416,6 @@ export default function OperationsDataDisplay() {
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Estado
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Categoría
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Añadida
