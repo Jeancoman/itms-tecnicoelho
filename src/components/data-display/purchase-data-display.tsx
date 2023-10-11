@@ -980,7 +980,7 @@ function EmbeddedTable({
     }
 
     onChange(detalles);
-  }, [detalles, page]);
+  }, [detalles, page, products]);
 
   const secondOnChange = (detalle: DetalleCompra) => {
     setDetalles((prevDetalles) => {

@@ -1050,7 +1050,7 @@ function EmbeddedTable({
     }
 
     onChange(detalles);
-  }, [detalles, page]);
+  }, [detalles, page, products]);
 
   useEffect(() => {
     if (!isEqual(detalles_venta?.sort(), detalles.sort())) {
