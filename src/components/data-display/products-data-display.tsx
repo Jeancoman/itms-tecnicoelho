@@ -1123,6 +1123,53 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                 }
                 closeModal();
               });
+            } else if (param === "STOCK_BAJO") {
+              const loadingToast = toast.loading("Generando reporte...");
+              ProductService.getLowStock().then((data) => {
+                if (data === false) {
+                  toast.dismiss(loadingToast);
+                  toast.error("Error obteniendo datos.");
+                } else {
+                  ExportCSV.handleDownload(
+                    data.rows.map((venta: any) => {
+                      return {
+                        Código: venta?.código,
+                        Nombre: venta?.nombre,
+                        Precio: venta?.precio,
+                        Stock: venta?.stock,
+                      };
+                    }),
+                    "reporte-de-productos-stock-bajo-" +
+                      new Date().toISOString()
+                  );
+                  toast.dismiss(loadingToast);
+                }
+                closeModal();
+              });
+            }
+            else if (param === "SIN_STOCK") {
+              const loadingToast = toast.loading("Generando reporte...");
+              ProductService.getZeroStock().then((data) => {
+                if (data === false) {
+                  toast.dismiss(loadingToast);
+                  toast.error("Error obteniendo datos.");
+                } else {
+                  ExportCSV.handleDownload(
+                    data.rows.map((venta: any) => {
+                      return {
+                        Código: venta?.código,
+                        Nombre: venta?.nombre,
+                        Precio: venta?.precio,
+                        Stock: venta?.stock,
+                      };
+                    }),
+                    "reporte-de-productos-cero-stock-" +
+                      new Date().toISOString()
+                  );
+                  toast.dismiss(loadingToast);
+                }
+                closeModal();
+              });
             }
           }
           closeModal();
@@ -1167,6 +1214,26 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               {
                 value: "MAS_COMPRADO",
                 label: "Más comprados",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "STOCK_BAJO",
+                label: "Stock bajo",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "SIN_STOCK",
+                label: "Cero stock",
                 onClick: (value, label) => {
                   setSelectedSearchType({
                     value,

@@ -755,7 +755,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       className="w-1/3 min-h-[200px] h-fit rounded-md shadow text-base"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Buscar vebta</h1>
+        <h1 className="text-xl font-bold text-white">Buscar publicaciones</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
