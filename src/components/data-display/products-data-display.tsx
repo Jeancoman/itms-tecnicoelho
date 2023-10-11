@@ -386,18 +386,6 @@ function EditModal({
           onChange={(e) => {
             setFormData({
               ...formData,
-              código: e.target.value,
-            });
-          }}
-          value={formData.código}
-          placeholder="Código*"
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
               nombre: e.target.value,
               slug: Slugifier.slugifyWithRandomString(e.target.value),
             });
