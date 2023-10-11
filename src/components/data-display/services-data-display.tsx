@@ -19,6 +19,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ServiceService from "../../services/service-service";
 import toast, { Toaster } from "react-hot-toast";
 import Select from "../misc/select";
+import SelectWithSearch from "../misc/select-with-search";
 import CategoryService from "../../services/category-service";
 import { format } from "date-fns";
 import session from "../../utils/session";
@@ -275,7 +276,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           </div>
           <div className="relative w-2/4">
             {categories.length > 0 && (
-              <Select
+              <SelectWithSearch
                 options={categories
                   .filter((category) => category.tipo === "SERVICIO")
                   .map((category) => ({
@@ -548,65 +549,65 @@ function EditModal({
           );
         }}
       >
-                  <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            placeholder="Nombre*"
-            value={formData.nombre}
-            className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          />
+        <input
+          type="text"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              nombre: e.target.value,
+            });
+          }}
+          placeholder="Nombre*"
+          value={formData.nombre}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+        />
         <div className="flex gap-2">
-        <div className="relative w-2/4">
-          <Select
-            onChange={() => {
-              setFormData({
-                ...formData,
-                tipo: selectedType.value as ServicioTipo,
-              });
-            }}
-            options={[
-              {
-                value: "DOMICILIO",
-                label: "Domicilio",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
+          <div className="relative w-2/4">
+            <Select
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  tipo: selectedType.value as ServicioTipo,
+                });
+              }}
+              options={[
+                {
+                  value: "DOMICILIO",
+                  label: "Domicilio",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
                 },
-              },
-              {
-                value: "TIENDA",
-                label: "Tienda",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
+                {
+                  value: "TIENDA",
+                  label: "Tienda",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
                 },
-              },
-              {
-                value: "REMOTO",
-                label: "Remoto",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
+                {
+                  value: "REMOTO",
+                  label: "Remoto",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
                 },
-              },
-            ]}
-            selected={selectedType}
-          />
-        </div>
+              ]}
+              selected={selectedType}
+            />
+          </div>
           <div className="relative w-2/4">
             {categories.length > 0 && (
-              <Select
+              <SelectWithSearch
                 options={categories
                   .filter((category) => category.tipo === "SERVICIO")
                   .map((category) => ({

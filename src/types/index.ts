@@ -485,6 +485,7 @@ export type PaginationProps = {
   current: number;
   next: () => void;
   prev: () => void;
+  className?: string;
 };
 
 export interface JwtPayload {

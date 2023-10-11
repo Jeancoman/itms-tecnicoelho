@@ -21,6 +21,7 @@ import { useUserSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import { ReactComponent as On } from "/src/assets/visibility.svg";
 import { ReactComponent as Off } from "/src/assets/visibility_off.svg";
+import session from "../../utils/session";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const [last, setLast] = useState(false);
@@ -35,7 +36,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     nombreUsuario: "",
     rol: "EMPLEADO",
     contraseña: "",
+    creado_por: {
+      lista: [],
+    },
   });
+  console.log(formData);
   const [permisos, setPermisos] = useState<Permisos>();
   const [visible, setVisible] = useState(false);
   let iniciales: Permisos = {
@@ -130,7 +135,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       producto: false,
     },
   };
-
   const resetFormData = () => {
     setFormData({
       nombre: "",
@@ -281,8 +285,22 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
+          let lista = session.find()?.usuario.creado_por?.lista || [];
+
+          if (!lista?.find((id) => id === session.find()?.usuario.id)) {
+            lista?.push(session.find()?.usuario.id!);
+          }
+
+          const newFormData = { ...formData };
+
+          //@ts-ignore
+          newFormData.creado_por = {
+            lista: lista,
+          };
+
           const loadingToast = toast.loading("Crear usuario...");
-          UserService.create(formData).then((data) => {
+
+          UserService.create(newFormData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
@@ -507,7 +525,12 @@ function EditModal({
       className="w-2/5 h-fit rounded-md shadow-md text-base"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar usuario</h1>
+        <h1 className="text-xl font-bold text-white">
+          {" "}
+          {session.find()?.usuario.id === usuario?.id
+            ? "Editar tú usuario"
+            : "Editar usuario"}
+        </h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
@@ -768,10 +791,24 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
       </th>
       <td className="px-6 py-4 border border-slate-300">{usuario?.nombre}</td>
       <td className="px-6 py-4 border border-slate-300">{usuario?.apellido}</td>
-      <td className="px-6 py-4 border border-slate-300">
-        {usuario?.nombreUsuario}
+      <td className="px-6 py-2 border border-slate-300">
+        <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg">
+          {usuario?.nombreUsuario}{" "}
+          {session.find()?.usuario?.id === usuario?.id ? "(Tú usuario)" : null}
+        </div>
       </td>
-      <td className="px-6 py-4 border border-slate-300">{usuario?.rol}</td>
+      <td className="px-6 py-2 border border-slate-300">
+        {" "}
+        {usuario?.rol === "EMPLEADO" ? (
+          <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg">
+            Empleado
+          </div>
+        ) : (
+          <div className="bg-blue-200 text-center text-blue-600 text-xs py-2 font-bold rounded-lg">
+            Administrador
+          </div>
+        )}
+      </td>
       <td className="px-6 py-3 w-52 border border-slate-300">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
@@ -780,38 +817,68 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
         )}
         {action === "EDIT" && (
           <>
-            <button
-              onClick={() => {
-                setIsEditOpen(true);
-              }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-            >
-              Editar usuario
-            </button>
-            <EditModal
-              usuario={usuario}
-              isOpen={isEditOpen}
-              closeModal={closeEditModal}
-              setOperationAsCompleted={setOperationAsCompleted}
-            />
+            {usuario?.rol === "EMPLEADO" ||
+            //@ts-ignore
+            usuario?.creado_por?.lista?.find(
+              (id) => session.find()?.usuario.id === id
+            ) ||
+            session.find()?.usuario.id === usuario?.id ? (
+              <>
+                <button
+                  onClick={() => {
+                    setIsEditOpen(true);
+                  }}
+                  className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+                >
+                  {session.find()?.usuario.id === usuario?.id
+                    ? "Editar tú usuario"
+                    : "Editar usuario"}
+                </button>
+                <EditModal
+                  usuario={usuario}
+                  isOpen={isEditOpen}
+                  closeModal={closeEditModal}
+                  setOperationAsCompleted={setOperationAsCompleted}
+                />
+              </>
+            ) : (
+              <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
+                Sin permiso
+              </button>
+            )}
           </>
         )}
         {action === "DELETE" && (
           <>
-            <button
-              onClick={() => {
-                setIsDeleteOpen(true);
-              }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-            >
-              Eliminar usuario
-            </button>
-            <DeleteModal
-              usuario={usuario}
-              isOpen={isDeleteOpen}
-              closeModal={closeDeleteModal}
-              setOperationAsCompleted={setOperationAsCompleted}
-            />
+            {usuario?.rol === "EMPLEADO" ||
+            //@ts-ignore
+            usuario?.creado_por?.lista?.find(
+              (id) => session.find()?.usuario.id === id
+            ) ||
+            session.find()?.usuario.id === usuario?.id ? (
+              <>
+                <button
+                  onClick={() => {
+                    setIsDeleteOpen(true);
+                  }}
+                  className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+                >
+                  {session.find()?.usuario.id === usuario?.id
+                    ? "Eliminar tú usuario"
+                    : "Eliminar usuario"}
+                </button>
+                <DeleteModal
+                  usuario={usuario}
+                  isOpen={isDeleteOpen}
+                  closeModal={closeDeleteModal}
+                  setOperationAsCompleted={setOperationAsCompleted}
+                />
+              </>
+            ) : (
+              <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
+                Sin permiso
+              </button>
+            )}
           </>
         )}
       </td>
@@ -2026,6 +2093,7 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
 }
 
 export default function UsersDataDisplay() {
+  const [currentUser, setCurrentUser] = useState<Usuario | undefined>();
   const [users, setUsers] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -2069,7 +2137,7 @@ export default function UsersDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0 || isOperationCompleted) {
-      UserService.getAll(page, 8).then((data) => {
+      UserService.getAll(page, 7).then((data) => {
         if (data === false) {
           setNotFound(true);
           setLoading(false);
@@ -2077,13 +2145,34 @@ export default function UsersDataDisplay() {
           setWasSearch(false);
           resetSearchCount();
         } else {
-          setUsers(data.rows);
-          setPages(data.pages);
-          setCurrent(data.current);
-          setLoading(false);
-          setNotFound(false);
-          setWasSearch(false);
-          resetSearchCount();
+          if (!currentUser) {
+            UserService.getById(session.find()?.usuario.id!).then((user) => {
+              if (user) {
+                setCurrentUser(user);
+                const withOutUser = data.rows.filter(
+                  (obj) => obj.id !== user.id
+                );
+                withOutUser.unshift(user), setUsers(withOutUser);
+                setPages(data.pages);
+                setCurrent(data.current);
+                setLoading(false);
+                setNotFound(false);
+                setWasSearch(false);
+                resetSearchCount();
+              }
+            });
+          } else {
+            const withOutUser = data.rows.filter(
+              (obj) => obj.id !== currentUser.id
+            );
+            withOutUser.unshift(currentUser), setUsers(withOutUser);
+            setPages(data.pages);
+            setCurrent(data.current);
+            setLoading(false);
+            setNotFound(false);
+            setWasSearch(false);
+            resetSearchCount();
+          }
         }
         setIsOperationCompleted(false);
       });
@@ -2091,7 +2180,7 @@ export default function UsersDataDisplay() {
       if (isPrecise && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
         if (param === "NOMBRE") {
-          UserService.getByExactNombre(input, page, 8).then((data) => {
+          UserService.getByExactNombre(input, page, 7).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2107,7 +2196,7 @@ export default function UsersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "APELLIDO") {
-          UserService.getByExactApellido(input, page, 8).then((data) => {
+          UserService.getByExactApellido(input, page, 7).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2123,7 +2212,7 @@ export default function UsersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "NOMBRE_USUARIO") {
-          UserService.getByExactNombreUsuario(input, page, 8).then((data) => {
+          UserService.getByExactNombreUsuario(input, page, 7).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2142,7 +2231,7 @@ export default function UsersDataDisplay() {
       } else if (!isPrecise && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
         if (param === "NOMBRE") {
-          UserService.getByNombre(input, page, 8).then((data) => {
+          UserService.getByNombre(input, page, 7).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2158,7 +2247,7 @@ export default function UsersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "APELLIDO") {
-          UserService.getByApellido(input, page, 8).then((data) => {
+          UserService.getByApellido(input, page, 7).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2174,7 +2263,7 @@ export default function UsersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "NOMBRE_USUARIO") {
-          UserService.getByNombreUsuario(input, page, 8).then((data) => {
+          UserService.getByNombreUsuario(input, page, 7).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);

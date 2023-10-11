@@ -24,10 +24,12 @@ import { format } from "date-fns";
 import ProductService from "../../services/producto-service";
 import SaleService from "../../services/sales-service";
 import ClientService from "../../services/client-service";
+import SelectWithSearch from "../misc/select-with-search";
 import Select from "../misc/select";
 import permissions from "../../utils/permissions";
 import session from "../../utils/session";
 import debounce from "lodash.debounce";
+import isEqual from "lodash.isequal";
 import { useSaleSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import ExportCSV from "../misc/export-to-cvs";
@@ -169,10 +171,15 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
           />
           <div className="relative w-1/3">
             {clients.length > 0 && (
-              <Select
+              <SelectWithSearch
                 options={clients.map((client) => ({
                   value: client.id,
-                  label: client.nombre + " " + client.apellido + ", " + client.documento,
+                  label:
+                    client.nombre +
+                    " " +
+                    client.apellido +
+                    ", " +
+                    client.documento,
                   onClick: (value, label) => {
                     setSelectedClient({
                       value,
@@ -256,8 +263,49 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
           />
         </div>
       </div>
-      <div className="flex flex-col gap-3 row-start-2 w-full	">
-        <div className="relative">
+      <div className="flex flex-col gap-3 row-start-2 w-full">
+        <div>
+          <h2 className="text-xl font-medium">
+            Lista de productos seleccionados
+          </h2>
+          <hr className="my-4 w-[61%] border-[#2096ed]" />
+        </div>
+        <EmbeddedDetailsTable
+          onChange={(detalles) => {
+            let subtotal = 0;
+            if (detalles) {
+              for (let detalle of detalles) {
+                subtotal += detalle.subtotal;
+              }
+            }
+            setFormData({
+              ...formData,
+              subtotal: subtotal,
+              total: subtotal * (1 + formData.impuesto / 100),
+              detalles: detalles,
+            });
+          }}
+          setPages={(pages) => {
+            setPages(pages);
+          }}
+          setCurrent={(current) => {
+            setCurrent(current);
+          }}
+          page={page}
+          action={action}
+          detalles_venta={formData?.detalles?.filter(
+            (detalle) => detalle.cantidad > 0
+          )}
+        />
+      </div>
+      <div className="flex flex-col gap-3 row-start-3 w-full relative">
+        <div>
+          <h2 className="text-xl font-medium">
+            Lista de productos a seleccionar
+          </h2>
+          <hr className="my-4 w-[61%] border-[#2096ed]" />
+        </div>
+        <div className="relative mb-4">
           <input
             type="text"
             placeholder="Buscar producto por código o nombre..."
@@ -268,7 +316,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
             }}
             name="search"
           />
-          <Search className="absolute top-2 left-96 fill-[#2096ed]" />
+          <Search className="absolute top-2 left-96 fill-slate-400" />
         </div>
         <EmbeddedTable
           onChange={(detalles) => {
@@ -295,23 +343,27 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
           action={action}
           products={productos}
           searchTerm={searchTerm}
+          detalles_venta={formData?.detalles}
         />
-        <div className="flex h-full items-end justify-end">
-          <Pagination
-            pages={pages}
-            current={current}
-            next={() => {
-              if (current < pages && current !== pages) {
-                setPage(page + 1);
-              }
-            }}
-            prev={() => {
-              if (current > 1) {
-                setPage(page - 1);
-              }
-            }}
-          />
-          <div className="flex gap-2 justify-end absolute bottom-5">
+        <div className="flex h-full items-self-end items-end justify-end pb-5">
+          <div className="justify-self-start">
+            <Pagination
+              pages={pages}
+              current={current}
+              next={() => {
+                if (current < pages && current !== pages) {
+                  setPage(page + 1);
+                }
+              }}
+              prev={() => {
+                if (current > 1) {
+                  setPage(page - 1);
+                }
+              }}
+              className="absolute bottom-5 left-0 flex items-center gap-4"
+            />
+          </div>
+          <div className="flex gap-2 justify-end bottom-5">
             <button
               type="button"
               onClick={() => {
@@ -343,7 +395,12 @@ function EditSection({
   const [productos, setProductos] = useState<Producto[]>();
   const [selectedClient, setSelectedClient] = useState<Selected>({
     value: venta?.cliente_id,
-    label: venta?.cliente?.nombre + " " + venta?.cliente?.apellido + ", " + venta?.cliente?.documento,
+    label:
+      venta?.cliente?.nombre +
+      " " +
+      venta?.cliente?.apellido +
+      ", " +
+      venta?.cliente?.documento,
   });
   const [formData, setFormData] = useState<Venta>(venta!);
   const [page, setPage] = useState(1);
@@ -461,10 +518,15 @@ function EditSection({
           />
           <div className="relative w-1/3">
             {clients.length > 0 && (
-              <Select
+              <SelectWithSearch
                 options={clients.map((client) => ({
                   value: client.id,
-                  label: client.nombre + " " + client.apellido + ", " + client.documento,
+                  label:
+                    client.nombre +
+                    " " +
+                    client.apellido +
+                    ", " +
+                    client.documento,
                   onClick: (value, label) => {
                     setSelectedClient({
                       value,
@@ -548,8 +610,50 @@ function EditSection({
           />
         </div>
       </div>
-      <div className="flex flex-col gap-3 row-start-2 w-full	">
-        <div className="relative">
+      <div className="flex flex-col gap-3 row-start-2 w-full">
+        <div>
+          <h2 className="text-xl font-medium">
+            Lista de productos seleccionados
+          </h2>
+          <hr className="my-4 w-[61%] border-[#2096ed]" />
+        </div>
+        <EmbeddedDetailsTable
+          onChange={(detalles) => {
+            let subtotal = 0;
+            if (detalles) {
+              for (let detalle of detalles) {
+                subtotal += detalle.subtotal;
+              }
+            }
+            setFormData({
+              ...formData,
+              subtotal: subtotal,
+              total: subtotal * (1 + formData.impuesto / 100),
+              detalles: detalles,
+            });
+          }}
+          setPages={(pages) => {
+            setPages(pages);
+          }}
+          setCurrent={(current) => {
+            setCurrent(current);
+          }}
+          page={page}
+          action={action}
+          products={formData?.productos}
+          detalles_venta={formData?.detalles?.filter(
+            (detalle) => detalle.cantidad > 0
+          )}
+        />
+      </div>
+      <div className="flex flex-col gap-3 row-start-3 w-full relative">
+        <div>
+          <h2 className="text-xl font-medium">
+            Lista de productos a seleccionar
+          </h2>
+          <hr className="my-4 w-[61%] border-[#2096ed]" />
+        </div>
+        <div className="relative mb-4">
           <input
             type="text"
             placeholder="Buscar producto por código o nombre..."
@@ -560,30 +664,26 @@ function EditSection({
             }}
             name="search"
           />
-          <Search className="absolute top-2 left-96 fill-[#2096ed]" />
+          <Search className="absolute top-2 left-96 fill-slate-400" />
         </div>
         <EmbeddedTable
           onChange={(detalles) => {
             let subtotal = 0;
-
             if (detalles) {
               for (let detalle of detalles) {
-                subtotal += Number(detalle.subtotal);
+                subtotal += detalle.subtotal;
               }
             }
-            if (detalles) {
-              setFormData({
-                ...formData,
-                subtotal: subtotal,
-                total: subtotal * (1 + Number(formData.impuesto) / 100),
-                detalles: detalles,
-              });
-            }
+            setFormData({
+              ...formData,
+              subtotal: subtotal,
+              total: subtotal * (1 + formData.impuesto / 100),
+              detalles: detalles,
+            });
           }}
           setPages={(pages) => {
             setPages(pages);
           }}
-          detalles_venta={venta?.detalles}
           setCurrent={(current) => {
             setCurrent(current);
           }}
@@ -591,23 +691,27 @@ function EditSection({
           action={action}
           products={productos}
           searchTerm={searchTerm}
+          detalles_venta={formData?.detalles}
         />
-        <div className="flex h-full items-end justify-end">
-          <Pagination
-            pages={pages}
-            current={current}
-            next={() => {
-              if (current < pages && current !== pages) {
-                setPage(page + 1);
-              }
-            }}
-            prev={() => {
-              if (current > 1) {
-                setPage(page - 1);
-              }
-            }}
-          />
-          <div className="flex gap-2 justify-end absolute bottom-5">
+        <div className="flex h-full items-self-end items-end justify-end pb-5">
+          <div className="justify-self-start">
+            <Pagination
+              pages={pages}
+              current={current}
+              next={() => {
+                if (current < pages && current !== pages) {
+                  setPage(page + 1);
+                }
+              }}
+              prev={() => {
+                if (current > 1) {
+                  setPage(page - 1);
+                }
+              }}
+              className="absolute bottom-5 left-0 flex items-center gap-4"
+            />
+          </div>
+          <div className="flex gap-2 justify-end bottom-5">
             <button
               type="button"
               onClick={() => {
@@ -800,16 +904,12 @@ function EmbeddedDataRow({
 }: EmbeddedDataRowProps) {
   const max = producto?.stock!;
   const precio = producto?.precio!;
-  const subtotal = 0;
-  const [cantidad, setCantidad] = useState(
-    detalle_venta ? detalle_venta.cantidad : 0
-  );
   const [detalle, setDetalle] = useState<DetalleVenta>(
     detalle_venta
       ? { ...detalle_venta, subtotal: Number(detalle_venta.subtotal) }
       : {
-          cantidad: cantidad,
-          subtotal: subtotal,
+          cantidad: 0,
+          subtotal: 0,
           precioUnitario: precio,
           producto_id: producto?.id,
           producto: producto,
@@ -818,33 +918,39 @@ function EmbeddedDataRow({
 
   useEffect(() => {
     onChange(detalle);
-  }, [cantidad]);
+  }, [detalle]);
 
   return (
     <tr>
       <th
-        scope="row" className="px-6 py-2 border border-slate-300 w-[50px] truncate">
-        {producto?.código}
+        scope="row"
+        className="font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 text-center"
+      >
+        {producto?.id}
       </th>
-      <td className="px-6 py-2 border border-slate-300 w-[50px] truncate">
+      <td className="px-6 py-2 border border-slate-300 max-w-[150px] truncate">
+        {producto?.código}
+      </td>
+      <td className="px-6 py-2 border border-slate-300 max-w-[150px] truncate">
         {producto?.nombre}
       </td>
-      <td className="px-6 py-2 border border-slate-300 w-[50px]">{producto?.precio}</td>
+      <td className="px-6 py-2 border border-slate-300 w-[50px]">
+        {producto?.precio}
+      </td>
       <td className="px-6 py-2 border border-slate-300 w-[1px]">
-        {cantidad}/{max}
+        {detalle.cantidad || 0}/{max}
       </td>
       <td className="px-6 py-2 border border-slate-300 w-[120px]">
         {action === "ADD" ? (
           <button
             type="button"
             onClick={() => {
-              if (cantidad < max) {
+              if (detalle.cantidad < max) {
                 setDetalle({
                   ...detalle,
-                  cantidad: cantidad + 1,
-                  subtotal: precio * (cantidad + 1),
+                  cantidad: detalle.cantidad + 1,
+                  subtotal: precio * (detalle.cantidad + 1),
                 });
-                setCantidad(cantidad + 1);
               }
             }}
             className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
@@ -855,13 +961,12 @@ function EmbeddedDataRow({
           <button
             type="button"
             onClick={() => {
-              if (cantidad > 0) {
+              if (detalle.cantidad > 0) {
                 setDetalle({
                   ...detalle,
-                  cantidad: cantidad - 1,
-                  subtotal: precio * (cantidad - 1),
+                  cantidad: detalle.cantidad - 1,
+                  subtotal: precio * (detalle.cantidad - 1),
                 });
-                setCantidad(cantidad - 1);
               }
             }}
             className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
@@ -869,6 +974,36 @@ function EmbeddedDataRow({
             Remover
           </button>
         )}
+      </td>
+    </tr>
+  );
+}
+
+function EmbeddedDetailsDataRow({
+  detalle_venta,
+  producto,
+}: EmbeddedDataRowProps) {
+  const max = producto?.stock!;
+
+  return (
+    <tr className="border-r-2 border-slate-200">
+      <th
+        scope="row"
+        className="font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 text-center"
+      >
+        {producto?.id}
+      </th>
+      <td className="px-6 py-2 border border-slate-300 max-w-[150px] truncate">
+        {producto?.código}
+      </td>
+      <td className="px-6 py-2 border border-slate-300 max-w-[150px] truncate">
+        {producto?.nombre}
+      </td>
+      <td className="px-6 py-2 border border-slate-300 w-[50px]">
+        {producto?.precio}
+      </td>
+      <td className="px-6 py-2 border border-slate-300 w-[1px]">
+        {detalle_venta?.cantidad || 0}/{max}
       </td>
     </tr>
   );
@@ -892,7 +1027,7 @@ function EmbeddedTable({
   );
 
   useEffect(() => {
-    if (typeof products === "undefined" && searchTerm === "") {
+    if (typeof products === "undefined" || searchTerm === "") {
       ProductService.getAll(page!, 6).then((data) => {
         if (data === false) {
           setNotFound(true);
@@ -913,8 +1048,15 @@ function EmbeddedTable({
       setProductos(products);
       setNotFound(false);
     }
+
     onChange(detalles);
-  }, [detalles, page, products]);
+  }, [detalles, page]);
+
+  useEffect(() => {
+    if (!isEqual(detalles_venta?.sort(), detalles.sort())) {
+      setDetalles(detalles_venta ? detalles_venta : []);
+    }
+  }, [detalles_venta]);
 
   const secondOnChange = (detalle: DetalleVenta) => {
     setDetalles((prevDetalles) => {
@@ -940,6 +1082,9 @@ function EmbeddedTable({
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    #
+                  </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Código
                   </th>
@@ -976,7 +1121,7 @@ function EmbeddedTable({
           </div>
         )}
       {notFound === true && (
-        <div className="grid w-fit h-4/5 self-center mt-14 ml-12">
+        <div className="grid w-fit h-4/5 self-center ml-12 mb-20">
           <div className="place-self-center flex flex-col items-center justify-center">
             <Face className="fill-[#2096ed] h-20 w-20" />
             <p className="font-bold text-xl text-center mt-1">
@@ -986,7 +1131,7 @@ function EmbeddedTable({
         </div>
       )}
       {loading === true && (
-        <div className="grid w-fit h-4/5 mt-20 ml-40">
+        <div className="grid w-fit h-4/5 ml-40 mb-20">
           <div className="place-self-center">
             <div role="status">
               <svg
@@ -1008,6 +1153,60 @@ function EmbeddedTable({
               <span className="sr-only">Cargando...</span>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EmbeddedDetailsTable({ detalles_venta, action, products }: EmbeddedTableProps) {
+  return (
+    <div>
+      {typeof detalles_venta !== "undefined" && detalles_venta?.length > 0 && (
+        <div className="relative overflow-x-auto max-w-xl">
+          <table className="w-full text-sm font-medium text-slate-600 text-left">
+            <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
+              <tr className="border-2 border-[#2096ed]">
+                <th scope="col" className="px-6 py-3 border border-slate-300">
+                  #
+                </th>
+                <th scope="col" className="px-6 py-3 border border-slate-300">
+                  Código
+                </th>
+                <th scope="col" className="px-6 py-3 border border-slate-300">
+                  Nombre
+                </th>
+                <th scope="col" className="px-6 py-3 border border-slate-300">
+                  Precio
+                </th>
+                <th scope="col" className="px-6 py-3 border border-slate-300">
+                  Cantidad
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {detalles_venta?.map(detail => {
+                if(detail.producto){
+                  return detail;
+                } else {
+                  return {
+                    ...detail,
+                    producto: products?.find(producto => producto.id === detail.producto_id)
+                  }
+                }
+              }).map((detail) => {
+                return (
+                  <EmbeddedDetailsDataRow
+                    producto={detail?.producto}
+                    key={detail?.producto?.id}
+                    onChange={() => {}}
+                    detalle_venta={detail}
+                    action={action}
+                  />
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
@@ -1171,7 +1370,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <>
             <div className="relative">
               {clients.length > 0 && (
-                <Select
+                <SelectWithSearch
                   options={clients.map((client) => ({
                     value: client.id,
                     label: `${client.nombre} ${client.apellido}, ${client.documento}`,
@@ -1238,16 +1437,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 setSecondParam(selectedFecha.value as string);
               }}
               options={[
-                {
-                  value: "HOY",
-                  label: "Hoy",
-                  onClick: (value, label) => {
-                    setSelectedFecha({
-                      value,
-                      label,
-                    });
-                  },
-                },
                 {
                   value: "RECIENTEMENTE",
                   label: "Recientemente",
@@ -1677,7 +1866,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
           <>
             <div className="relative">
               {clients.length > 0 && (
-                <Select
+                <SelectWithSearch
                   options={clients.map((client) => ({
                     value: client.id,
                     label: `${client.nombre} ${client.apellido}, ${client.documento}`,
@@ -1741,16 +1930,6 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                 setSecondParam(selectedFecha.value as string);
               }}
               options={[
-                {
-                  value: "HOY",
-                  label: "Hoy",
-                  onClick: (value, label) => {
-                    setSelectedFecha({
-                      value,
-                      label,
-                    });
-                  },
-                },
                 {
                   value: "RECIENTEMENTE",
                   label: "Recientemente",

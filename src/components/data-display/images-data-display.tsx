@@ -398,7 +398,6 @@ function Dropup({
   close,
   selectAction,
   openAddModal,
-  openSearchModal,
 }: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
@@ -523,29 +522,6 @@ function Dropup({
           </div>
         </li>
       )}
-      <li>
-        <div
-          onClick={() => {
-            openSearchModal?.();
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Buscar imagen
-        </div>
-      </li>
     </ul>
   );
 }

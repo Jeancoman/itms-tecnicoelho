@@ -17,6 +17,7 @@ import ProductService from "../../services/producto-service";
 import Slugifier from "../../utils/slugifier";
 import toast, { Toaster } from "react-hot-toast";
 import CategoryService from "../../services/category-service";
+import SelectWithSearch from "../misc/select-with-search";
 import Select from "../misc/select";
 import session from "../../utils/session";
 import permissions from "../../utils/permissions";
@@ -177,7 +178,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         </div>
         <div className="relative">
           {categories.length > 0 && (
-            <Select
+            <SelectWithSearch
               options={categories
                 .filter((category) => category.tipo === "PRODUCTO")
                 .map((category) => ({
@@ -440,7 +441,7 @@ function EditModal({
         </div>
         <div className="relative">
           {categories.length > 0 && (
-            <Select
+            <SelectWithSearch
               options={categories
                 .filter((category) => category.tipo === "PRODUCTO")
                 .map((category) => ({
@@ -1177,7 +1178,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               },
               {
                 value: "MAS_COMPRADO",
-                label: "Más comprado",
+                label: "Más comprados",
                 onClick: (value, label) => {
                   setSelectedSearchType({
                     value,
@@ -1197,16 +1198,6 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                 setSecondParam(selectedFecha.value as string);
               }}
               options={[
-                {
-                  value: "HOY",
-                  label: "Hoy",
-                  onClick: (value, label) => {
-                    setSelectedFecha({
-                      value,
-                      label,
-                    });
-                  },
-                },
                 {
                   value: "RECIENTEMENTE",
                   label: "Recientemente",

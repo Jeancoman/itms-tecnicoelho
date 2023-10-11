@@ -550,29 +550,6 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           </div>
         </li>
       )}
-      <li>
-        <div
-          onClick={() => {
-            openAddModal();
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Buscar mensaje
-        </div>
-      </li>
     </ul>
   );
 }

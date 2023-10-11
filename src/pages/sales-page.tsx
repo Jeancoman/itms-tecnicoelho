@@ -37,7 +37,7 @@ export default function SalesPage() {
     <> 
       <div className="h-screen bg-white grid grid-cols-[1fr_5fr]">
         <NavPanel />
-        <main className="bg-white relative max-h-[656px]">
+        <main className="bg-white relative max-h-[656px] overflow-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100">
           <SalesDataDisplay />
         </main>
       </div>

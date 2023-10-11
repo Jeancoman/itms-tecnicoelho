@@ -50,7 +50,7 @@ export default function SalePDFPage() {
         onClick={() => toPDF()}
         className="absolute left-1/2 top-10 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
       >
-        Descargar PDF
+        Descargar factura
       </button>
       <main
         ref={targetRef}

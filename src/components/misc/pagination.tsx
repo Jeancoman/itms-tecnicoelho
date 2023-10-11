@@ -8,9 +8,10 @@ export default function Pagination({
   pages,
   next,
   prev,
+  className
 }: PaginationProps) {
   return (
-    <nav className="absolute bottom-5 left-8 flex items-center gap-4 ">
+    <div className={className ? className : "absolute bottom-5 left-8 flex items-center gap-4"}>
       <div
         onClick={prev}
         className={clsx({
@@ -38,6 +39,6 @@ export default function Pagination({
       >
         <Right className="h-4 w-4" />
       </div>
-    </nav>
+    </div>
   );
 }

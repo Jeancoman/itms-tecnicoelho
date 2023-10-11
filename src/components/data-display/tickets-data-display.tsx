@@ -21,6 +21,7 @@ import toast, { Toaster } from "react-hot-toast";
 import ElementService from "../../services/element-service";
 import TicketService from "../../services/ticket-service";
 import { useNavigate } from "react-router-dom";
+import SelectWithSearch from "../misc/select-with-search";
 import Select from "../misc/select";
 import { format } from "date-fns";
 import MessageService from "../../services/message-service";
@@ -286,6 +287,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       value: -1,
       label: "Seleccionar elemento",
     });
+    setElements([])
   };
 
   useEffect(() => {
@@ -442,7 +444,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       >
         <div className="relative">
           {clients.length > 0 && (
-            <Select
+            <SelectWithSearch
               options={clients.map((client) => ({
                 value: client.id,
                 label: `${client.nombre} ${client.apellido}, ${client.documento}`,
@@ -499,7 +501,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         </div>
         <div className="relative">
           {clients.length > 0 && elements.length > 0 && (
-            <Select
+            <SelectWithSearch
               onChange={() => {
                 setFormData({
                   ...formData,
@@ -1296,7 +1298,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <>
             <div className="relative">
               {categories.length > 0 && (
-                <Select
+                <SelectWithSearch
                   options={categories.map((category) => ({
                     value: category.id,
                     label: `${category.nombre}`,
@@ -1360,7 +1362,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <>
             <div className="relative">
               {clients.length > 0 && (
-                <Select
+                <SelectWithSearch
                   options={clients.map((client) => ({
                     value: client.id,
                     label: `${client.nombre} ${client.apellido}, ${client.documento}`,

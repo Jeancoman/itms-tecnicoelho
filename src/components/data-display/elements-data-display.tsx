@@ -17,6 +17,7 @@ import toast, { Toaster } from "react-hot-toast";
 import ElementService from "../../services/element-service";
 import { useParams } from "react-router-dom";
 import CategoryService from "../../services/category-service";
+import SelectWithSearch from "../misc/select-with-search";
 import Select from "../misc/select";
 import { format } from "date-fns";
 import session from "../../utils/session";
@@ -125,7 +126,7 @@ function EditModal({
           />
           <div className="relative w-2/4">
             {categories.length > 0 && (
-              <Select
+              <SelectWithSearch
                 options={categories
                   .filter((category) => category.tipo === "ELEMENTO")
                   .map((category) => ({
@@ -332,7 +333,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           />
           <div className="relative w-2/4">
             {categories.length > 0 && (
-              <Select
+              <SelectWithSearch
                 options={categories
                   .filter((category) => category.tipo === "ELEMENTO")
                   .map((category) => ({
@@ -924,7 +925,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <>
             <div className="relative">
               {categories.length > 0 && (
-                <Select
+                <SelectWithSearch
                   options={categories.map((category) => ({
                     value: category.id,
                     label: `${category.nombre}`,
