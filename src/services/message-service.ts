@@ -43,6 +43,65 @@ export default class MessageService {
     }
   }
 
+  static async getBetweenDates(
+    ticket_id: number,
+    initial_date: string,
+    end_date: string,
+    page: number,
+    size: number,
+  ) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/busqueda/mensajes?tipo=ENTRE&creado_inicial=${initial_date}&creado_final=${end_date}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+    static async getByState(
+    ticket_id: number,
+    state: string,
+    page: number,
+    size: number,
+  ) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/${ticket_id}/busqueda/mensajes?estado=${state}&page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
   static async create(ticket_id: number, message: Mensaje) {
     try {
       const response = await fetch(

@@ -20,6 +20,8 @@ import { format } from "date-fns";
 import permissions from "../../utils/permissions";
 import session from "../../utils/session";
 import Select from "../misc/select";
+import { useMessageSearchParamStore } from "../../store/searchParamStore";
+import { useSearchedStore } from "../../store/searchedStore";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id } = useParams();
@@ -422,7 +424,156 @@ function DataRow({ action, mensaje, setOperationAsCompleted }: DataRowProps) {
   );
 }
 
-function Dropup({ close, selectAction, openAddModal }: DropupProps) {
+function SearchModal({ isOpen, closeModal }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
+    value: "",
+    label: "Seleccionar parametro de busqueda",
+  });
+  const [selectedState, setSelectedState] = useState<Selected>({
+    value: "",
+    label: "Seleccionar estado",
+  });
+  const setSecondParam = useMessageSearchParamStore((state) => state.setSecondParam);
+  const setParam = useMessageSearchParamStore((state) => state.setParam);
+  const incrementSearchCount = useMessageSearchParamStore(
+    (state) => state.incrementSearchCount
+  );
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+
+  const resetSearch = () => {
+    setSelectedSearchType({
+      value: "",
+      label: "Seleccionar parametro de busqueda",
+    });
+    setWasSearch(false);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          resetSearch();
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      resetSearch();
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-1/3 h-fit rounded-md shadow text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Buscar Messagen</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (selectedSearchType.value !== "") {
+            resetSearch();
+            incrementSearchCount();
+            closeModal();
+            setWasSearch(true);
+          }
+        }}
+      >
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setParam(selectedSearchType.value as string);
+            }}
+            options={[
+              {
+                value: "ESTADO",
+                label: "Estado",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedSearchType}
+          />
+        </div>
+        {selectedSearchType.value === "ESTADO" ? (
+                  <div className="relative">
+                  <Select
+                    onChange={() => {
+                      setSecondParam(selectedState.value as string);
+                    }}
+                    options={[
+                      {
+                        value: "ENVIADO",
+                        label: "Enviado",
+                        onClick: (value, label) => {
+                          setSelectedState({
+                            value,
+                            label,
+                          });
+                        },
+                      },
+                                            {
+                        value: "NO_ENVIADO",
+                        label: "No enviado",
+                        onClick: (value, label) => {
+                          setSelectedState({
+                            value,
+                            label,
+                          });
+                        },
+                      },
+                    ]}
+                    selected={selectedState}
+                  />
+                </div>
+        ) : null}
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Buscar
+            </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
+function Dropup({
+  close,
+  selectAction,
+  openAddModal,
+  openSearchModal,
+}: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -550,6 +701,29 @@ function Dropup({ close, selectAction, openAddModal }: DropupProps) {
           </div>
         </li>
       )}
+      <li>
+        <div
+          onClick={() => {
+            openSearchModal?.();
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Buscar mensaje
+        </div>
+      </li>
     </ul>
   );
 }
@@ -566,6 +740,14 @@ export default function MessagesDataDisplay() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
+  const searchCount = useMessageSearchParamStore((state) => state.searchCount);
+  const resetSearchCount = useMessageSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const secondParam = useMessageSearchParamStore((state) => state.secondParam);
+  const [isSearch, setIsSearch] = useState(false);
+  const wasSearch = useSearchedStore((state) => state.wasSearch);
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -588,20 +770,52 @@ export default function MessagesDataDisplay() {
   };
 
   useEffect(() => {
-    MessageService.getAll(Number(id), page, 8).then((data) => {
-      if (data === false) {
-        setNotFound(true);
-        setLoading(false);
-        setMessages([]);
-      } else {
-        setMessages(data.rows);
-        setPages(data.pages);
-        setCurrent(data.current);
-        setLoading(false);
-      }
-      setIsOperationCompleted(false);
-    });
-  }, [isOperationCompleted, page]);
+    if (searchCount === 0) {
+      MessageService.getAll(Number(id), page, 8).then((data) => {
+        if (data === false) {
+          setNotFound(true);
+          setMessages([]);
+          setLoading(false);
+          resetSearchCount();
+          setWasSearch(false);
+        } else {
+          setMessages(data.rows);
+          setPages(data.pages);
+          setCurrent(data.current);
+          setLoading(false);
+          setNotFound(false);
+          resetSearchCount();
+          setWasSearch(false);
+        }
+        setIsOperationCompleted(false);
+      });
+    } if (wasSearch) {
+      const loadingToast = toast.loading("Buscando...");
+        MessageService.getByState(Number(id), secondParam, page, 8).then((data) => {
+          if (data === false) {
+            setNotFound(true);
+            setMessages([]);
+            setLoading(false);
+            resetSearchCount();
+            setWasSearch(false);
+          } else {
+            setMessages(data.rows);
+            setPages(data.pages);
+            setCurrent(data.current);
+            setLoading(false);
+            setNotFound(false);
+            resetSearchCount();
+            setWasSearch(false);
+          }
+          toast.dismiss(loadingToast);
+          setIsOperationCompleted(false);
+        });
+    }
+  }, [isOperationCompleted, page, searchCount]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchCount]);
 
   return (
     <>
@@ -613,7 +827,7 @@ export default function MessagesDataDisplay() {
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">#{id}</span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]">Mensajes</span>
+            <span onClick={resetSearchCount} className="text-[#2096ed]">Mensajes</span>
           </div>
           <div>
             {isDropup && (
@@ -621,6 +835,9 @@ export default function MessagesDataDisplay() {
                 close={closeDropup}
                 selectAction={selectAction}
                 openAddModal={openAddModal}
+                openSearchModal={() => {
+                  setIsSearch(true);
+                }}
               />
             )}
             <button
@@ -676,7 +893,7 @@ export default function MessagesDataDisplay() {
             </table>
           </div>
         )}
-        {notFound === true && (
+        {(notFound === true || (messages.length === 0 && loading === false)) && (
           <div className="grid w-full h-4/5">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
@@ -684,8 +901,9 @@ export default function MessagesDataDisplay() {
                 Ningún mensaje encontrado
               </p>
               <p className="font-medium text text-center mt-1">
-                Esto puede deberse a un error del servidor, o a que simplemente
-                no hay ningún mensaje registrado.
+              {searchCount === 0
+                  ? "Esto puede deberse a un error del servidor, o a que no hay ningún mensaje registrada."
+                  : "Esto puede deberse a un error del servidor, o a que ningún mensaje concuerda con tu busqueda."}
               </p>
             </div>
           </div>
@@ -738,6 +956,13 @@ export default function MessagesDataDisplay() {
         closeModal={closeAddModal}
         setOperationAsCompleted={setAsCompleted}
       />
+            <SearchModal
+        isOpen={isSearch}
+        closeModal={() => setIsSearch(false)}
+        setOperationAsCompleted={function (): void {
+          throw new Error("Function not implemented.");
+        }}
+        />
     </>
   );
 }

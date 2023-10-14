@@ -430,3 +430,65 @@ export const useProblemSearchParamStore = create<SimpleSearchParamStore>(
     setSearchId: (arg) => set(() => ({ searchId: arg })),
   })
 );
+
+export const useImageSearchParamStore = create<SimpleSearchParamStore>(
+  (set) => ({
+    searchCount: 0,
+    tempIsPrecise: false,
+    isPrecise: false,
+    tempParam: "",
+    tempInput: "",
+    param: "",
+    secondParam: "",
+    input: "",
+    secondInput: "",
+    secondTempInput: "",
+    secondTempParam: "",
+    setParam: (arg) => set(() => ({ param: arg })),
+    setInput: (arg) => set(() => ({ input: arg })),
+    setTempInput: (arg) => set(() => ({ tempInput: arg })),
+    setTempParam: (arg) => set(() => ({ tempParam: arg })),
+    setIsPrecise: (arg) => set(() => ({ isPrecise: arg })),
+    setTempIsPrecise: (arg) => set(() => ({ tempIsPrecise: arg })),
+    incrementSearchCount: () =>
+      set((state) => ({ searchCount: state.searchCount + 1 })),
+    resetSearchCount: () => set(() => ({ searchCount: 0 })),
+    setSecondParam: (arg) => set(() => ({ secondParam: arg })),
+    setSecondInput: (arg) => set(() => ({ secondInput: arg })),
+    setSecondTempParam: (arg) => set(() => ({ secondTempParam: arg })),
+    setSecondTempInput: (arg) => set(() => ({ secondTempInput: arg })),
+    searchId: 0,
+    setSearchId: (arg) => set(() => ({ searchId: arg })),
+  })
+);
+
+export const useMessageSearchParamStore = create<SimpleSearchParamStore>(
+  (set) => ({
+    searchCount: 0,
+    tempIsPrecise: false,
+    isPrecise: false,
+    tempParam: "",
+    tempInput: "",
+    param: "",
+    secondParam: "",
+    input: "",
+    secondInput: "",
+    secondTempInput: "",
+    secondTempParam: "",
+    setParam: (arg) => set(() => ({ param: arg })),
+    setInput: (arg) => set(() => ({ input: arg })),
+    setTempInput: (arg) => set(() => ({ tempInput: arg })),
+    setTempParam: (arg) => set(() => ({ tempParam: arg })),
+    setIsPrecise: (arg) => set(() => ({ isPrecise: arg })),
+    setTempIsPrecise: (arg) => set(() => ({ tempIsPrecise: arg })),
+    incrementSearchCount: () =>
+      set((state) => ({ searchCount: state.searchCount + 1 })),
+    resetSearchCount: () => set(() => ({ searchCount: 0 })),
+    setSecondParam: (arg) => set(() => ({ secondParam: arg })),
+    setSecondInput: (arg) => set(() => ({ secondInput: arg })),
+    setSecondTempParam: (arg) => set(() => ({ secondTempParam: arg })),
+    setSecondTempInput: (arg) => set(() => ({ secondTempInput: arg })),
+    searchId: 0,
+    setSearchId: (arg) => set(() => ({ searchId: arg })),
+  })
+);

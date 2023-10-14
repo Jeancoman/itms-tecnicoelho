@@ -10,12 +10,16 @@ import {
   DropupProps,
   Action,
   Imagen,
+  Selected,
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
 import ImageService from "../../services/image-service";
 import permissions from "../../utils/permissions";
 import session from "../../utils/session";
 import { format } from "date-fns";
+import { useImageSearchParamStore } from "../../store/searchParamStore";
+import Select from "../misc/select";
+import { useSearchedStore } from "../../store/searchedStore";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -394,10 +398,176 @@ function DataRow({ action, imagen, setOperationAsCompleted }: DataRowProps) {
   );
 }
 
+function SearchModal({ isOpen, closeModal }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
+    value: "",
+    label: "Seleccionar parametro de busqueda",
+  });
+  const setIsPrecise = useImageSearchParamStore((state) => state.setIsPrecise);
+  const setTempIsPrecise = useImageSearchParamStore(
+    (state) => state.setTempIsPrecise
+  );
+  const tempIsPrecise = useImageSearchParamStore(
+    (state) => state.tempIsPrecise
+  );
+  const tempInput = useImageSearchParamStore((state) => state.tempInput);
+  const setInput = useImageSearchParamStore((state) => state.setInput);
+  const setTempInput = useImageSearchParamStore((state) => state.setTempInput);
+  const setParam = useImageSearchParamStore((state) => state.setParam);
+  const incrementSearchCount = useImageSearchParamStore(
+    (state) => state.incrementSearchCount
+  );
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+
+  const resetSearch = () => {
+    setTempInput("");
+    setTempIsPrecise(false);
+    setSelectedSearchType({
+      value: "",
+      label: "Seleccionar parametro de busqueda",
+    });
+    setWasSearch(false);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          resetSearch();
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      resetSearch();
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-1/3 h-fit rounded-md shadow text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Buscar imagen</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (selectedSearchType.value !== "") {
+            resetSearch();
+            incrementSearchCount();
+            closeModal();
+            setWasSearch(true);
+          }
+        }}
+      >
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setParam(selectedSearchType.value as string);
+            }}
+            options={[
+              {
+                value: "URL",
+                label: "URL",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "DESCRIPCIÓN",
+                label: "Descripción",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedSearchType}
+          />
+        </div>
+        <input
+          type="text"
+          placeholder={
+            selectedSearchType.value === "URL"
+              ? "Introduzca url de imagen"
+              : selectedSearchType.value === "DESCRIPCIÓN"
+              ? "Introduzca descripción de imagen"
+              : ""
+          }
+          value={tempInput}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          onChange={(e) => {
+            setInput(e.target.value);
+            setTempInput(e.target.value);
+          }}
+        />
+        <div className="flex w-full justify-between items-center">
+          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+            <input
+              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              type="checkbox"
+              onChange={(e) => {
+                setIsPrecise(e.target.checked);
+                setTempIsPrecise(e.target.checked);
+              }}
+              checked={tempIsPrecise}
+              id="checkbox"
+            />
+            <label
+              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+              htmlFor="checkbox"
+            >
+              ¿Busqueda exacta?
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Buscar
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
 function Dropup({
   close,
   selectAction,
   openAddModal,
+  openSearchModal,
 }: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
@@ -522,6 +692,29 @@ function Dropup({
           </div>
         </li>
       )}
+      <li>
+        <div
+          onClick={() => {
+            openSearchModal?.();
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Buscar imagen
+        </div>
+      </li>
     </ul>
   );
 }
@@ -537,6 +730,16 @@ export default function ImagesDataDisplay() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
+  const searchCount = useImageSearchParamStore((state) => state.searchCount);
+  const resetSearchCount = useImageSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const input = useImageSearchParamStore((state) => state.input);
+  const param = useImageSearchParamStore((state) => state.param);
+  const [isSearch, setIsSearch] = useState(false);
+  const isPrecise = useImageSearchParamStore((state) => state.isPrecise);
+  const wasSearch = useSearchedStore((state) => state.wasSearch);
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -559,21 +762,117 @@ export default function ImagesDataDisplay() {
   };
 
   useEffect(() => {
-    ImageService.getAll(page, 8).then((data) => {
-      if (data === false) {
-        setNotFound(true);
-        setImages([]);
-        setLoading(false);
-      } else {
-        setImages(data.rows);
-        setPages(data.pages);
-        setCurrent(data.current);
-        setLoading(false);
-        setNotFound(false);
+    if (searchCount === 0) {
+      ImageService.getAll(page, 8).then((data) => {
+        if (data === false) {
+          setNotFound(true);
+          setImages([]);
+          setLoading(false);
+          resetSearchCount();
+          setWasSearch(false);
+        } else {
+          setImages(data.rows);
+          setPages(data.pages);
+          setCurrent(data.current);
+          setLoading(false);
+          setNotFound(false);
+          resetSearchCount();
+          setWasSearch(false);
+        }
+        setIsOperationCompleted(false);
+      });
+    } else if (isPrecise && wasSearch) {
+      const loadingToast = toast.loading("Buscando...");
+      if (param === "URL") {
+        ImageService.getExactUrl(input, page, 8).then((data) => {
+          if (data === false) {
+            setNotFound(true);
+            setImages([]);
+            setLoading(false);
+            resetSearchCount();
+            setWasSearch(false);
+          } else {
+            setImages(data.rows);
+            setPages(data.pages);
+            setCurrent(data.current);
+            setLoading(false);
+            setNotFound(false);
+            resetSearchCount();
+            setWasSearch(false);
+          }
+          toast.dismiss(loadingToast);
+          setIsOperationCompleted(false);
+        });
+      } else if (param === "DESCRIPCIÓN") {
+        ImageService.getExactDescription(input, page, 8).then((data) => {
+          if (data === false) {
+            setNotFound(true);
+            setImages([]);
+            setLoading(false);
+            resetSearchCount();
+            setWasSearch(false);
+          } else {
+            setImages(data.rows);
+            setPages(data.pages);
+            setCurrent(data.current);
+            setLoading(false);
+            setNotFound(false);
+            resetSearchCount();
+            setWasSearch(false);
+          }
+          toast.dismiss(loadingToast);
+          setIsOperationCompleted(false);
+        });
       }
-      setIsOperationCompleted(false);
-    });
-  }, [isOperationCompleted, page]);
+    } else if (wasSearch) {
+      const loadingToast = toast.loading("Buscando...");
+      if (param === "URL") {
+        ImageService.getByUrl(input, page, 8).then((data) => {
+          if (data === false) {
+            setNotFound(true);
+            setImages([]);
+            setLoading(false);
+            resetSearchCount();
+            setWasSearch(false);
+          } else {
+            setImages(data.rows);
+            setPages(data.pages);
+            setCurrent(data.current);
+            setLoading(false);
+            setNotFound(false);
+            resetSearchCount();
+            setWasSearch(false);
+          }
+          toast.dismiss(loadingToast);
+          setIsOperationCompleted(false);
+        });
+      } else if (param === "DESCRIPCIÓN") {
+        ImageService.getDescription(input, page, 8).then((data) => {
+          if (data === false) {
+            setNotFound(true);
+            setImages([]);
+            setLoading(false);
+            resetSearchCount();
+            setWasSearch(false);
+          } else {
+            setImages(data.rows);
+            setPages(data.pages);
+            setCurrent(data.current);
+            setLoading(false);
+            setNotFound(false);
+            resetSearchCount();
+            setWasSearch(false);
+          }
+          toast.dismiss(loadingToast);
+          setIsOperationCompleted(false);
+        });
+      }
+    }
+  }, [isOperationCompleted, page, searchCount]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchCount]);
 
   return (
     <>
@@ -581,7 +880,12 @@ export default function ImagesDataDisplay() {
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed] cursor-pointer">Galería</span>
+            <span
+              onClick={resetSearchCount}
+              className="text-[#2096ed] cursor-pointer"
+            >
+              Galería
+            </span>
           </div>
           <div>
             {isDropup && (
@@ -589,6 +893,9 @@ export default function ImagesDataDisplay() {
                 close={closeDropup}
                 selectAction={selectAction}
                 openAddModal={openAddModal}
+                openSearchModal={() => {
+                  setIsSearch(true);
+                }}
               />
             )}
             <button
@@ -649,8 +956,9 @@ export default function ImagesDataDisplay() {
                 Ningúna imagen encontrada
               </p>
               <p className="font-medium text text-center mt-1">
-                Esto puede deberse a un error del servidor, o a que no hay
-                ningúna imagen registrada.
+                {searchCount === 0
+                  ? "Esto puede deberse a un error del servidor, o a que no hay ningúna imagen registrada."
+                  : "Esto puede deberse a un error del servidor, o a que ningúna imagen concuerda con tu busqueda."}
               </p>
             </div>
           </div>
@@ -702,6 +1010,13 @@ export default function ImagesDataDisplay() {
         isOpen={isAddOpen}
         closeModal={closeAddModal}
         setOperationAsCompleted={setAsCompleted}
+      />
+      <SearchModal
+        isOpen={isSearch}
+        closeModal={() => setIsSearch(false)}
+        setOperationAsCompleted={function (): void {
+          throw new Error("Function not implemented.");
+        }}
       />
     </>
   );

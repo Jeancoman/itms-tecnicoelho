@@ -72,7 +72,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   const searchProducts = useCallback(
     debounce(async (searchTerm: string) => {
       if (searchTerm === "") {
-        ProductService.getAll(page, 6).then((data) => {
+        ProductService.getAll(page, 8).then((data) => {
           if (data === false) {
             setProductos([]);
           } else {
@@ -82,9 +82,9 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
           }
         });
       }
-      const data = await ProductService.getByCódigo(searchTerm, page, 6);
+      const data = await ProductService.getByCódigo(searchTerm, page, 8);
       if (data === false) {
-        const otherData = await ProductService.getByNombre(searchTerm, page, 6);
+        const otherData = await ProductService.getByNombre(searchTerm, page, 8);
         if (otherData === false) {
           setProductos([]);
         } else {
@@ -412,7 +412,7 @@ function EditSection({
   const searchProducts = useCallback(
     debounce(async (searchTerm: string) => {
       if (searchTerm === "") {
-        ProductService.getAll(page, 6).then((data) => {
+        ProductService.getAll(page, 8).then((data) => {
           if (data === false) {
             setProductos([]);
           } else {
@@ -422,9 +422,9 @@ function EditSection({
           }
         });
       }
-      const data = await ProductService.getByCódigo(searchTerm, page, 6);
+      const data = await ProductService.getByCódigo(searchTerm, page, 8);
       if (data === false) {
-        const otherData = await ProductService.getByNombre(searchTerm, page, 6);
+        const otherData = await ProductService.getByNombre(searchTerm, page, 8);
         if (otherData === false) {
           setProductos([]);
         } else {
@@ -917,7 +917,7 @@ function EmbeddedDataRow({
   );
 
   useEffect(() => {
-    onChange(detalle);
+    if(typeof detalle_venta === "undefined" || !isEqual(detalle_venta, detalle)) onChange(detalle);
   }, [detalle]);
 
   return (
@@ -938,18 +938,18 @@ function EmbeddedDataRow({
         {producto?.precio}
       </td>
       <td className="px-6 py-2 border border-slate-300 w-[1px]">
-        {detalle.cantidad || 0}/{max}
+        {detalle_venta?.cantidad || 0}/{max}
       </td>
       <td className="px-6 py-2 border border-slate-300 w-[120px]">
         {action === "ADD" ? (
           <button
             type="button"
             onClick={() => {
-              if (detalle.cantidad < max) {
+              if ((detalle_venta?.cantidad || 0) < max) {
                 setDetalle({
                   ...detalle,
-                  cantidad: detalle.cantidad + 1,
-                  subtotal: precio * (detalle.cantidad + 1),
+                  cantidad: (detalle_venta?.cantidad || 0) + 1,
+                  subtotal: precio * ((detalle_venta?.cantidad || 0) + 1),
                 });
               }
             }}
@@ -961,11 +961,11 @@ function EmbeddedDataRow({
           <button
             type="button"
             onClick={() => {
-              if (detalle.cantidad > 0) {
+              if ((detalle_venta?.cantidad || 0) > 0) {
                 setDetalle({
                   ...detalle,
-                  cantidad: detalle.cantidad - 1,
-                  subtotal: precio * (detalle.cantidad - 1),
+                  cantidad: (detalle_venta?.cantidad || 0) - 1,
+                  subtotal: precio * ((detalle_venta?.cantidad || 0) - 1),
                 });
               }
             }}
@@ -982,11 +982,29 @@ function EmbeddedDataRow({
 function EmbeddedDetailsDataRow({
   detalle_venta,
   producto,
+  action,
+  onChange
 }: EmbeddedDataRowProps) {
   const max = producto?.stock!;
+  const precio = producto?.precio!;
+    const [detalle, setDetalle] = useState<DetalleVenta>(
+    detalle_venta
+      ? { ...detalle_venta, subtotal: Number(detalle_venta.subtotal) }
+      : {
+          cantidad: 0,
+          subtotal: 0,
+          precioUnitario: precio,
+          producto_id: producto?.id,
+          producto: producto,
+        }
+  );
+
+  useEffect(() => {
+    if(typeof detalle_venta === "undefined" || !isEqual(detalle_venta, detalle)) onChange(detalle);
+  }, [detalle]);
 
   return (
-    <tr className="border-r-2 border-slate-200">
+    <tr>
       <th
         scope="row"
         className="font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 text-center"
@@ -1004,6 +1022,41 @@ function EmbeddedDetailsDataRow({
       </td>
       <td className="px-6 py-2 border border-slate-300 w-[1px]">
         {detalle_venta?.cantidad || 0}/{max}
+      </td>
+      <td className="px-6 py-2 border border-slate-300 w-[120px]">
+        {action === "ADD" ? (
+          <button
+            type="button"
+            onClick={() => {
+              if ((detalle_venta?.cantidad || 0) < max) {
+                setDetalle({
+                  ...detalle,
+                  cantidad: (detalle_venta?.cantidad || 0) + 1,
+                  subtotal: precio * ((detalle_venta?.cantidad || 0) + 1),
+                });
+              }
+            }}
+            className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+          >
+            Añadir
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              if ((detalle_venta?.cantidad || 0) > 0) {
+                setDetalle({
+                  ...detalle,
+                  cantidad: (detalle_venta?.cantidad || 0) - 1,
+                  subtotal: precio * ((detalle_venta?.cantidad || 0) - 1),
+                });
+              }
+            }}
+            className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+          >
+            Remover
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -1028,7 +1081,7 @@ function EmbeddedTable({
 
   useEffect(() => {
     if (typeof products === "undefined" || searchTerm === "") {
-      ProductService.getAll(page!, 6).then((data) => {
+      ProductService.getAll(page!, 8).then((data) => {
         if (data === false) {
           setNotFound(true);
           setProductos([]);
@@ -1048,9 +1101,11 @@ function EmbeddedTable({
       setProductos(products);
       setNotFound(false);
     }
+  }, [page, products]);
 
-    onChange(detalles);
-  }, [detalles, page, products]);
+    useEffect(() => {
+    if(typeof detalles_venta === "undefined" || !isEqual(detalles_venta, detalles)) onChange(detalles);
+  }, [detalles]);
 
   useEffect(() => {
     if (!isEqual(detalles_venta?.sort(), detalles.sort())) {
@@ -1159,11 +1214,45 @@ function EmbeddedTable({
   );
 }
 
-function EmbeddedDetailsTable({ detalles_venta, action, products }: EmbeddedTableProps) {
+function EmbeddedDetailsTable({
+  detalles_venta,
+  action,
+  products,
+  onChange
+}: EmbeddedTableProps) {
+  const [detalles, setDetalles] = useState<DetalleVenta[]>(
+    detalles_venta ? detalles_venta : []
+  );
+
+  useEffect(() => {
+    if(typeof detalles_venta === "undefined" || !isEqual(detalles_venta, detalles)) onChange(detalles);
+  }, [detalles]);
+
+  useEffect(() => {
+    if (!isEqual(detalles_venta?.sort(), detalles.sort())) {
+      setDetalles(detalles_venta ? detalles_venta : []);
+    }
+  }, [detalles_venta]);
+
+  const secondOnChange = (detalle: DetalleVenta) => {
+    setDetalles((prevDetalles) => {
+      const existingObjectIndex = prevDetalles.findIndex(
+        (obj) => obj.producto_id === detalle.producto_id
+      );
+      if (existingObjectIndex >= 0) {
+        return prevDetalles.map((item, index) =>
+          index === existingObjectIndex ? detalle : item
+        );
+      } else {
+        return [...prevDetalles, detalle];
+      }
+    });
+  };
+
   return (
     <div>
       {typeof detalles_venta !== "undefined" && detalles_venta?.length > 0 && (
-        <div className="relative overflow-x-auto max-w-xl">
+        <div className="relative overflow-x-auto">
           <table className="w-full text-sm font-medium text-slate-600 text-left">
             <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
               <tr className="border-2 border-[#2096ed]">
@@ -1182,29 +1271,36 @@ function EmbeddedDetailsTable({ detalles_venta, action, products }: EmbeddedTabl
                 <th scope="col" className="px-6 py-3 border border-slate-300">
                   Cantidad
                 </th>
+                <th scope="col" className="px-6 py-3 border border-slate-300">
+                  Acción
+                </th>
               </tr>
             </thead>
             <tbody>
-              {detalles_venta?.map(detail => {
-                if(detail.producto){
-                  return detail;
-                } else {
-                  return {
-                    ...detail,
-                    producto: products?.find(producto => producto.id === detail.producto_id)
+              {detalles_venta
+                ?.map((detail) => {
+                  if (detail.producto) {
+                    return detail;
+                  } else {
+                    return {
+                      ...detail,
+                      producto: products?.find(
+                        (producto) => producto.id === detail.producto_id
+                      ),
+                    };
                   }
-                }
-              }).map((detail) => {
-                return (
-                  <EmbeddedDetailsDataRow
-                    producto={detail?.producto}
-                    key={detail?.producto?.id}
-                    onChange={() => {}}
-                    detalle_venta={detail}
-                    action={action}
-                  />
-                );
-              })}
+                })
+                .map((detail) => {
+                  return (
+                    <EmbeddedDetailsDataRow
+                      producto={detail?.producto}
+                      key={detail?.producto?.id}
+                      onChange={secondOnChange}
+                      detalle_venta={detail}
+                      action={action}
+                    />
+                  );
+                })}
             </tbody>
           </table>
         </div>
@@ -2355,6 +2451,13 @@ export default function SalesDataDisplay() {
   const setAsCompleted = () => {
     setIsOperationCompleted(true);
   };
+
+  useEffect(() => {
+    if(toEdit == false && toAdd == false){
+      selectSecondAction("ADD")
+    }
+
+  }, [toEdit, toAdd])
 
   useEffect(() => {
     if (searchCount === 0 || isOperationCompleted) {

@@ -29,6 +29,7 @@ import PurchaseService from "../../services/purchases-service";
 import permissions from "../../utils/permissions";
 import session from "../../utils/session";
 import debounce from "lodash.debounce";
+import isEqual from "lodash.isequal";
 import { usePurchaseSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import ProviderService from "../../services/provider-service";
@@ -67,7 +68,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   const searchProducts = useCallback(
     debounce(async (searchTerm: string) => {
       if (searchTerm === "") {
-        ProductService.getAll(page, 6).then((data) => {
+        ProductService.getAll(page, 8).then((data) => {
           if (data === false) {
             setProductos([]);
           } else {
@@ -77,9 +78,9 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
           }
         });
       }
-      const data = await ProductService.getByCódigo(searchTerm, page, 6);
+      const data = await ProductService.getByCódigo(searchTerm, page, 8);
       if (data === false) {
-        const otherData = await ProductService.getByNombre(searchTerm, page, 6);
+        const otherData = await ProductService.getByNombre(searchTerm, page, 8);
         if (otherData === false) {
           setProductos([]);
         } else {
@@ -397,7 +398,7 @@ function EditSection({
   const searchProducts = useCallback(
     debounce(async (searchTerm: string) => {
       if (searchTerm === "") {
-        ProductService.getAll(page, 6).then((data) => {
+        ProductService.getAll(page, 8).then((data) => {
           if (data === false) {
             setProductos([]);
           } else {
@@ -407,9 +408,9 @@ function EditSection({
           }
         });
       }
-      const data = await ProductService.getByCódigo(searchTerm, page, 6);
+      const data = await ProductService.getByCódigo(searchTerm, page, 8);
       if (data === false) {
-        const otherData = await ProductService.getByNombre(searchTerm, page, 6);
+        const otherData = await ProductService.getByNombre(searchTerm, page, 8);
         if (otherData === false) {
           setProductos([]);
         } else {
@@ -883,7 +884,7 @@ function EmbeddedDataRow({
   );
 
   useEffect(() => {
-    onChange(detalle);
+    if(typeof detalle_compra === "undefined" || !isEqual(detalle_compra, detalle)) onChange(detalle);
   }, [detalle]);
 
   return (
@@ -901,7 +902,7 @@ function EmbeddedDataRow({
         {producto?.nombre}
       </td>
       <td className="px-6 py-2 border border-slate-300">{producto?.precio}</td>
-      <td className="px-6 py-2 border border-slate-300">{detalle.cantidad}</td>
+      <td className="px-6 py-2 border border-slate-300">{detalle_compra?.cantidad || 0}</td>
       <td className="px-6 py-2 border border-slate-300 w-[120px]">
         {action === "ADD" ? (
           <button
@@ -909,8 +910,8 @@ function EmbeddedDataRow({
             onClick={() => {
               setDetalle({
                 ...detalle,
-                cantidad: detalle.cantidad + 1,
-                subtotal: precio * (detalle.cantidad + 1),
+                cantidad: (detalle_compra?.cantidad || 0) + 1,
+                subtotal: precio * ((detalle_compra?.cantidad || 0) + 1),
               });
             }}
             className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
@@ -921,11 +922,11 @@ function EmbeddedDataRow({
           <button
             type="button"
             onClick={() => {
-              if (detalle.cantidad > 0) {
+              if ((detalle_compra?.cantidad || 0) > 0) {
                 setDetalle({
                   ...detalle,
-                  cantidad: detalle.cantidad - 1,
-                  subtotal: precio * (detalle.cantidad - 1),
+                  cantidad: (detalle_compra?.cantidad || 0) - 1,
+                  subtotal: precio * ((detalle_compra?.cantidad || 0) - 1),
                 });
               }
             }}
@@ -958,7 +959,7 @@ function EmbeddedTable({
 
   useEffect(() => {
     if (typeof products === "undefined" && searchTerm === "") {
-      ProductService.getAll(page!, 6).then((data) => {
+      ProductService.getAll(page!, 8).then((data) => {
         if (data === false) {
           setNotFound(true);
           setProductos([]);
@@ -978,9 +979,17 @@ function EmbeddedTable({
       setProductos(products);
       setNotFound(false);
     }
+  }, [page, products]);
 
-    onChange(detalles);
-  }, [detalles, page, products]);
+  useEffect(() => {
+    if(typeof detalles_compra === "undefined" || !isEqual(detalles_compra, detalles)) onChange(detalles);
+  }, [detalles]);
+
+  useEffect(() => {
+    if (!isEqual(detalles_compra?.sort(), detalles.sort())) {
+      setDetalles(detalles_compra ? detalles_compra : []);
+    }
+  }, [detalles_compra]);
 
   const secondOnChange = (detalle: DetalleCompra) => {
     setDetalles((prevDetalles) => {
@@ -1087,10 +1096,28 @@ function EmbeddedTable({
 function EmbeddedDetailsDataRow({
   producto,
   detalle_compra,
+  action,
+  onChange,
 }: EmbeddedDataRowProps) {
+  const precio = producto?.precio!;
+  const [detalle, setDetalle] = useState<DetalleCompra>(
+    detalle_compra
+      ? { ...detalle_compra, subtotal: Number(detalle_compra.subtotal) }
+      : {
+          cantidad: 0,
+          subtotal: 0,
+          precioUnitario: precio,
+          producto_id: producto?.id,
+          producto: producto,
+        }
+  );
+
+  useEffect(() => {
+    if(typeof detalle_compra === "undefined" || !isEqual(detalle_compra, detalle)) onChange(detalle);
+  }, [detalle]);
 
   return (
-    <tr className="border-r-2 border-slate-200">
+    <tr>
       <th
         scope="row"
         className="font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 text-center"
@@ -1104,22 +1131,86 @@ function EmbeddedDetailsDataRow({
         {producto?.nombre}
       </td>
       <td className="px-6 py-2 border border-slate-300">{producto?.precio}</td>
-      <td className="px-6 py-2 border border-slate-300">{detalle_compra?.cantidad}</td>
+      <td className="px-6 py-2 border border-slate-300">{detalle_compra?.cantidad || 0}</td>
+      <td className="px-6 py-2 border border-slate-300 w-[120px]">
+        {action === "ADD" ? (
+          <button
+            type="button"
+            onClick={() => {
+              setDetalle({
+                ...detalle,
+                cantidad: (detalle_compra?.cantidad || 0) + 1,
+                subtotal: precio * ((detalle_compra?.cantidad || 0) + 1),
+              });
+            }}
+            className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+          >
+            Añadir
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              if ((detalle_compra?.cantidad || 0) > 0) {
+                setDetalle({
+                  ...detalle,
+                  cantidad: (detalle_compra?.cantidad || 0) - 1,
+                  subtotal: precio * ((detalle_compra?.cantidad || 0) - 1),
+                });
+              }
+            }}
+            className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+          >
+            Remover
+          </button>
+        )}
+      </td>
     </tr>
   );
 }
 
 function EmbeddedDetailsTable({
+  onChange,
+  action,
   detalles_compra,
   products,
 }: EmbeddedTableProps) {
+  const [detalles, setDetalles] = useState<DetalleCompra[]>(
+    detalles_compra ? detalles_compra : []
+  );
+
+  useEffect(() => {
+    if(typeof detalles_compra === "undefined" || !isEqual(detalles_compra, detalles)) onChange(detalles);
+  }, [detalles]);
+
+    useEffect(() => {
+    if (!isEqual(detalles_compra?.sort(), detalles.sort())) {
+      setDetalles(detalles_compra ? detalles_compra : []);
+    }
+  }, [detalles_compra]);
+
+  const secondOnChange = (detalle: DetalleCompra) => {
+    setDetalles((prevDetalles) => {
+      const existingObjectIndex = prevDetalles.findIndex(
+        (obj) => obj.producto_id === detalle.producto_id
+      );
+
+      if (existingObjectIndex >= 0) {
+        return prevDetalles.map((item, index) =>
+          index === existingObjectIndex ? detalle : item
+        );
+      } else {
+        return [...prevDetalles, detalle];
+      }
+    });
+  };
 
   return (
     <div>
       {typeof detalles_compra !== "undefined" &&
         detalles_compra?.length > 0 && (
           <div className="relative overflow-x-auto">
-            <table className="max-w-xl w-full text-sm font-medium text-slate-600 text-left">
+            <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">
                   <th scope="col" className="px-6 py-3 border border-slate-300">
@@ -1136,6 +1227,9 @@ function EmbeddedDetailsTable({
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Cantidad
+                  </th>
+                                    <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Acción
                   </th>
                 </tr>
               </thead>
@@ -1154,8 +1248,9 @@ function EmbeddedDetailsTable({
                   <EmbeddedDetailsDataRow
                     producto={detail?.producto}
                     key={detail?.producto?.id}
-                    onChange={() => {}}
+                    onChange={secondOnChange}
                     detalle_compra={detail}
+                    action={action}
                   />
                 );
               })}
@@ -2264,6 +2359,13 @@ export default function PurchaseDataDisplay() {
   const setAsCompleted = () => {
     setIsOperationCompleted(true);
   };
+
+  useEffect(() => {
+    if(toEdit == false && toAdd == false){
+      selectSecondAction("ADD")
+    }
+
+  }, [toEdit, toAdd])
 
   useEffect(() => {
     if (searchCount === 0 || isOperationCompleted) {
