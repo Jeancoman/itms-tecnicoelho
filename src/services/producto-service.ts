@@ -358,7 +358,7 @@ export default class ProductService {
   ) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/productos/${id}/noexiste/random`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/productos/${id}/imagenes`,
         {
           method: "POST",
           headers: {
