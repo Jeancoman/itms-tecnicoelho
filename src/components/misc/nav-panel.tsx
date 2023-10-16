@@ -15,7 +15,7 @@ import { ReactComponent as Envelopes } from "/src/assets/envelopes-bulk-solid.sv
 import { ReactComponent as House } from "/src/assets/home.svg";
 import { ReactComponent as Tag } from "/src/assets/tag.svg";
 import { ReactComponent as Library } from "/src/assets/library.svg";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import session from "../../utils/session";
 import permissions from "../../utils/permissions";
 import { useColapsableInventoryStore } from "../../store/colapsableStore";
@@ -34,6 +34,8 @@ import {
   useUserSearchParamStore,
 } from "../../store/searchParamStore";
 import options from "../../utils/options";
+import clsx from "clsx";
+import { useEffect } from "react";
 
 export default function NavPanel() {
   const isInventoryColapsed = useColapsableInventoryStore(
@@ -41,6 +43,7 @@ export default function NavPanel() {
   );
   const toggleInventory = useColapsableInventoryStore((state) => state.toggle);
   const navigate = useNavigate();
+  let location = useLocation();
   const resetTicketSearchCount = useTicketSearchParamStore(
     (state) => state.resetSearchCount
   );
@@ -50,38 +53,30 @@ export default function NavPanel() {
   const resetClientSearchCount = useClientSearchParamStore(
     (state) => state.resetSearchCount
   );
-
   const resetUserSearchCount = useUserSearchParamStore(
     (state) => state.resetSearchCount
   );
-
   const resetProviderSearchCount = useProviderSearchParamStore(
     (state) => state.resetSearchCount
   );
   const resetCategorySearchCount = useCategorySearchParamStore(
     (state) => state.resetSearchCount
   );
-
   const resetPublicationSearchCount = usePublicationSearchParamStore(
     (state) => state.resetSearchCount
   );
-
   const resetSaleSearchCount = useSaleSearchParamStore(
     (state) => state.resetSearchCount
   );
-
   const resetPurchaseSearchCount = usePurchaseSearchParamStore(
     (state) => state.resetSearchCount
   );
-
   const resetProblemSearchCount = useProblemSearchParamStore(
     (state) => state.resetSearchCount
   );
-
   const resetServiceSearchCount = useServiceSearchParamStore(
     (state) => state.resetSearchCount
   );
-
   const resetOperationSearchCount = useOperationSearchParamStore(
     (state) => state.resetSearchCount
   );
@@ -101,6 +96,12 @@ export default function NavPanel() {
     resetUserSearchCount();
   };
 
+  useEffect(() => {
+    if((location.pathname.includes("ventas") || location.pathname.includes("compras")) && isInventoryColapsed === false){
+      toggleInventory()
+    }
+  }, [location])
+
   return (
     <aside className="pt-7 h-full shadow-md bg-[#2096ed] select-none">
       <div className="font-bold text-white text-lg pl-6 flex gap-2 items-center">
@@ -118,9 +119,20 @@ export default function NavPanel() {
           <NavLink
             to="/"
             onClick={reset}
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+            className={clsx({
+              ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                location.pathname !== "/",
+              ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                location.pathname === "/",
+            })}
           >
-            <House className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+            <House
+              className={clsx({
+                ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                  location.pathname !== "/",
+                ["h-6 w-6 fill-[#2096ed]"]: location.pathname === "/",
+              })}
+            />
             <p>Inicio</p>
           </NavLink>
           {session.find()?.usuario.rol === "ADMINISTRADOR" ||
@@ -128,9 +140,21 @@ export default function NavPanel() {
             <NavLink
               to="/usuarios"
               onClick={reset}
-              className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+              className={clsx({
+                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                  !location.pathname.includes("usuarios"),
+                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                  location.pathname.includes("usuarios"),
+              })}
             >
-              <Users className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <Users
+                className={clsx({
+                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    !location.pathname.includes("usuarios"),
+                  ["h-6 w-6 fill-[#2096ed]"]:
+                    location.pathname.includes("usuarios"),
+                })}
+              />
               <p>Usuarios</p>
             </NavLink>
           ) : (
@@ -145,9 +169,21 @@ export default function NavPanel() {
             <NavLink
               to="/clientes"
               onClick={reset}
-              className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+              className={clsx({
+                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                  !location.pathname.includes("clientes"),
+                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                  location.pathname.includes("clientes"),
+              })}
             >
-              <Work className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <Work
+                className={clsx({
+                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    !location.pathname.includes("clientes"),
+                  ["h-6 w-6 fill-[#2096ed]"]:
+                    location.pathname.includes("clientes"),
+                })}
+              />
               <p>Clientes</p>
             </NavLink>
           ) : (
@@ -162,9 +198,21 @@ export default function NavPanel() {
             <NavLink
               to="/tickets"
               onClick={reset}
-              className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+              className={clsx({
+                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                  !location.pathname.includes("tickets"),
+                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                  location.pathname.includes("tickets"),
+              })}
             >
-              <Ticket className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <Ticket
+                className={clsx({
+                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    !location.pathname.includes("tickets"),
+                  ["h-6 w-6 fill-[#2096ed]"]:
+                    location.pathname.includes("tickets"),
+                })}
+              />
               <p>Tickets</p>
             </NavLink>
           ) : (
@@ -179,9 +227,21 @@ export default function NavPanel() {
             <NavLink
               to="/productos"
               onClick={reset}
-              className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+              className={clsx({
+                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                  !location.pathname.includes("productos"),
+                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                  location.pathname.includes("productos"),
+              })}
             >
-              <Store className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <Store
+                className={clsx({
+                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    !location.pathname.includes("productos"),
+                  ["h-6 w-6 fill-[#2096ed]"]:
+                    location.pathname.includes("productos"),
+                })}
+              />
               <p>Productos</p>
             </NavLink>
           ) : (
@@ -196,9 +256,21 @@ export default function NavPanel() {
             <NavLink
               to="/proveedores"
               onClick={reset}
-              className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+              className={clsx({
+                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                  !location.pathname.includes("proveedores"),
+                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                  location.pathname.includes("proveedores"),
+              })}
             >
-              <Truck className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <Truck
+                className={clsx({
+                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    !location.pathname.includes("proveedores"),
+                  ["h-6 w-6 fill-[#2096ed]"]:
+                    location.pathname.includes("proveedores"),
+                })}
+              />
               <p>Proveedores</p>
             </NavLink>
           ) : (
@@ -213,9 +285,21 @@ export default function NavPanel() {
             <NavLink
               to="/publicaciones"
               onClick={reset}
-              className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+              className={clsx({
+                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                  !location.pathname.includes("publicaciones"),
+                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                  location.pathname.includes("publicaciones"),
+              })}
             >
-              <Article className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <Article
+                className={clsx({
+                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    !location.pathname.includes("publicaciones"),
+                  ["h-6 w-6 fill-[#2096ed]"]:
+                    location.pathname.includes("publicaciones"),
+                })}
+              />
               <p>Publicaciones</p>
             </NavLink>
           ) : (
@@ -230,9 +314,21 @@ export default function NavPanel() {
             <NavLink
               to="/categorias"
               onClick={reset}
-              className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+              className={clsx({
+                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                  !location.pathname.includes("categorias"),
+                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                  location.pathname.includes("categorias"),
+              })}
             >
-              <Category className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <Category
+                className={clsx({
+                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    !location.pathname.includes("categorias"),
+                  ["h-6 w-6 fill-[#2096ed]"]:
+                    location.pathname.includes("categorias"),
+                })}
+              />
               <p>Categorías</p>
             </NavLink>
           ) : (
@@ -271,9 +367,21 @@ export default function NavPanel() {
                 <NavLink
                   to="/ventas"
                   onClick={reset}
-                  className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+                  className={clsx({
+                    ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                      !location.pathname.includes("ventas"),
+                    ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                      location.pathname.includes("ventas"),
+                  })}
                 >
-                  <Register className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+                  <Register
+                    className={clsx({
+                      ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                        !location.pathname.includes("ventas"),
+                      ["h-6 w-6 fill-[#2096ed]"]:
+                        location.pathname.includes("ventas"),
+                    })}
+                  />
                   <p>Ventas</p>
                 </NavLink>
               ) : (
@@ -288,9 +396,21 @@ export default function NavPanel() {
                 <NavLink
                   to="/compras"
                   onClick={reset}
-                  className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+                  className={clsx({
+                    ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                      !location.pathname.includes("compras"),
+                    ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                      location.pathname.includes("compras"),
+                  })}
                 >
-                  <Cart className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+                  <Cart
+                    className={clsx({
+                      ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                        !location.pathname.includes("compras"),
+                      ["h-6 w-6 fill-[#2096ed]"]:
+                        location.pathname.includes("compras"),
+                    })}
+                  />
                   <p>Compras</p>
                 </NavLink>
               ) : (
@@ -301,35 +421,27 @@ export default function NavPanel() {
               )}
             </div>
           ) : null}
-          {/*
-          <NavLink
-            to="/galeria"
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
-          >
-            <Library className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-            <p>Galería</p>
-          </NavLink>
-          <NavLink
-            to="/mensajeria"
-            className="group/parent justify-self-end	flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
-          >
-            <Envelopes className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-            <p>Mensajería</p>
-          </NavLink>
-          <div className="group/parent justify-self-end	flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg">
-            <Account className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-            <p>Este usuario</p>
-          </div>
-          */}
           {session.find()?.usuario.rol === "ADMINISTRADOR" ||
           session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
           permissions.find()?.ver.imagen ? (
             <NavLink
               to="/galeria"
               onClick={reset}
-              className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+              className={clsx({
+                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                  !location.pathname.includes("galeria"),
+                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                  location.pathname.includes("galeria"),
+              })}
             >
-              <Library className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <Library
+                className={clsx({
+                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    !location.pathname.includes("galeria"),
+                  ["h-6 w-6 fill-[#2096ed]"]:
+                    location.pathname.includes("galeria"),
+                })}
+              />
               <p>Galería</p>
             </NavLink>
           ) : (
@@ -344,9 +456,21 @@ export default function NavPanel() {
             <NavLink
               to="/mensajeria"
               onClick={reset}
-              className="group/parent justify-self-end	flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+              className={clsx({
+                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                  !location.pathname.includes("mensajeria"),
+                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                  location.pathname.includes("mensajeria"),
+              })}
             >
-              <Envelopes className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <Envelopes
+                className={clsx({
+                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    !location.pathname.includes("mensajeria"),
+                  ["h-6 w-6 fill-[#2096ed]"]:
+                    location.pathname.includes("mensajeria"),
+                })}
+              />
               <p>Mensajería</p>
             </NavLink>
           )}

@@ -227,7 +227,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <div className="relative w-full">
           <input
             type={visible ? "text" : "password"}
-            placeholder="Contraseña"
+            placeholder="Contraseña*"
             onChange={(e) =>
               setFormData({
                 ...formData,
@@ -238,6 +238,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
             required
             minLength={1}
+            name="password"
           />
           {visible ? (
             <On
@@ -483,7 +484,7 @@ function EditModal({
         <div className="relative w-full">
           <input
             type={visible ? "text" : "password"}
-            placeholder="Contraseña"
+            placeholder="Nueva contraseña"
             onChange={(e) =>
               setFormData({
                 ...formData,
@@ -492,8 +493,8 @@ function EditModal({
             }
             value={formData.contraseña}
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
-            required
             minLength={1}
+            name="password"
           />
           {visible ? (
             <On

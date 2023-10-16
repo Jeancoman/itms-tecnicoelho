@@ -13,6 +13,7 @@ import {
   Publicación,
   SectionProps,
   Selected,
+  Imagen,
 } from "../../types";
 import PublicationService from "../../services/publication-service";
 import toast, { Toaster } from "react-hot-toast";
@@ -26,6 +27,7 @@ import {
 } from "../../store/searchParamStore";
 import Select from "../misc/select";
 import { useSearchedStore } from "../../store/searchedStore";
+import ImageService from "../../services/image-service";
 
 function AddSection({ close, setOperationAsCompleted }: SectionProps) {
   const [formData, setFormData] = useState<Publicación>({
@@ -33,7 +35,12 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
     título: "",
     contenido: "",
     esPública: false,
-    usuario_id: session.find()?.usuario.id
+    imagen: {
+      url: "",
+      descripción: "",
+      esPública: false,
+    },
+    usuario_id: session.find()?.usuario.id,
   });
 
   const resetFormData = () => {
@@ -42,7 +49,12 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
       título: "",
       contenido: "",
       esPública: false,
-      usuario_id: session.find()?.usuario.id
+      imagen: {
+        url: "",
+        descripción: "",
+        esPública: false,
+      },
+      usuario_id: session.find()?.usuario.id,
     });
   };
 
@@ -127,6 +139,40 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           required
         />
+        <input
+          type="url"
+          placeholder="URL de portada*"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              imagen: {
+                url: e.target.value || "",
+                descripción: formData.imagen?.descripción,
+                esPública: false,
+              },
+            });
+          }}
+          value={formData.imagen?.url}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          required
+          name="url"
+        />
+        <textarea
+          rows={6}
+          placeholder="Descripción de portada"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              imagen: {
+                url: formData.imagen?.url || "",
+                descripción: e.target.value,
+                esPública: false,
+              },
+            });
+          }}
+          value={formData.imagen?.descripción}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+        />
         <div className="flex h-full items-end">
           <div className="flex w-full justify-between items-center">
             <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -146,7 +192,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
                 className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
                 htmlFor="checkbox"
               >
-                Pública
+                ¿Es pública en sitio web?
               </label>
             </div>
           </div>
@@ -177,6 +223,9 @@ function EditSection({
   publicación,
 }: SectionProps) {
   const [formData, setFormData] = useState<Publicación>(publicación!);
+  const [imageFormData, setImageFormData] = useState<Imagen>(
+    publicación?.imagen!
+  );
 
   return (
     <form
@@ -186,6 +235,7 @@ function EditSection({
         e.preventDefault();
         close();
         const loadingToast = toast.loading("Editando publicación...");
+        ImageService.update(imageFormData?.id!, imageFormData)
         PublicationService.update(publicación?.id!, formData).then((data) => {
           toast.dismiss(loadingToast);
           setOperationAsCompleted();
@@ -257,6 +307,32 @@ function EditSection({
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           required
         />
+        <input
+          type="url"
+          placeholder="URL de portada*"
+          onChange={(e) => {
+            setImageFormData({
+              ...imageFormData,
+              url: e.target.value,
+            });
+          }}
+          value={imageFormData.url}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          required
+          name="url"
+        />
+        <textarea
+          rows={6}
+          placeholder="Descripción de portada"
+          onChange={(e) => {
+            setImageFormData({
+              ...imageFormData,
+              descripción: e.target.value,
+            });
+          }}
+          value={imageFormData.descripción}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+        />
         <div className="flex h-full items-end">
           <div className="flex w-full justify-between items-center">
             <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -276,7 +352,7 @@ function EditSection({
                 className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
                 htmlFor="checkbox"
               >
-                Pública
+                ¿Es pública en sitio web?
               </label>
             </div>
           </div>

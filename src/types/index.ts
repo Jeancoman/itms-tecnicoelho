@@ -18,7 +18,8 @@ export type ModalProps = {
   compra?: Compra;
   plantilla?: Plantilla;
   mensajería?: Mensajería;
-  imagen?: Imagen
+  imagen?: Imagen;
+  imagenes?: Imagen[];
 };
 
 export type SectionProps = {
@@ -60,6 +61,7 @@ export type DropupProps = {
   openOptionModal?: () => void;
   openSearchModal?: () => void;
   openReportModal?: () => void;
+  openImageModal?: () => void;
   toEdit?: boolean;
   toAdd?: boolean;
 };
@@ -180,6 +182,7 @@ export type Action =
   | "PREVIEW"
   | "RESOLVE_PROBLEM"
   | "QUERY_BY"
+  | "VIEW_IMAGES"
   | "ADD"
   | "REDUCE";
 
@@ -353,6 +356,7 @@ export interface Categoría {
   nombre: string;
   descripción?: string;
   tipo: `${CategoríaTipo}`;
+  esDigital: boolean;
 }
 
 export interface Producto {
@@ -366,6 +370,7 @@ export interface Producto {
   esPúblico: boolean;
   categoría_id?: number;
   categoría?: Categoría;
+  imagens?: Imagen[]
 }
 
 export interface Publicación {
@@ -376,6 +381,7 @@ export interface Publicación {
   esPública: boolean;
   readonly creada?: Date;
   modificada?: Date;
+  imagen?: Imagen;
   imagen_id?: number;
   usuario_id?: number;
 }

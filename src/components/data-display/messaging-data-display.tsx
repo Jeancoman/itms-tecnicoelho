@@ -296,7 +296,6 @@ function EditModal({
             } else {
               toast.error("Plantilla no pudo ser editada.");
             }
-            setOperationAsCompleted();
           });
         }}
       >

@@ -3,6 +3,7 @@ import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
+import { ReactComponent as Delete } from "/src/assets/delete.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -12,6 +13,7 @@ import {
   Producto,
   Categoría,
   Selected,
+  Imagen,
 } from "../../types";
 import ProductService from "../../services/producto-service";
 import Slugifier from "../../utils/slugifier";
@@ -543,6 +545,182 @@ function EditModal({
   );
 }
 
+function ImagesModal({
+  isOpen,
+  closeModal,
+  setOperationAsCompleted,
+  imagenes,
+  producto,
+}: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [toUpdate, setToUpdate] = useState<Imagen[]>(imagenes || []);
+  const [toCreate, setToCreate] = useState<Imagen[]>([
+    {
+      id: -1,
+      url: "",
+      esPública: false,
+    },
+  ]);
+  const [toDelete, setToDelete] = useState<Imagen[]>([]);
+  const [lastID, setLastID] = useState(-2);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  const handleAddImage = () => {
+    const imagen: Imagen = {
+      id: lastID,
+      url: "",
+      esPública: false,
+    };
+    setToCreate([...toCreate, imagen]);
+    setLastID(lastID - 1);
+  };
+
+  const handleDeleteImage = (id: number) => {
+    if (id > 0) {
+      const imageToDeleteFromUpdate = toUpdate.find((img) => img.id === id);
+      if (imageToDeleteFromUpdate) {
+        setToDelete([...toDelete, imageToDeleteFromUpdate]);
+        setToUpdate(toUpdate.filter((img) => img.id !== id));
+      }
+    } else {
+      const imageToDeleteFromCreate = toCreate.find((img) => img.id === id);
+      if (imageToDeleteFromCreate) {
+        setToCreate(toCreate.filter((img) => img.id !== id));
+      }
+    }
+  };
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-2/5 h-fit rounded shadow scrollbar-none text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Editar imagenes</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          closeModal();
+          const loadingToast = toast.loading("Editando imagenes...");
+          ProductService.editImages(producto?.id!, {
+            toUpdate,
+            toCreate,
+            toDelete,
+          }).then((data) => {
+            if (data) {
+              toast.dismiss(loadingToast);
+              toast.success("Imagenes editadas con exito.");
+            } else {
+              toast.dismiss(loadingToast);
+              toast.error("Imagenes no pudieron ser editadas.");
+            }
+            setOperationAsCompleted();
+          });
+        }}
+      >
+        {toUpdate.map((imagen) => (
+          <div className="w-full flex gap-2 items-center" key={imagen.id}>
+            <input
+              type="url"
+              onChange={(e) => {
+                const data = {
+                  ...imagen,
+                  url: e.target.value,
+                };
+                setToUpdate([
+                  ...toUpdate.filter((img) => img.id !== imagen.id),
+                  ...[data],
+                ]);
+              }}
+              value={imagen.url}
+              placeholder="URL de imagen*"
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
+            />
+            <Delete
+              onClick={() => handleDeleteImage(imagen.id!)}
+              className="fill-white bg-red-400 p-2 h-10 w-10 rounded-lg cursor-pointer hover:bg-red-500 transition ease-in-out delay-100 duration-300"
+            />
+          </div>
+        ))}
+        {toCreate.map((imagen) => (
+          <div className="w-full flex gap-2 items-center" key={imagen.id}>
+            <input
+              type="url"
+              onChange={(e) => {
+                const data = {
+                  ...imagen,
+                  url: e.target.value,
+                };
+                setToCreate([
+                  ...toCreate.filter((img) => img.id !== imagen.id),
+                  ...[data],
+                ]);
+              }}
+              value={imagen.url}
+              placeholder="URL de imagen*"
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
+            />
+            <Delete
+              onClick={() => handleDeleteImage(imagen.id!)}
+              className="fill-white bg-red-400 p-2 h-10 w-10 rounded-lg cursor-pointer hover:bg-red-500 transition ease-in-out delay-100 duration-300"
+            />
+          </div>
+        ))}
+        <div className="flex w-full justify-between">
+          <button
+            type="button"
+            onClick={handleAddImage}
+            className="text-[#2096ed] bg-blue-100 font-semibold rounded-lg p-2 px-4 hover:bg-blue-200 transition ease-in-out delay-100 duration-300"
+          >
+            Añadir imagen
+          </button>
+          <div className="flex gap-2 justify-self-end justify-end">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
 function DeleteModal({
   isOpen,
   closeModal,
@@ -799,6 +977,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 function DataRow({ action, producto, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isImageOpen, setIsImageOpen] = useState(false);
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -806,6 +985,10 @@ function DataRow({ action, producto, setOperationAsCompleted }: DataRowProps) {
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const closeImageModal = () => {
+    setIsImageOpen(false);
   };
 
   return (
@@ -865,6 +1048,24 @@ function DataRow({ action, producto, setOperationAsCompleted }: DataRowProps) {
               producto={producto}
               isOpen={isDeleteOpen}
               closeModal={closeDeleteModal}
+              setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
+        )}
+        {action === "VIEW_IMAGES" && (
+          <>
+            <button
+              onClick={() => {
+                setIsImageOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Editar imagenes
+            </button>
+            <ImagesModal
+              producto={producto}
+              isOpen={isImageOpen}
+              closeModal={closeImageModal}
               setOperationAsCompleted={setOperationAsCompleted}
             />
           </>
@@ -1146,8 +1347,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                 }
                 closeModal();
               });
-            }
-            else if (param === "SIN_STOCK") {
+            } else if (param === "SIN_STOCK") {
               const loadingToast = toast.loading("Generando reporte...");
               ProductService.getZeroStock().then((data) => {
                 if (data === false) {
@@ -1447,6 +1647,32 @@ function Dropup({
             "
           >
             Eliminar producto
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.producto) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("VIEW_IMAGES");
+              close();
+            }}
+            className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+          >
+            Editar imagenes
           </div>
         </li>
       )}

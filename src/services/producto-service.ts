@@ -1,4 +1,4 @@
-import { Producto, Response } from "../types";
+import { Imagen, Producto, Response } from "../types";
 
 export default class ProductService {
   static async getAll(page: number, size: number) {
@@ -321,7 +321,10 @@ export default class ProductService {
     }
   }
 
-  static async getByPurchasedBetween(fecha_inicial: string, fecha_final: string) {
+  static async getByPurchasedBetween(
+    fecha_inicial: string,
+    fecha_final: string
+  ) {
     try {
       const response = await fetch(
         `${
@@ -340,6 +343,37 @@ export default class ProductService {
       }
 
       return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async editImages(
+    id: number,
+    body: {
+      toUpdate: Imagen[];
+      toCreate: Imagen[];
+      toDelete: Imagen[];
+    }
+  ) {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/productos/${id}/noexiste/random`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        }
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      return true;
     } catch {
       return false;
     }
