@@ -40,9 +40,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       lista: [],
     },
   });
-  console.log(formData);
+
+
   const [permisos, setPermisos] = useState<Permisos>();
   const [visible, setVisible] = useState(false);
+
   let iniciales: Permisos = {
     ver: {
       cliente: false,
@@ -116,25 +118,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       mensajería: false,
       producto: false,
     },
-    reporte: {
-      cliente: false,
-      ticket: false,
-      elemento: false,
-      problema: false,
-      mensaje: false,
-      servicio: false,
-      operación: false,
-      categoría: false,
-      imagen: false,
-      venta: false,
-      compra: false,
-      publicación: false,
-      proveedor: false,
-      reporte: false,
-      mensajería: false,
-      producto: false,
-    },
   };
+
   const resetFormData = () => {
     setFormData({
       nombre: "",
@@ -204,24 +189,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         producto: false,
       },
       eliminar: {
-        cliente: false,
-        ticket: false,
-        elemento: false,
-        problema: false,
-        mensaje: false,
-        servicio: false,
-        operación: false,
-        categoría: false,
-        imagen: false,
-        venta: false,
-        compra: false,
-        publicación: false,
-        proveedor: false,
-        reporte: false,
-        mensajería: false,
-        producto: false,
-      },
-      reporte: {
         cliente: false,
         ticket: false,
         elemento: false,
@@ -1213,6 +1180,7 @@ type PermissionPanelProps = {
 
 function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
   const [permissions, setPermissions] = useState<Permisos>(permisos);
+  
   useEffect(() => {
     onChange(permissions);
   }, [permissions]);
