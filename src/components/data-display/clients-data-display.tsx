@@ -26,13 +26,13 @@ import { ReactComponent as Off } from "/src/assets/visibility_off.svg";
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [documentType, setDocumentType] = useState<Selected>({
-    value: "V",
-    label: "V",
+    value: "RIF",
+    label: "RIF",
   });
   const [formData, setFormData] = useState<Cliente>({
     nombre: "",
     apellido: "",
-    documento: "",
+    documento: undefined,
     email: "",
     telefono: "",
     dirección: "",
@@ -45,12 +45,17 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     setFormData({
       nombre: "",
       apellido: "",
-      documento: "",
+      documento: undefined,
       email: "",
       telefono: "",
       dirección: "",
       enviarMensajes: false,
       contraseña: "",
+    });
+    setVisible(false);
+    setDocumentType({
+      value: "RIF",
+      label: "RIF",
     });
   };
 
@@ -92,16 +97,18 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Añadir cliente</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
-        autoComplete="off"
+        className="flex flex-col p-8 pt-6 gap-4 select-none group"
+        autoComplete="none"
+        noValidate={true}
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
           let updatedFormData = { ...formData };
-          updatedFormData.documento =
-            documentType.value === "V"
+          updatedFormData.documento = formData.documento
+            ? documentType.value === "V"
               ? "V-" + formData.documento
-              : formData.documento;
+              : formData.documento
+            : undefined;
           const loadingToast = toast.loading("Añadiendo cliente...");
           ClientService.create(updatedFormData).then((data) => {
             toast.dismiss(loadingToast);
@@ -115,32 +122,43 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         }}
       >
         <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Nombre*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            value={formData.nombre}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            required
-          />
-          <input
-            type="text"
-            placeholder="Apellido*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                apellido: e.target.value,
-              });
-            }}
-            value={formData.apellido}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            required
-          />
+          <div className="w-2/4">
+            <input
+              type="text"
+              placeholder="Nombre*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  nombre: e.target.value,
+                });
+              }}
+              value={formData.nombre}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^.{2,}$"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 2 caracteres
+            </span>
+          </div>
+          <div className="w-2/4">
+            <input
+              type="text"
+              placeholder="Apellido"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  apellido: e.target.value,
+                });
+              }}
+              value={formData.apellido}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              pattern="^.{2,}$"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 2 caracteres
+            </span>
+          </div>
         </div>
         <div className="flex gap-2">
           <div className="flex w-2/4 gap-1">
@@ -174,7 +192,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             </div>
             <input
               type="text"
-              placeholder="Documento*"
+              placeholder="Documento"
               onChange={(e) => {
                 setFormData({
                   ...formData,
@@ -183,7 +201,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               }}
               value={formData.documento}
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-[72%]"
-              required
             />
           </div>
           <input
@@ -197,33 +214,46 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             }}
             value={formData.telefono}
             className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            required
           />
         </div>
-        <input
-          type="email"
-          placeholder="E-mail"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              email: e.target.value,
-            });
-          }}
-          value={formData.email}
-          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <input
-          type="text"
-          placeholder="Dirección"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              dirección: e.target.value,
-            });
-          }}
-          value={formData.dirección}
-          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <input
+            type="email"
+            name="email"
+            placeholder="E-mail"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                email: e.target.value,
+              });
+            }}
+            value={formData.email}
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            E-mail invalido
+          </span>
+        </div>
+        <div className="w-full">
+          <input
+            type="text"
+            placeholder="Dirección"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                dirección: e.target.value,
+              });
+            }}
+            value={formData.dirección}
+            autoComplete="none"
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            pattern="^.{2,}$"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Dirección debe tener minimo 2 caracteres
+          </span>
+        </div>
         <div className="relative w-full">
           <input
             type={visible ? "text" : "password"}
@@ -235,20 +265,25 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               })
             }
             value={formData.contraseña}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             required
-            minLength={1}
             name="password"
+            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+            autoComplete="new-password"
           />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Contraseña debe tener minimo 8 caracteres, contener una letra
+            mayuscula, una letra minúscula, un número y un carácter especial
+          </span>
           {visible ? (
             <On
               onClick={() => setVisible(false)}
-              className="absolute top-2 right-4 fill-[#2096ed]"
+              className="absolute top-2 right-4 fill-[#2096ed] peer-[&:not(:placeholder-shown):invalid]:fill-red-500"
             />
           ) : (
             <Off
               onClick={() => setVisible(true)}
-              className="absolute top-2 right-4 fill-[#2096ed]"
+              className="absolute top-2 right-4 fill-[#2096ed] peer-[&:not(:placeholder-shown):invalid]:fill-red-500"
             />
           )}
         </div>
@@ -281,7 +316,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
               Completar
             </button>
           </div>
@@ -341,13 +376,13 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow text-base"
+      className="w-2/5 h-fit rounded-md shadow text-base text-black"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar cliente</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -371,32 +406,43 @@ function EditModal({
         }}
       >
         <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Nombre"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            value={formData.nombre}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            required
-          />
-          <input
-            type="text"
-            placeholder="Apellido"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                apellido: e.target.value,
-              });
-            }}
-            value={formData.apellido}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            required
-          />
+          <div className="w-2/4">
+            <input
+              type="text"
+              placeholder="Nombre*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  nombre: e.target.value,
+                });
+              }}
+              value={formData.nombre}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^.{2,}$"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 2 caracteres
+            </span>
+          </div>
+          <div className="w-2/4">
+            <input
+              type="text"
+              placeholder="Apellido"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  apellido: e.target.value,
+                });
+              }}
+              value={formData.apellido}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              pattern="^.{2,}$"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 2 caracteres
+            </span>
+          </div>
         </div>
         <div className="flex gap-2">
           <div className="flex w-2/4 gap-1">
@@ -430,7 +476,7 @@ function EditModal({
             </div>
             <input
               type="text"
-              placeholder="Documento*"
+              placeholder="Documento"
               onChange={(e) => {
                 setFormData({
                   ...formData,
@@ -439,7 +485,6 @@ function EditModal({
               }}
               value={formData.documento}
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-[72%]"
-              required
             />
           </div>
           <input
@@ -452,35 +497,47 @@ function EditModal({
               });
             }}
             value={formData.telefono}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            required
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
           />
         </div>
-        <input
-          type="email"
-          placeholder="E-mail"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              email: e.target.value,
-            });
-          }}
-          value={formData.email}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-        />
-        <input
-          type="text"
-          placeholder="Dirección"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              dirección: e.target.value,
-            });
-          }}
-          value={formData.dirección}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <input
+            type="email"
+            name="email"
+            placeholder="E-mail"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                email: e.target.value,
+              });
+            }}
+            value={formData.email}
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            E-mail invalido
+          </span>
+        </div>
+        <div className="w-full">
+          <input
+            type="text"
+            placeholder="Dirección"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                dirección: e.target.value,
+              });
+            }}
+            value={formData.dirección}
+            autoComplete="none"
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            pattern="^.{2,}$"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Dirección debe tener minimo 2 caracteres
+          </span>
+        </div>
         <div className="relative w-full">
           <input
             type={visible ? "text" : "password"}
@@ -492,19 +549,24 @@ function EditModal({
               })
             }
             value={formData.contraseña}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
-            minLength={1}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             name="password"
+            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+            autoComplete="new-password"
           />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Contraseña debe tener minimo 8 caracteres, contener una letra
+            mayuscula, una letra minúscula, un número y un carácter especial
+          </span>
           {visible ? (
             <On
               onClick={() => setVisible(false)}
-              className="absolute top-2 right-4 fill-[#2096ed]"
+              className="absolute top-2 right-4 fill-[#2096ed] peer-[&:not(:placeholder-shown):invalid]:fill-red-500"
             />
           ) : (
             <Off
               onClick={() => setVisible(true)}
-              className="absolute top-2 right-4 fill-[#2096ed]"
+              className="absolute top-2 right-4 fill-[#2096ed] peer-[&:not(:placeholder-shown):invalid]:fill-red-500"
             />
           )}
         </div>
@@ -537,7 +599,7 @@ function EditModal({
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
               Completar
             </button>
           </div>
@@ -585,7 +647,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/5 h-fit rounded-xl shadow text-base"
     >
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -841,19 +903,20 @@ function DataRow({ action, cliente, setOperationAsCompleted }: DataRowProps) {
       >
         {cliente?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">{cliente?.nombre}</td>
-      <td className="px-6 py-4 border border-slate-300">{cliente?.apellido}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
+        {cliente?.nombre} {cliente?.apellido}
+      </td>
       <td className="px-6 py-4 border border-slate-300">
-        {cliente?.documento}
+        {cliente?.documento ? cliente.documento !== "" ? cliente.documento : "N/A" : "N/A" }
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[150px]">
-        {cliente?.email}
+        {cliente?.email ? cliente.email !== "" ? cliente.email : "N/A" : "N/A" }
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
-        {cliente?.telefono}
+        {cliente?.telefono ? cliente.telefono !== "" ? cliente.telefono : "N/A" : "N/A" }
       </td>
-      <td className="px-6 py-4 border border-slate-300 max-w-[200px]">
-        {cliente?.dirección}
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
+        {cliente?.dirección ? cliente.dirección !== "" ? cliente.dirección : "N/A" : "N/A" }
       </td>
       <td className="px-6 py-3 border border-slate-300 w-[200px]">
         {action === "NONE" && (
@@ -1345,10 +1408,7 @@ export default function ClientsDataDisplay() {
                     #
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Nombre
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Apellido
+                    Nombre completo
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Documento

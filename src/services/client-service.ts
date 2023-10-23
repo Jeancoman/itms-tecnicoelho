@@ -1,4 +1,5 @@
 import { Cliente, Response } from "../types";
+import session from "../utils/session";
 
 export default class ClientService {
   static async getAll(page: number, size: number) {
@@ -6,7 +7,13 @@ export default class ClientService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes?page=${page}&size=${size}`
+        }/api/clientes?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -28,7 +35,13 @@ export default class ClientService {
   static async getById(id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/clientes/${id}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/clientes/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -50,6 +63,7 @@ export default class ClientService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(client),
         }
@@ -70,7 +84,13 @@ export default class ClientService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`
+        }/api/clientes/busqueda?tipo=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -94,7 +114,13 @@ export default class ClientService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=EXACTA&nombre=${nombre}&page=${page}&size=${size}`
+        }/api/clientes/busqueda?tipo=EXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -118,7 +144,13 @@ export default class ClientService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=INEXACTA&apellido=${apellido}&page=${page}&size=${size}`
+        }/api/clientes/busqueda?tipo=INEXACTA&apellido=${apellido}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -146,7 +178,13 @@ export default class ClientService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=EXACTA&apellido=${apellido}&page=${page}&size=${size}`
+        }/api/clientes/busqueda?tipo=EXACTA&apellido=${apellido}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -170,7 +208,13 @@ export default class ClientService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=INEXACTA&documento=${documento}&page=${page}&size=${size}`
+        }/api/clientes/busqueda?tipo=INEXACTA&documento=${documento}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -198,7 +242,13 @@ export default class ClientService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=EXACTA&documento=${documento}&page=${page}&size=${size}`
+        }/api/clientes/busqueda?tipo=EXACTA&documento=${documento}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -222,7 +272,13 @@ export default class ClientService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=INEXACTA&telefono=${telefono}&page=${page}&size=${size}`
+        }/api/clientes/busqueda?tipo=INEXACTA&telefono=${telefono}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -250,7 +306,13 @@ export default class ClientService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=EXACTA&telefono=${telefono}&page=${page}&size=${size}`
+        }/api/clientes/busqueda?tipo=EXACTA&telefono=${telefono}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -278,6 +340,7 @@ export default class ClientService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(client),
         }
@@ -302,6 +365,7 @@ export default class ClientService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );

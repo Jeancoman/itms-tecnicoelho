@@ -1,4 +1,5 @@
 import { Permisos, Usuario, Response } from "../types";
+import session from "../utils/session";
 
 export default class UserService {
   static async getAll(page: number, size: number) {
@@ -6,7 +7,13 @@ export default class UserService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/usuarios?page=${page}&size=${size}`
+        }/api/usuarios?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status === 404) {

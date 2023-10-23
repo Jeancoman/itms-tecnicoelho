@@ -74,8 +74,8 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-blue-50 grid place-items-center scrollbar-none overflow-hidden">
-        <div className="bg-white w-96 h-fit rounded-md shadow-md border">
+      <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center gap-4 scrollbar-none overflow-hidden">
+        <div className="bg-white w-96 h-fit rounded-md shadow border">
           <form
             className="flex flex-col place-items-center gap-4 p-8"
             onSubmit={onSubmit}
@@ -117,6 +117,12 @@ export default function LoginPage() {
             </button>
           </form>
         </div>
+        <div>
+            <p>
+              Copyright © 2014-{new Date().getFullYear()}{" "}
+              <strong>TecniCoelho</strong>
+            </p>
+          </div>
       </div>
       <Toaster position="bottom-right" reverseOrder={false} />
     </>

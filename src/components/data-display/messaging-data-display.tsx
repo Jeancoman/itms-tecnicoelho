@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
+import { ReactComponent as Check } from "/src/assets/check_circle.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -17,6 +18,8 @@ import MessagingOptionsService from "../../services/messaging-options-service";
 import Editor from "react-simple-code-editor";
 import hljs from "highlight.js/lib/core";
 import options from "../../utils/options";
+import { Socket, io } from "socket.io-client";
+import MessageSenderService from "../../services/message-sender-service";
 
 hljs.registerLanguage("tecniplantilla", () => {
   return {
@@ -42,6 +45,190 @@ hljs.registerLanguage("tecniplantilla", () => {
     ],
   };
 });
+
+function MessengerModal({ isOpen, closeModal }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [socket, setSocket] = useState<Socket>();
+  const [isOn, setIsOn] = useState(false);
+  const [status, setStatus] = useState("");
+  const [QRCode, setQRCode] = useState("");
+
+  const checkBackendStatus = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_MENSAJERO_URL}/ping`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.ok) {
+        const socket = io(`${import.meta.env.VITE_MENSAJERO_URL}`);
+        setSocket(socket);
+        setIsOn(true);
+      } else {
+        setTimeout(checkBackendStatus, 5000);
+      }
+    } catch (error) {
+      setTimeout(checkBackendStatus, 5000);
+    }
+  };
+
+  useEffect(() => {
+    if (status === "") {
+      MessageSenderService.status().then((data) => {
+        if (data !== false) {
+          setStatus(data.status);
+        }
+      });
+    }
+  }, [status]);
+
+  useEffect(() => {
+    checkBackendStatus();
+  }, []);
+
+  useEffect(() => {
+    if (socket) {
+      socket.on("qr", (value) => {
+        if (value) {
+          setQRCode(value);
+        }
+      });
+
+      socket.on("status", (value) => {
+        setStatus(value);
+      });
+    }
+
+    return () => {
+      socket?.off("qr");
+      socket?.off("status");
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-[32%] h-fit rounded shadow-md text-base"
+    >
+      <div className="flex flex-col p-8 pt-6 gap-4">
+        {isOn === false ? (
+          <div className="flex flex-col items-center gap-2">
+            <div className="grid w-full h-4/5">
+              <div className="place-self-center">
+                <div role="status">
+                  <svg
+                    aria-hidden="true"
+                    className="inline w-20 h-20 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
+                    viewBox="0 0 100 101"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                      fill="currentFill"
+                    />
+                  </svg>
+                  <span className="sr-only">Cargando...</span>
+                </div>
+              </div>
+            </div>
+            <p className="font-medium">
+              Estableciendo conexión con el servicio mensajero...
+            </p>
+          </div>
+        ) : status === "CONECTADO" ? (
+          <div className="flex flex-col items-center gap-2">
+            <div className="grid w-full h-4/5">
+              <Check className="place-self-center h-24 w-24 fill-green-400" />
+            </div>
+            <p className="font-medium">Sesión de mensajero activa</p>
+          </div>
+        ) : status === "DESCONECTADO" ? (
+          <div className="flex flex-col items-center gap-2">
+            <div className="grid w-full h-4/5">
+              {QRCode !== "" ? (
+                <img src={QRCode} className="place-self-center h-68 w-68" />
+              ) : (
+                <div className="place-self-center">
+                  <div role="status">
+                    <svg
+                      aria-hidden="true"
+                      className="inline w-20 h-20 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
+                      viewBox="0 0 100 101"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                        fill="currentColor"
+                      />
+                      <path
+                        d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                        fill="currentFill"
+                      />
+                    </svg>
+                    <span className="sr-only">Cargando...</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            <p className="font-medium">
+              {QRCode !== ""
+                ? "Escaneé el código QR para activar el servicio"
+                : "Esperando código QR..."}
+            </p>
+          </div>
+        ) : null}
+        <div className="flex w-full justify-center items-center">
+          <div className="flex gap-2">
+            <button
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </dialog>
+  );
+}
 
 function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -424,7 +611,12 @@ function DataRow({ action, plantilla, setOperationAsCompleted }: DataRowProps) {
   );
 }
 
-function Dropup({ close, selectAction, openOptionModal }: DropupProps) {
+function Dropup({
+  close,
+  selectAction,
+  openAddModal,
+  openOptionModal,
+}: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -512,6 +704,29 @@ function Dropup({ close, selectAction, openOptionModal }: DropupProps) {
           Configurar mensajería
         </div>
       </li>
+      <li>
+        <div
+          onClick={() => {
+            openAddModal();
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Servicio mensajero
+        </div>
+      </li>
     </ul>
   );
 }
@@ -528,6 +743,7 @@ export default function MessagingDataDisplay() {
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
   const [options, setOptions] = useState<Mensajería>();
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const closeDropup = () => {
     setIsDropup(false);
@@ -542,12 +758,11 @@ export default function MessagingDataDisplay() {
   };
 
   useEffect(() => {
-
     TemplateService.getAll(page, 8).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
-        setTemplates([])
+        setTemplates([]);
       } else {
         setTemplates(data.rows);
         setPages(data.pages);
@@ -581,7 +796,7 @@ export default function MessagingDataDisplay() {
                 close={closeDropup}
                 selectAction={selectAction}
                 openOptionModal={() => setIsOption(true)}
-                openAddModal={() => {}}
+                openAddModal={() => setIsAddOpen(true)}
               />
             )}
             <button
@@ -691,6 +906,11 @@ export default function MessagingDataDisplay() {
         />
       )}
       <Toaster position="bottom-right" reverseOrder={false} />
+      <MessengerModal
+        isOpen={isAddOpen}
+        closeModal={() => setIsAddOpen(false)}
+        setOperationAsCompleted={() => {}}
+      />
       {options ? (
         <OptionModal
           isOpen={isOption}

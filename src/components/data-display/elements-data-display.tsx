@@ -15,7 +15,7 @@ import {
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
 import ElementService from "../../services/element-service";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import CategoryService from "../../services/category-service";
 import SelectWithSearch from "../misc/select-with-search";
 import Select from "../misc/select";
@@ -515,6 +515,9 @@ function DeleteModal({
 function DataRow({ action, elemento, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const { id } = useParams()
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -598,6 +601,18 @@ function DataRow({ action, elemento, setOperationAsCompleted }: DataRowProps) {
             />
           </>
         )}
+        {action === "VIEW_SEGUIMIENTO" && (
+          <>
+            <button
+              onClick={() => {
+                navigate(`/clientes/${id}/elementos/${elemento?.id}/seguimiento`);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Mostrar seguimiento
+            </button>
+          </>
+        )}
       </td>
     </tr>
   );
@@ -652,13 +667,13 @@ function Dropup({
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
         permissions.find()?.editar.cliente) && (
-          <li>
-            <div
-              onClick={() => {
-                selectAction("EDIT");
-                close();
-              }}
-              className="
+        <li>
+          <div
+            onClick={() => {
+              selectAction("EDIT");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -671,11 +686,11 @@ function Dropup({
               hover:bg-slate-100
               cursor-pointer
             "
-            >
-              Editar elemento
-            </div>
-          </li>
-        )}
+          >
+            Editar elemento
+          </div>
+        </li>
+      )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
         permissions.find()?.eliminar.cliente) && (
@@ -709,6 +724,30 @@ function Dropup({
           permissions.find()?.eliminar.cliente)) && (
         <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       )}
+      <li>
+        <div
+          onClick={() => {
+            selectAction("VIEW_SEGUIMIENTO");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Mostrar seguimiento
+        </div>
+      </li>
+      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
         permissions.find()?.crear.cliente) && (

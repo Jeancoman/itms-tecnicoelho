@@ -20,6 +20,7 @@ export type ModalProps = {
   mensajería?: Mensajería;
   imagen?: Imagen;
   imagenes?: Imagen[];
+  seguimiento?: Seguimiento;
 };
 
 export type SectionProps = {
@@ -62,6 +63,9 @@ export type DropupProps = {
   openSearchModal?: () => void;
   openReportModal?: () => void;
   openImageModal?: () => void;
+  openAddModalTwo?: () => void;
+  openAddModalThree?: () => void;
+  openAddModalFour?: () => void;
   toEdit?: boolean;
   toAdd?: boolean;
 };
@@ -85,7 +89,8 @@ export type DataRowProps = {
   venta?: Venta;
   compra?: Compra;
   plantilla?: Plantilla;
-  imagen?: Imagen
+  imagen?: Imagen;
+  seguimiento?: Seguimiento;
 };
 
 export type OptionProps = {
@@ -169,8 +174,11 @@ export interface Options {
 export type Action =
   | "NONE"
   | "EDIT"
+  | "EDIT_RECIBO"
+  | "EDIT_ENTREGA"
   | "DELETE"
   | "VIEW_ELEMENTS"
+  | "VIEW_SEGUIMIENTO"
   | "VIEW_SERVICES"
   | "VIEW_PROBLEMS"
   | "VIEW_MESSAGES"
@@ -184,6 +192,7 @@ export type Action =
   | "QUERY_BY"
   | "VIEW_IMAGES"
   | "ADD"
+  | "ADD_ENTREGA"
   | "REDUCE";
 
 export type UsuarioRol = "EMPLEADO" | "ADMINISTRADOR" | "SUPERADMINISTRADOR";
@@ -265,7 +274,6 @@ export interface Permisos {
   crear: Permiso;
   editar: Permiso;
   eliminar: Permiso;
-  reporte: Permiso;
   usuario_id?: number;
 }
 
@@ -475,7 +483,7 @@ export interface Seguimiento {
   notas_de_recibo?: string;
   entregable_desde?: Date;
   entregado?: Date;
-  notas_de_entrega?: String;
+  notas_de_entrega?: string;
   elemento_id?: number;
 }
 

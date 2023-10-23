@@ -9,35 +9,29 @@ import {
   DataRowProps,
   DropupProps,
   Action,
-  Proveedor,
-  Selected,
+  Seguimiento,
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
-import ProviderService from "../../services/provider-service";
-import Select from "../misc/select";
+import ElementService from "../../services/element-service";
 import permissions from "../../utils/permissions";
 import session from "../../utils/session";
-import { useProviderSearchParamStore } from "../../store/searchParamStore";
+import { useParams } from "react-router-dom";
+import { format } from "date-fns";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
-  const [documentType, setDocumentType] = useState<Selected>({
-    value: "RIF",
-    label: "RIF",
-  });
+  const { id, elemento_id } = useParams();
   const ref = useRef<HTMLDialogElement>(null);
-  const [formData, setFormData] = useState<Proveedor>({
-    nombre: "",
-    documento: undefined,
-    descripción: "",
-    telefono: "",
+  const [formData, setFormData] = useState<Seguimiento>({
+    recibido: new Date(),
+    notas_de_recibo: "",
+    elemento_id: Number(elemento_id),
   });
 
   const resetFormData = () => {
     setFormData({
-      nombre: "",
-      documento: undefined,
-      descripción: "",
-      telefono: "",
+      recibido: new Date(),
+      notas_de_recibo: "",
+      elemento_id: Number(elemento_id),
     });
   };
 
@@ -76,7 +70,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       className="w-2/5 h-fit rounded-md shadow-md"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Añadir proveedor</h1>
+        <h1 className="text-xl font-bold text-white">Registrar recibo</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
@@ -84,101 +78,45 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          let updatedFormData = { ...formData };
-          updatedFormData.documento = formData.documento
-            ? documentType.value === "V"
-              ? "V-" + formData.documento
-              : formData.documento
-            : undefined;
-          const loadingToast = toast.loading("Añadiendo proveedor...");
-          ProviderService.create(updatedFormData).then((data) => {
+          const loadingToast = toast.loading("Registrando recibo...");
+          ElementService.createSeguimiento(
+            Number(id),
+            Number(elemento_id),
+            formData
+          ).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
-              toast.error("Proveedor no pudo ser añadido.");
+              toast.error("Recibo no pudo ser registrado.");
             } else {
-              toast.success("Proveedor añadido con exito.");
+              toast.success("Recibo registrado con exito.");
             }
           });
         }}
       >
         <input
-          type="text"
-          placeholder="Nombre*"
+          type="date"
+          placeholder="Fecha de recibo"
+          value={format(formData.recibido || new Date(), "yyyy-MM-dd")}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
           onChange={(e) => {
             setFormData({
               ...formData,
-              nombre: e.target.value,
+              recibido: new Date(e.target.value),
             });
           }}
-          value={formData.nombre}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
           required
-          name="name"
         />
-        <div className="flex gap-1">
-          <div className="relative w-[20%]">
-            <Select
-              options={[
-                {
-                  value: "V",
-                  label: "V",
-                  onClick: (value, label) => {
-                    setDocumentType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "RIF",
-                  label: "RIF",
-                  onClick: (value, label) => {
-                    setDocumentType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-              ]}
-              selected={documentType}
-            />
-          </div>
-          <input
-            type="text"
-            placeholder="Documento*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                documento: e.target.value,
-              });
-            }}
-            value={formData.documento}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-[80%]"
-          />
-        </div>
         <textarea
           rows={3}
-          placeholder="Descripción"
+          placeholder="Notas de recibo"
           onChange={(e) => {
             setFormData({
               ...formData,
-              descripción: e.target.value,
+              notas_de_recibo: e.target.value,
             });
           }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <input
-          type="tel"
-          placeholder="Telefono"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              telefono: e.target.value,
-            });
-          }}
-          value={formData.telefono}
+          value={formData.notas_de_recibo}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="flex gap-2 justify-end">
@@ -198,23 +136,135 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   );
 }
 
-function EditModal({
+function AddEntregaModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  proveedor,
 }: ModalProps) {
+  const { id, elemento_id } = useParams();
   const ref = useRef<HTMLDialogElement>(null);
-  const [documentType, setDocumentType] = useState<Selected>({
-    value: proveedor?.documento?.startsWith("V") ? "V" : "RIF",
-    label: proveedor?.documento?.startsWith("V") ? "V" : "RIF",
+  const [formData, setFormData] = useState<Seguimiento>({
+    entregado: undefined,
+    notas_de_entrega: "",
   });
-  const [formData, setFormData] = useState<Proveedor>({
-    ...proveedor!,
-    documento: proveedor?.documento?.startsWith("V")
-      ? proveedor?.documento?.slice(2)
-      : proveedor?.documento,
-  });
+
+  const resetFormData = () => {
+    setFormData({
+      entregado: undefined,
+      notas_de_entrega: "",
+    });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+          resetFormData();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+      resetFormData();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-2/5 h-fit rounded-md shadow-md"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Registrar entrega</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          closeModal();
+          const loadingToast = toast.loading("Registrando entrega...");
+          ElementService.createSeguimiento(
+            Number(id),
+            Number(elemento_id),
+            formData
+          ).then((data) => {
+            toast.dismiss(loadingToast);
+            setOperationAsCompleted();
+            if (data === false) {
+              toast.error("Entrega no pudo ser registrada.");
+            } else {
+              toast.success("Entrega registrada con exito.");
+            }
+          });
+        }}
+      >
+        <input
+          type="date"
+          placeholder="Fecha de entrega"
+          value={format(formData.entregado || new Date(), "yyyy-MM-dd")}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              entregado: new Date(e.target.value),
+            });
+          }}
+          required
+        />
+        <textarea
+          rows={3}
+          placeholder="Notas de entrega"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              notas_de_entrega: e.target.value,
+            });
+          }}
+          value={formData.notas_de_entrega}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
+        />
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cancelar
+          </button>
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Completar
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
+function EditReciboModal({
+  isOpen,
+  closeModal,
+  setOperationAsCompleted,
+  seguimiento,
+}: ModalProps) {
+  const { id, elemento_id } = useParams();
+  const ref = useRef<HTMLDialogElement>(null);
+  const [formData, setFormData] = useState<Seguimiento>(seguimiento!);
 
   useEffect(() => {
     if (isOpen) {
@@ -249,7 +299,7 @@ function EditModal({
       className="w-2/5 h-fit rounded-md shadow-md text-base"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar proveedor</h1>
+        <h1 className="text-xl font-bold text-white">Editar recibo</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
@@ -257,95 +307,158 @@ function EditModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Editando proveedor...");
-          ProviderService.update(proveedor?.id!, formData).then((data) => {
+          const loadingToast = toast.loading("Editando recibo...");
+          ElementService.updateSeguimiento(
+            seguimiento?.id!,
+            formData,
+            Number(id),
+            Number(elemento_id)
+          ).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data) {
-              toast.success("Proveedor editado con exito.");
+              toast.success("Recibo editado con exito.");
             } else {
-              toast.error("Proveedor no pudo ser editado.");
+              toast.error("Recibo no pudo ser editado.");
             }
             setOperationAsCompleted();
           });
         }}
       >
         <input
-          type="text"
-          placeholder="Nombre*"
+          type="date"
+          placeholder="Fecha de recibo"
+          value={format(formData.recibido || new Date(), "yyyy-MM-dd")}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
           onChange={(e) => {
             setFormData({
               ...formData,
-              nombre: e.target.value,
+              recibido: new Date(e.target.value),
             });
           }}
-          value={formData.nombre}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
           required
         />
-        <div className="flex gap-1">
-          <div className="relative w-[20%]">
-            <Select
-              options={[
-                {
-                  value: "V",
-                  label: "V",
-                  onClick: (value, label) => {
-                    setDocumentType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "RIF",
-                  label: "RIF",
-                  onClick: (value, label) => {
-                    setDocumentType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-              ]}
-              selected={documentType}
-            />
-          </div>
-          <input
-            type="text"
-            placeholder="Documento*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                documento: e.target.value,
-              });
-            }}
-            value={formData.documento || ""}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-[80%]"
-          />
-        </div>
         <textarea
           rows={3}
-          placeholder="Descripción"
+          placeholder="Notas de recibo"
           onChange={(e) => {
             setFormData({
               ...formData,
-              descripción: e.target.value,
+              notas_de_recibo: e.target.value,
             });
           }}
-          value={formData.descripción}
+          value={formData.notas_de_recibo}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cancelar
+          </button>
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Completar
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
+function EditEntregaModal({
+  isOpen,
+  closeModal,
+  setOperationAsCompleted,
+  seguimiento,
+}: ModalProps) {
+  const { id, elemento_id } = useParams();
+  const ref = useRef<HTMLDialogElement>(null);
+  const [formData, setFormData] = useState<Seguimiento>(seguimiento!);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-2/5 h-fit rounded-md shadow-md text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Editar entrega</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          closeModal();
+          const loadingToast = toast.loading("Editando entrega...");
+          ElementService.updateSeguimiento(
+            seguimiento?.id!,
+            formData,
+            Number(id),
+            Number(elemento_id)
+          ).then((data) => {
+            toast.dismiss(loadingToast);
+            setOperationAsCompleted();
+            if (data) {
+              toast.success("Entrega editada con exito.");
+            } else {
+              toast.error("Entrega no pudo ser editada.");
+            }
+            setOperationAsCompleted();
+          });
+        }}
+      >
         <input
-          type="tel"
-          placeholder="Telefono"
+          type="date"
+          placeholder="Fecha de entrega"
+          value={format(formData.entregado || new Date(), "yyyy-MM-dd")}
+          className="border p-2 rounded outline-none focus:border-[#2096ed]"
           onChange={(e) => {
             setFormData({
               ...formData,
-              telefono: e.target.value,
+              entregado: new Date(e.target.value),
             });
           }}
-          value={formData.telefono}
+          required
+        />
+        <textarea
+          rows={3}
+          placeholder="Notas de recibo"
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              notas_de_recibo: e.target.value,
+            });
+          }}
+          value={formData.notas_de_recibo}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
         <div className="flex gap-2 justify-end">
@@ -369,9 +482,10 @@ function DeleteModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  proveedor,
+  seguimiento,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const { id, elemento_id } = useParams();
 
   useEffect(() => {
     if (isOpen) {
@@ -411,13 +525,17 @@ function DeleteModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Eliminando proveedor...");
-          ProviderService.delete(proveedor?.id!).then((data) => {
+          const loadingToast = toast.loading("Eliminando recibo y entrega...");
+          ElementService.deleteSeguimiento(
+            seguimiento?.id!,
+            Number(id),
+            Number(elemento_id)
+          ).then((data) => {
             toast.dismiss(loadingToast);
             if (data) {
-              toast.success("Proveedor eliminado con exito.");
+              toast.success("Recibo y entrega eliminado con exito.");
             } else {
-              toast.error("Proveedor no pudo ser eliminado.");
+              toast.error("Recibo y entrega no pudo ser eliminado.");
             }
             setOperationAsCompleted();
           });
@@ -449,178 +567,22 @@ function DeleteModal({
   );
 }
 
-function SearchModal({ isOpen, closeModal }: ModalProps) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
-    value: "",
-    label: "Seleccionar parametro de busqueda",
-  });
-  const setIsPrecise = useProviderSearchParamStore(
-    (state) => state.setIsPrecise
-  );
-  const setTempIsPrecise = useProviderSearchParamStore(
-    (state) => state.setTempIsPrecise
-  );
-  const tempIsPrecise = useProviderSearchParamStore(
-    (state) => state.tempIsPrecise
-  );
-  const tempInput = useProviderSearchParamStore((state) => state.tempInput);
-  const setInput = useProviderSearchParamStore((state) => state.setInput);
-  const setTempInput = useProviderSearchParamStore(
-    (state) => state.setTempInput
-  );
-  const setParam = useProviderSearchParamStore((state) => state.setParam);
-  const incrementSearchCount = useProviderSearchParamStore(
-    (state) => state.incrementSearchCount
-  );
-
-  const resetSearch = () => {
-    setTempInput("");
-    setTempIsPrecise(false);
-    setSelectedSearchType({
-      value: "",
-      label: "Seleccionar parametro de busqueda",
-    });
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          resetSearch();
-          closeModal();
-          ref.current?.close();
-        }
-      });
-    } else {
-      resetSearch();
-      closeModal();
-      ref.current?.close();
-    }
-  }, [isOpen]);
-
-  return (
-    <dialog
-      ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-1/3 h-fit rounded-md shadow text-base"
-    >
-      <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Buscar proveedor</h1>
-      </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (selectedSearchType.value !== "") {
-            resetSearch();
-            incrementSearchCount();
-            closeModal();
-          }
-        }}
-      >
-        <div className="relative">
-          <Select
-            onChange={() => {
-              setParam(selectedSearchType.value as string);
-            }}
-            options={[
-              {
-                value: "NOMBRE",
-                label: "Nombre",
-                onClick: (value, label) => {
-                  setSelectedSearchType({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "DOCUMENTO",
-                label: "Documento",
-                onClick: (value, label) => {
-                  setSelectedSearchType({
-                    value,
-                    label,
-                  });
-                },
-              },
-            ]}
-            selected={selectedSearchType}
-          />
-        </div>
-        <input
-          type="text"
-          placeholder={
-            selectedSearchType.value === "NOMBRE"
-              ? "Introduzca nombre del proveedor"
-              : selectedSearchType.value === "DOCUMENTO"
-              ? "Introduzca documento del proveedor"
-              : ""
-          }
-          value={tempInput}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          onChange={(e) => {
-            setInput(e.target.value);
-            setTempInput(e.target.value);
-          }}
-        />
-        <div className="flex w-full justify-between items-center">
-          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
-            <input
-              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              type="checkbox"
-              onChange={(e) => {
-                setIsPrecise(e.target.checked);
-                setTempIsPrecise(e.target.checked);
-              }}
-              checked={tempIsPrecise}
-              id="checkbox"
-            />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox"
-            >
-              ¿Busqueda exacta?
-            </label>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Buscar
-            </button>
-          </div>
-        </div>
-      </form>
-    </dialog>
-  );
-}
-
-function DataRow({ action, proveedor, setOperationAsCompleted }: DataRowProps) {
-  const [isEditOpen, setIsEditOpen] = useState(false);
+function DataRow({
+  action,
+  seguimiento,
+  setOperationAsCompleted,
+}: DataRowProps) {
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditReciboOpen, setIsEditReciboOpen] = useState(false);
+  const [isEditEntregaOpen, setIsEditEntregaOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  const closeEditModal = () => {
-    setIsEditOpen(false);
+  const closeEditReciboModal = () => {
+    setIsEditReciboOpen(false);
+  };
+
+  const closeEditEntregaModal = () => {
+    setIsEditEntregaOpen(false);
   };
 
   const closeDeleteModal = () => {
@@ -633,38 +595,77 @@ function DataRow({ action, proveedor, setOperationAsCompleted }: DataRowProps) {
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
       >
-        {proveedor?.id}
+        {seguimiento?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">{proveedor?.nombre}</td>
-            <td className="px-6 py-4 border border-slate-300">
-        {proveedor?.documento ? proveedor.documento !== "" ? proveedor.documento : "N/A" : "N/A" }
+      <td className="px-6 py-4 border border-slate-300">
+        {format(new Date(seguimiento?.recibido!), "dd/MM/yyyy")}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {proveedor?.descripción ? proveedor.descripción !== "" ? proveedor.descripción : "N/A" : "N/A"}
+        {seguimiento?.entregado
+          ? format(new Date(seguimiento?.entregado!), "dd/MM/yyyy")
+          : "Nunca"}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {proveedor?.telefono ? proveedor.telefono !== "" ? proveedor.telefono : "N/A" : "N/A"}
+        {seguimiento?.entregable_desde
+          ? format(new Date(seguimiento?.entregable_desde!), "dd/MM/yyyy")
+          : "Nunca"}
       </td>
-      <td className="px-6 py-3 border border-slate-300 w-[200px]">
+      <td className="px-6 py-3 border border-slate-300 w-[250px]">
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
             Ninguna seleccionada
           </button>
         )}
-        {action === "EDIT" && (
+        {action === "ADD_ENTREGA" && (
           <>
             <button
               onClick={() => {
-                setIsEditOpen(true);
+                setIsEditReciboOpen(true);
               }}
               className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
-              Editar proveedor
+              Registrar entrega
             </button>
-            <EditModal
-              proveedor={proveedor}
-              isOpen={isEditOpen}
-              closeModal={closeEditModal}
+            <AddEntregaModal
+              seguimiento={seguimiento}
+              isOpen={isAddOpen}
+              closeModal={() => setIsAddOpen(false)}
+              setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
+        )}
+        {action === "EDIT_RECIBO" && (
+          <>
+            <button
+              onClick={() => {
+                setIsEditReciboOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Editar recibo
+            </button>
+            <EditReciboModal
+              seguimiento={seguimiento}
+              isOpen={isEditReciboOpen}
+              closeModal={closeEditReciboModal}
+              setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
+        )}
+        {action === "EDIT_ENTREGA" && (
+          <>
+            <button
+              onClick={() => {
+                setIsEditEntregaOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Editar entrega
+            </button>
+            <EditEntregaModal
+              seguimiento={seguimiento}
+              isOpen={isEditEntregaOpen}
+              closeModal={closeEditEntregaModal}
               setOperationAsCompleted={setOperationAsCompleted}
             />
           </>
@@ -677,10 +678,10 @@ function DataRow({ action, proveedor, setOperationAsCompleted }: DataRowProps) {
               }}
               className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
-              Eliminar proveedor
+              Eliminar recibo y entrega
             </button>
             <DeleteModal
-              proveedor={proveedor}
+              seguimiento={seguimiento}
               isOpen={isDeleteOpen}
               closeModal={closeDeleteModal}
               setOperationAsCompleted={setOperationAsCompleted}
@@ -692,12 +693,7 @@ function DataRow({ action, proveedor, setOperationAsCompleted }: DataRowProps) {
   );
 }
 
-function Dropup({
-  close,
-  selectAction,
-  openAddModal,
-  openSearchModal,
-}: DropupProps) {
+function Dropup({ close, selectAction, openAddModal }: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -739,7 +735,85 @@ function Dropup({
         "
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.editar.proveedor) && (
+        permissions.find()?.crear.cliente) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("ADD_ENTREGA");
+              close();
+            }}
+            className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+          >
+            Registrar entrega
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.cliente) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("EDIT_RECIBO");
+              close();
+            }}
+            className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+          >
+            Editar recibo
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.cliente) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("EDIT_ENTREGA");
+              close();
+            }}
+            className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+          >
+            Editar entrega
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.editar.cliente) && (
         <li>
           <div
             onClick={() => {
@@ -760,12 +834,12 @@ function Dropup({
               cursor-pointer
             "
           >
-            Editar proveedor
+            Marcar como entregable
           </div>
         </li>
       )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.eliminar.proveedor) && (
+        permissions.find()?.eliminar.cliente) && (
         <li>
           <div
             onClick={() => {
@@ -786,17 +860,17 @@ function Dropup({
               cursor-pointer
             "
           >
-            Eliminar proveedor
+            Eliminar recibo y entrega
           </div>
         </li>
       )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        (permissions.find()?.editar.proveedor &&
-          permissions.find()?.eliminar.proveedor)) && (
+        (permissions.find()?.editar.cliente &&
+          permissions.find()?.eliminar.cliente)) && (
         <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.proveedor) && (
+        permissions.find()?.crear.cliente) && (
         <li>
           <div
             onClick={() => {
@@ -817,56 +891,26 @@ function Dropup({
               cursor-pointer
             "
           >
-            Añadir proveedor
+            Registrar recibo
           </div>
         </li>
       )}
-      <li>
-        <div
-          onClick={() => {
-            openSearchModal?.();
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Buscar proveedor
-        </div>
-      </li>
     </ul>
   );
 }
 
-export default function ProvidersDataDisplay() {
-  const [providers, setProviders] = useState<Proveedor[]>([]);
+export default function SeguimientosDataDisplay() {
+  const { id, elemento_id } = useParams();
+  const [seguimientos, setSeguimientos] = useState<Seguimiento[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
-  const [isSearch, setIsSearch] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>("NONE");
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
-  const searchCount = useProviderSearchParamStore((state) => state.searchCount);
-  const resetSearchCount = useProviderSearchParamStore(
-    (state) => state.resetSearchCount
-  );
-  const input = useProviderSearchParamStore((state) => state.input);
-  const param = useProviderSearchParamStore((state) => state.param);
-  const isPrecise = useProviderSearchParamStore((state) => state.isPrecise);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -889,106 +933,39 @@ export default function ProvidersDataDisplay() {
   };
 
   useEffect(() => {
-    if (searchCount === 0) {
-      ProviderService.getAll(page, 8).then((data) => {
-        if (data === false) {
-          setNotFound(true);
-          setProviders([]);
-          setLoading(false);
-        } else {
-          setProviders(data.rows);
-          setPages(data.pages);
-          setCurrent(data.current);
-          setLoading(false);
-          setNotFound(false);
-        }
-        setIsOperationCompleted(false);
-      });
-    } else {
-      if (isPrecise) {
-        if (param === "NOMBRE") {
-          ProviderService.getByExactNombre(input, page, 8).then((data) => {
-            if (data === false) {
-              setNotFound(true);
-              setProviders([]);
-              setLoading(false);
-            } else {
-              setProviders(data.rows);
-              setPages(data.pages);
-              setCurrent(data.current);
-              setLoading(false);
-              setNotFound(false);
-            }
-            setIsOperationCompleted(false);
-          });
-        } else if (param === "DOCUMENTO") {
-          ProviderService.getByExactDocumento(input, page, 8).then((data) => {
-            if (data === false) {
-              setNotFound(true);
-              setProviders([]);
-              setLoading(false);
-            } else {
-              setProviders(data.rows);
-              setPages(data.pages);
-              setCurrent(data.current);
-              setLoading(false);
-              setNotFound(false);
-            }
-            setIsOperationCompleted(false);
-          });
-        }
+    ElementService.getSeguimientos(
+      Number(id),
+      Number(elemento_id),
+      page,
+      8
+    ).then((data) => {
+      if (data === false) {
+        setNotFound(true);
+        setSeguimientos([]);
+        setLoading(false);
       } else {
-        if (param === "NOMBRE") {
-          ProviderService.getByNombre(input, page, 8).then((data) => {
-            if (data === false) {
-              setNotFound(true);
-              setProviders([]);
-              setLoading(false);
-            } else {
-              setProviders(data.rows);
-              setPages(data.pages);
-              setCurrent(data.current);
-              setLoading(false);
-              setNotFound(false);
-            }
-            setIsOperationCompleted(false);
-          });
-        } else if (param === "DOCUMENTO") {
-          ProviderService.getByDocumento(input, page, 8).then((data) => {
-            if (data === false) {
-              setNotFound(true);
-              setProviders([]);
-              setLoading(false);
-            } else {
-              setProviders(data.rows);
-              setPages(data.pages);
-              setCurrent(data.current);
-              setLoading(false);
-              setNotFound(false);
-            }
-            setIsOperationCompleted(false);
-          });
-        }
+        setSeguimientos(data.rows);
+        setPages(data.pages);
+        setCurrent(data.current);
+        setLoading(false);
+        setNotFound(false);
       }
-    }
+      setIsOperationCompleted(false);
+    });
   }, [isOperationCompleted, page]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchCount]);
 
   return (
     <>
       <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span
-              onClick={resetSearchCount}
-              className="text-[#2096ed] cursor-pointer"
-            >
-              Proveedores
-            </span>
+            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Clientes{" "}
+            <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span className="text-[#2096ed] cursor-pointer">{id}</span>
+            <Right className="w-3 h-3 inline fill-slate-600" /> Elementos{" "}
+            <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span className="text-[#2096ed] cursor-pointer">{elemento_id}</span>{" "}
+            <Right className="w-3 h-3 inline fill-slate-600" /> Seguimiento
           </div>
           <div>
             {isDropup && (
@@ -996,9 +973,6 @@ export default function ProvidersDataDisplay() {
                 close={closeDropup}
                 selectAction={selectAction}
                 openAddModal={openAddModal}
-                openSearchModal={() => {
-                  setIsSearch(true);
-                }}
               />
             )}
             <button
@@ -1014,7 +988,7 @@ export default function ProvidersDataDisplay() {
           </div>
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
-        {providers.length > 0 && loading == false && (
+        {seguimientos.length > 0 && loading == false && (
           <div className="relative overflow-x-auto">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
@@ -1023,16 +997,13 @@ export default function ProvidersDataDisplay() {
                     #
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Nombre
+                    Recibido en
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Documento
+                    Entregado en
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Descripción
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Telefono
+                    Entregable desde
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
@@ -1040,13 +1011,13 @@ export default function ProvidersDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {providers.map((provider) => {
+                {seguimientos.map((seguimiento) => {
                   return (
                     <DataRow
                       action={action}
-                      proveedor={provider}
+                      seguimiento={seguimiento}
                       setOperationAsCompleted={setAsCompleted}
-                      key={provider.id}
+                      key={seguimiento.id}
                     />
                   );
                 })}
@@ -1055,17 +1026,16 @@ export default function ProvidersDataDisplay() {
           </div>
         )}
         {(notFound === true ||
-          (providers.length === 0 && loading === false)) && (
+          (seguimientos.length === 0 && loading === false)) && (
           <div className="grid w-full h-4/5">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">
-                Ningún proveedor encontrado
+                Ningún recibo y entrega encontrado
               </p>
               <p className="font-medium text text-center mt-1">
-                {searchCount === 0
-                  ? "Esto puede deberse a un error del servidor, o a que no hay ningún proveedor registrado."
-                  : "Esto puede deberse a un error del servidor, o a que ningún proveedor concuerda con tu busqueda."}
+                Esto puede deberse a un error del servidor, o a que no se haya
+                creado ningún seguimiento para este elemento.
               </p>
             </div>
           </div>
@@ -1096,7 +1066,7 @@ export default function ProvidersDataDisplay() {
           </div>
         )}
       </div>
-      {providers.length > 0 && loading == false && (
+      {seguimientos.length > 0 && loading == false && (
         <Pagination
           pages={pages}
           current={current}
@@ -1117,13 +1087,6 @@ export default function ProvidersDataDisplay() {
         isOpen={isAddOpen}
         closeModal={closeAddModal}
         setOperationAsCompleted={setAsCompleted}
-      />
-      <SearchModal
-        isOpen={isSearch}
-        closeModal={() => setIsSearch(false)}
-        setOperationAsCompleted={function (): void {
-          throw new Error("Function not implemented.");
-        }}
       />
     </>
   );

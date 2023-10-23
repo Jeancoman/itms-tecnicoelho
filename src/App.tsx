@@ -18,6 +18,7 @@ import LoginPage from "./pages/login-page";
 import MessagingPage from "./pages/messaging-page";
 import SalePDFPage from "./pages/sale-pdf-page";
 import ImagesPage from "./pages/images-page";
+import SeguimientosPage from "./pages/seguimientos-page";
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/clientes" element={<ClientsPage />} />
         <Route path="/clientes/:id/elementos" element={<ElementsPage />} />
+        <Route path="/clientes/:id/elementos/:elemento_id/seguimiento" element={<SeguimientosPage />} />
         <Route path="/usuarios" element={<UsersPage />} />
         <Route path="/tickets" element={<TicketsPage />} />
         <Route path="/tickets/:id/mensajes" element={<MessagesPage />} />

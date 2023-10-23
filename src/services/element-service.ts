@@ -1,4 +1,4 @@
-import { Elemento, Response } from "../types";
+import { Elemento, Response, Seguimiento } from "../types";
 
 export default class ElementService {
   static async getAll(client_id: number, page: number, size: number) {
@@ -207,4 +207,106 @@ export default class ElementService {
       return false;
     }
   }
+
+  static async getSeguimientos(client_id: number, element_id: number, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/clientes/${client_id}/elementos/${element_id}/seguimiento?page=${page}&size=${size}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async createSeguimiento(client_id: number, element_id: number, element: Seguimiento) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/clientes/${client_id}/elementos/${element_id}/seguimiento`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(element),
+        }
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      return (await response.json()) as Elemento;
+    } catch {
+      return false;
+    }
+  }
+
+  static async updateSeguimiento(id: number, element: Seguimiento, client_id: number, element_id: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/clientes/${client_id}/elementos/${element_id}/seguimiento/${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(element),
+        }
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  static async deleteSeguimiento(id: number, client_id: number, element_id: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/clientes/${client_id}/elementos/${element_id}/seguimiento/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
 }

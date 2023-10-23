@@ -825,7 +825,7 @@ export default function MessagesDataDisplay() {
             Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">Tickets</span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]">#{id}</span>{" "}
+            <span className="text-[#2096ed]">{id}</span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span onClick={resetSearchCount} className="text-[#2096ed]">Mensajes</span>
           </div>
