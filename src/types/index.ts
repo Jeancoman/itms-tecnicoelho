@@ -193,7 +193,8 @@ export type Action =
   | "VIEW_IMAGES"
   | "ADD"
   | "ADD_ENTREGA"
-  | "REDUCE";
+  | "REDUCE"
+  | "SEARCH";
 
 export type UsuarioRol = "EMPLEADO" | "ADMINISTRADOR" | "SUPERADMINISTRADOR";
 

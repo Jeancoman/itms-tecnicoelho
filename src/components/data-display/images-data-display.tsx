@@ -344,8 +344,8 @@ function DataRow({ action, imagen, setOperationAsCompleted }: DataRowProps) {
       >
         {imagen?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300 truncate w-max-200">{imagen?.url}</td>
-      <td className="px-6 py-4 border border-slate-300 truncate w-max-200">
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">{imagen?.url}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
         {imagen?.descripción}
       </td>
       <td className="px-6 py-4 border border-slate-300">
