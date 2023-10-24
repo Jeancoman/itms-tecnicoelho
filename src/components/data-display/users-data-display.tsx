@@ -595,7 +595,6 @@ function EditModal({
                 }
                 value={formData.contraseña}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
-                required
                 name="password"
                 minLength={1}
               />
