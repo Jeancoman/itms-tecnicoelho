@@ -111,7 +111,7 @@ function EditModal({
                 const messageToast = toast.loading("Creando mensaje...");
                 MessageRender.renderTicketModificationTemplate(
                   ticket?.id!,
-                  formData
+                  ticket!
                 ).then((rendered) => {
                   if (rendered) {
                     if (rendered === "Plantilla desactivada") {
@@ -186,7 +186,7 @@ function EditModal({
           });
         }}
       >
-        {formData.estado === "ABIERTO" ? (
+        {ticket?.estado === "ABIERTO" ? (
           <div className="relative">
             <Select
               options={[
@@ -205,7 +205,7 @@ function EditModal({
             />
           </div>
         ) : null}
-        {formData.estado === "CERRADO" ? (
+        {ticket?.estado === "CERRADO" ? (
           <div className="relative">
             <select
               className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
@@ -1867,7 +1867,7 @@ export default function TicketDataDisplay() {
           </div>
         )}
         {(notFound === true || (tickets.length === 0 && loading === false)) && (
-          <div className="grid w-full h-4/5 text-slate-600">
+          <div className="grid w-full h-4/5">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">

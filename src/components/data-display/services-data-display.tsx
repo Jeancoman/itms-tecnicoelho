@@ -14,6 +14,7 @@ import {
   Categoría,
   Mensaje,
   ServicioTipo,
+  ServicioEstado
 } from "../../types";
 import { useNavigate, useParams } from "react-router-dom";
 import ServiceService from "../../services/service-service";
@@ -472,7 +473,7 @@ function EditModal({
                   MessageRender.renderServicioModificationTemplate(
                     Number(id),
                     servicio?.id!,
-                    formData
+                    servicio!
                   ).then((rendered) => {
                     if (rendered) {
                       if (rendered === "Plantilla desactivada") {
@@ -671,9 +672,15 @@ function EditModal({
             )}
           </div>
         </div>
-        {formData.estado === "PENDIENTE" ? (
+        {servicio?.estado === "PENDIENTE" ? (
           <div className="relative">
             <Select
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  estado: selectedState.value as ServicioEstado,
+                });
+              }}
               options={[
                 {
                   value: "INICIADO",
@@ -700,7 +707,7 @@ function EditModal({
             />
           </div>
         ) : null}
-        {formData.estado === "INICIADO" ? (
+        {servicio?.estado === "INICIADO" ? (
           <div className="relative">
             <Select
               options={[
@@ -716,10 +723,16 @@ function EditModal({
                 },
               ]}
               selected={selectedState}
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  estado: selectedState.value as ServicioEstado,
+                });
+              }}
             />
           </div>
         ) : null}
-        {formData.estado === "COMPLETADO" ? (
+        {servicio?.estado === "COMPLETADO" ? (
           <div className="relative">
             <select
               className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"

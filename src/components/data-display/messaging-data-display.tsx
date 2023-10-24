@@ -85,6 +85,10 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
         }
       });
     }
+
+    if (QRCode === "") {
+      MessageSenderService.qr();
+    }
   }, [status]);
 
   useEffect(() => {

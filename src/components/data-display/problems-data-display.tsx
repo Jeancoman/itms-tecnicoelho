@@ -11,6 +11,7 @@ import {
   Action,
   Problema,
   ProblemaPrioridad,
+  ProblemaEstado,
   Selected,
   Mensaje,
 } from "../../types";
@@ -379,7 +380,7 @@ function EditModal({
                   MessageRender.renderProblemaModicationTemplate(
                     Number(id),
                     problema?.id!,
-                    formData
+                    problema!
                   ).then((rendered) => {
                     if (rendered) {
                       if (rendered === "Plantilla desactivada") {
@@ -516,7 +517,7 @@ function EditModal({
             />
           </div>
         </div>
-        {formData.estado === "PENDIENTE" ? (
+        {problema?.estado === "PENDIENTE" ? (
           <div className="relative">
             <Select
               options={[
@@ -532,10 +533,16 @@ function EditModal({
                 },
               ]}
               selected={selectedState}
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  estado: selectedState.value as ProblemaEstado,
+                });
+              }}
             />
           </div>
         ) : null}
-        {formData.estado === "RESUELTO" ? (
+        {problema?.estado === "RESUELTO" ? (
           <div className="relative">
             <select
               className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
@@ -549,7 +556,7 @@ function EditModal({
         ) : null}
         <textarea
           rows={3}
-          placeholder="Descripción*"
+          placeholder="Descripción"
           onChange={(e) => {
             setFormData({
               ...formData,

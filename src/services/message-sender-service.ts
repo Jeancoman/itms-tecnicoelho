@@ -59,4 +59,29 @@ export default class MessageSenderService {
       return false;
     }
   }
+
+  static async qr() {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_MENSAJERO_URL}/qr`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      return (await response.json()) as {
+        status: string;
+      };
+    } catch {
+      return false;
+    }
+  }
 }

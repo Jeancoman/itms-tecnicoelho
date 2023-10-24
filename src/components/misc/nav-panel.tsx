@@ -15,6 +15,9 @@ import { ReactComponent as Envelopes } from "/src/assets/envelopes-bulk-solid.sv
 import { ReactComponent as House } from "/src/assets/home.svg";
 import { ReactComponent as Tag } from "/src/assets/tag.svg";
 import { ReactComponent as Library } from "/src/assets/library.svg";
+import { ReactComponent as Backup } from "/src/assets/backup.svg";
+import { ReactComponent as Check } from "/src/assets/check_circle.svg";
+import { ReactComponent as Error } from "/src/assets/error.svg";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import session from "../../utils/session";
 import permissions from "../../utils/permissions";
@@ -35,7 +38,212 @@ import {
 } from "../../store/searchParamStore";
 import options from "../../utils/options";
 import clsx from "clsx";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ModalProps } from "../../types";
+import toast from "react-hot-toast";
+
+function RestaurationModal({ isOpen, closeModal }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+      reset();
+    }
+  }, [isOpen]);
+
+  const reset = () => {
+    if (isSuccess || isError) {
+      setIsError(false);
+      setIsSuccess(false);
+      setIsImporting(false);
+      setIsLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const toastId = toast.loading("Exportando datos...");
+      closeModal();
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/backup/exportar`
+      );
+      const blob = await response.blob();
+
+      toast.dismiss(toastId);
+
+      let fileName = "copia-de-seguridad-" + new Date().toISOString() + ".json";
+
+      const contentDisposition = response.headers.get("content-disposition");
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (fileNameMatch?.length === 2) fileName = fileNameMatch?.[1];
+      }
+
+      let urlBlob = window.URL.createObjectURL(blob);
+      let linkTempDownload = document.createElement("a");
+      linkTempDownload.href = urlBlob;
+      linkTempDownload.download = fileName;
+      document.body.appendChild(linkTempDownload);
+      linkTempDownload.click();
+      document.body.removeChild(linkTempDownload);
+    } catch (error) {
+      console.error("Hubo un error al descargar el archivo: ", error);
+    }
+  };
+
+  const handleImport = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    try {
+      const input = event?.target as HTMLInputElement;
+      const file = input?.files?.[0];
+      const formData = new FormData();
+
+      formData.append("file", file!);
+
+      setIsImporting(true);
+      setIsLoading(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/backup/importar`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (response.ok) {
+        setIsLoading(false);
+        setIsSuccess(true);
+      } else {
+        setIsLoading(false);
+        setIsError(true);
+      }
+    } catch {
+      console.error("");
+    }
+  };
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-96 h-fit rounded-xl shadow text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Restauración</h1>
+      </div>
+      <div className="flex flex-col p-8 pt-6 justify-center">
+        {isImporting === true ? (
+          <>
+            {isLoading === true ? (
+              <div className="flex flex-col items-center gap-2">
+                <div className="grid w-full h-4/5">
+                  <div className="place-self-center">
+                    <div role="status">
+                      <svg
+                        aria-hidden="true"
+                        className="inline w-20 h-20 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
+                        viewBox="0 0 100 101"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                          fill="currentColor"
+                        />
+                        <path
+                          d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                          fill="currentFill"
+                        />
+                      </svg>
+                      <span className="sr-only">Cargando...</span>
+                    </div>
+                  </div>
+                </div>
+                <p className="font-medium">Importando datos...</p>
+              </div>
+            ) : null}
+            {isError === true ? (
+              <div className="flex flex-col items-center gap-2">
+                <div className="grid w-full h-4/5">
+                  <Error className="place-self-center h-24 w-24 fill-red-400" />
+                </div>
+                <p className="font-medium">Error importando datos</p>
+              </div>
+            ) : null}
+            {isSuccess === true ? (
+              <div className="flex flex-col items-center gap-2">
+                <div className="grid w-full h-4/5">
+                  <Check className="place-self-center h-24 w-24 fill-green-400" />
+                </div>
+                <p className="font-medium">
+                  Los datos fueron importados exitosamente
+                </p>
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <div className="flex flex-col gap-4 justify-center items-center">
+            <div>
+              <button
+                type="button"
+                onClick={handleExport}
+                className="outline-none bg-red-400 font-semibold rounded-lg py-2 px-4 hover:bg-red-500 text-white transition ease-in-out delay-100 duration-300 w-full"
+              >
+                Exportar copia de seguridad
+              </button>
+            </div>
+            <div className="items-center justify-center bg-grey-lighter cursor-pointer">
+              <label className="outline-none bg-green-400 font-semibold rounded-lg py-2 px-4 hover:bg-green-500 text-white transition ease-in-out delay-100 duration-300 w-full">
+                <span className="mt-2 text-base leading-normal">
+                  Importar copia de seguridad
+                </span>
+                <input type="file" className="hidden" onChange={handleImport}/>
+              </label>
+            </div>
+          </div>
+        )}
+        <div className="flex gap-2 justify-center mt-6">
+          <button
+            type="button"
+            onClick={() => {
+              closeModal();
+              reset();
+            }}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
 
 export default function NavPanel() {
   const isInventoryColapsed = useColapsableInventoryStore(
@@ -44,6 +252,7 @@ export default function NavPanel() {
   const toggleInventory = useColapsableInventoryStore((state) => state.toggle);
   const navigate = useNavigate();
   let location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
   const resetTicketSearchCount = useTicketSearchParamStore(
     (state) => state.resetSearchCount
   );
@@ -97,10 +306,14 @@ export default function NavPanel() {
   };
 
   useEffect(() => {
-    if((location.pathname.includes("ventas") || location.pathname.includes("compras")) && isInventoryColapsed === false){
-      toggleInventory()
+    if (
+      (location.pathname.includes("ventas") ||
+        location.pathname.includes("compras")) &&
+      isInventoryColapsed === false
+    ) {
+      toggleInventory();
     }
-  }, [location])
+  }, [location]);
 
   return (
     <aside className="pt-7 h-full shadow-md bg-[#2096ed] select-none">
@@ -474,6 +687,21 @@ export default function NavPanel() {
               <p>Mensajería</p>
             </NavLink>
           )}
+          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ? (
+            <div
+              onClick={() => setIsOpen(true)}
+              className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+            >
+              <Backup className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <p className="mr-8">Restauración</p>
+            </div>
+          ) : (
+            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+              <Tag className="h-6 w-6 fill-white " />
+              <p>No permitido</p>
+            </div>
+          )}
           <div
             onClick={() => {
               session.revoke();
@@ -488,6 +716,11 @@ export default function NavPanel() {
           </div>
         </div>
       </div>
+      <RestaurationModal
+        isOpen={isOpen}
+        closeModal={() => setIsOpen(false)}
+        setOperationAsCompleted={() => {}}
+      />
     </aside>
   );
 }

@@ -10,6 +10,7 @@ import {
   DropupProps,
   Action,
   Operación,
+  OperaciónEstado,
   Mensaje,
   Selected,
 } from "../../types";
@@ -302,7 +303,7 @@ function EditModal({
             Number(id),
             Number(service_id),
             operación?.id!,
-            formData
+            operación!
           ).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
@@ -406,7 +407,7 @@ function EditModal({
         />
         <textarea
           rows={3}
-          placeholder="Descripción*"
+          placeholder="Descripción"
           onChange={(e) => {
             setFormData({
               ...formData,
@@ -416,7 +417,7 @@ function EditModal({
           value={formData.descripción}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
         />
-        {formData.estado === "PENDIENTE" ? (
+        {operación?.estado === "PENDIENTE" ? (
           <div className="relative">
             <Select
               options={[
@@ -442,10 +443,16 @@ function EditModal({
                 },
               ]}
               selected={selectedState}
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  estado: selectedState.value as OperaciónEstado,
+                });
+              }}
             />
           </div>
         ) : null}
-        {formData.estado === "INICIADA" ? (
+        {operación?.estado === "INICIADA" ? (
           <div className="relative">
             <Select
               options={[
@@ -461,10 +468,16 @@ function EditModal({
                 },
               ]}
               selected={selectedState}
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  estado: selectedState.value as OperaciónEstado,
+                });
+              }}
             />
           </div>
         ) : null}
-        {formData.estado === "COMPLETADA" ? (
+        {operación?.estado === "COMPLETADA" ? (
           <div className="relative">
             <select
               className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"

@@ -24,6 +24,7 @@ import MessagingOptionsService from "../../services/messaging-options-service";
 import options from "../../utils/options";
 import session from "../../utils/session";
 import permissions from "../../utils/permissions";
+import { Toaster } from "react-hot-toast";
 
 export default function HomeDataDisplay() {
   const [clientes, setClientes] = useState(0);
@@ -440,6 +441,7 @@ export default function HomeDataDisplay() {
           )}
         </div>
       </div>
+     <Toaster position="bottom-right" reverseOrder={false} />
     </>
   );
 }
