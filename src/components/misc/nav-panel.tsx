@@ -105,9 +105,7 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
     }
   };
 
-  const handleImport = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       const input = event?.target as HTMLInputElement;
       const file = input?.files?.[0];
@@ -223,7 +221,7 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
                 <span className="mt-2 text-base leading-normal">
                   Importar copia de seguridad
                 </span>
-                <input type="file" className="hidden" onChange={handleImport}/>
+                <input type="file" className="hidden" onChange={handleImport} />
               </label>
             </div>
           </div>
@@ -494,64 +492,6 @@ export default function NavPanel() {
           )}
           {session.find()?.usuario.rol === "ADMINISTRADOR" ||
           session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.publicación ? (
-            <NavLink
-              to="/publicaciones"
-              onClick={reset}
-              className={clsx({
-                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                  !location.pathname.includes("publicaciones"),
-                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                  location.pathname.includes("publicaciones"),
-              })}
-            >
-              <Article
-                className={clsx({
-                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
-                    !location.pathname.includes("publicaciones"),
-                  ["h-6 w-6 fill-[#2096ed]"]:
-                    location.pathname.includes("publicaciones"),
-                })}
-              />
-              <p>Publicaciones</p>
-            </NavLink>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
-            </div>
-          )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.categoría ? (
-            <NavLink
-              to="/categorias"
-              onClick={reset}
-              className={clsx({
-                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                  !location.pathname.includes("categorias"),
-                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                  location.pathname.includes("categorias"),
-              })}
-            >
-              <Category
-                className={clsx({
-                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
-                    !location.pathname.includes("categorias"),
-                  ["h-6 w-6 fill-[#2096ed]"]:
-                    location.pathname.includes("categorias"),
-                })}
-              />
-              <p>Categorías</p>
-            </NavLink>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
-            </div>
-          )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
           permissions.find()?.ver.venta ||
           permissions.find()?.ver.compra ? (
             <div
@@ -636,6 +576,35 @@ export default function NavPanel() {
           ) : null}
           {session.find()?.usuario.rol === "ADMINISTRADOR" ||
           session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+          permissions.find()?.ver.publicación ? (
+            <NavLink
+              to="/publicaciones"
+              onClick={reset}
+              className={clsx({
+                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                  !location.pathname.includes("publicaciones"),
+                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                  location.pathname.includes("publicaciones"),
+              })}
+            >
+              <Article
+                className={clsx({
+                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    !location.pathname.includes("publicaciones"),
+                  ["h-6 w-6 fill-[#2096ed]"]:
+                    location.pathname.includes("publicaciones"),
+                })}
+              />
+              <p>Publicaciones</p>
+            </NavLink>
+          ) : (
+            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+              <Tag className="h-6 w-6 fill-white " />
+              <p>No permitido</p>
+            </div>
+          )}
+          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
           permissions.find()?.ver.imagen ? (
             <NavLink
               to="/galeria"
@@ -656,6 +625,35 @@ export default function NavPanel() {
                 })}
               />
               <p>Galería</p>
+            </NavLink>
+          ) : (
+            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+              <Tag className="h-6 w-6 fill-white " />
+              <p>No permitido</p>
+            </div>
+          )}
+          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+          permissions.find()?.ver.categoría ? (
+            <NavLink
+              to="/categorias"
+              onClick={reset}
+              className={clsx({
+                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                  !location.pathname.includes("categorias"),
+                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                  location.pathname.includes("categorias"),
+              })}
+            >
+              <Category
+                className={clsx({
+                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    !location.pathname.includes("categorias"),
+                  ["h-6 w-6 fill-[#2096ed]"]:
+                    location.pathname.includes("categorias"),
+                })}
+              />
+              <p>Categorías</p>
             </NavLink>
           ) : (
             <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">

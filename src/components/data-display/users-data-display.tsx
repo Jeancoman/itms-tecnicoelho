@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
+import { ReactComponent as More } from "/src/assets/more_vert.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import Pagination from "../misc/pagination";
@@ -40,7 +41,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       lista: [],
     },
   });
-
 
   const [permisos, setPermisos] = useState<Permisos>();
   const [visible, setVisible] = useState(false);
@@ -244,7 +244,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       className="w-2/5 h-fit rounded-md shadow-md"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Crear usuario</h1>
+        <h1 className="text-xl font-bold text-white">Añadir usuario</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
@@ -265,13 +265,13 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             lista: lista,
           };
 
-          const loadingToast = toast.loading("Crear usuario...");
+          const loadingToast = toast.loading("Añadiendo usuario...");
 
           UserService.create(newFormData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
-              toast.error("Usuario no pudo ser creado.");
+              toast.error("Usuario no pudo ser añadido.");
             } else {
               let createPermisos = { ...permisos };
               createPermisos.usuario_id = data.id;
@@ -279,7 +279,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 //@ts-ignore
                 UserService.postPermissionsById(data.id!, createPermisos);
               }
-              toast.success("Usuario creado con exito.");
+              toast.success("Usuario añadido con exito.");
             }
           });
         }}
@@ -496,7 +496,7 @@ function EditModal({
         <h1 className="text-xl font-bold text-white">
           {" "}
           {session.find()?.usuario.id === usuario?.id
-            ? "Editar tú usuario"
+            ? "Editar tu usuario"
             : "Editar usuario"}
         </h1>
       </div>
@@ -737,9 +737,12 @@ function DeleteModal({
   );
 }
 
-function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
+function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [isDropup, setIsDropup] = useState(false);
+  const ref = useRef<HTMLTableCellElement>(null)
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -747,6 +750,10 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const selectAction = (action: `${Action}`) => {
+    setAction(action);
   };
 
   return (
@@ -762,7 +769,7 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
       <td className="px-6 py-2 border border-slate-300">
         <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg">
           {usuario?.nombreUsuario}{" "}
-          {session.find()?.usuario?.id === usuario?.id ? "(Tú usuario)" : null}
+          {session.find()?.usuario?.id === usuario?.id ? "(Tu usuario)" : null}
         </div>
       </td>
       <td className="px-6 py-2 border border-slate-300">
@@ -777,12 +784,7 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
           </div>
         )}
       </td>
-      <td className="px-6 py-3 w-52 border border-slate-300">
-        {action === "NONE" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
-            Ninguna seleccionada
-          </button>
-        )}
+      <td ref={ref} className="px-6 py-3 w-52 border border-slate-300 relative">
         {action === "EDIT" && (
           <>
             {usuario?.rol === "EMPLEADO" ||
@@ -799,7 +801,7 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
                   className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
                 >
                   {session.find()?.usuario.id === usuario?.id
-                    ? "Editar tú usuario"
+                    ? "Editar usuario"
                     : "Editar usuario"}
                 </button>
                 <EditModal
@@ -832,7 +834,7 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
                   className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
                 >
                   {session.find()?.usuario.id === usuario?.id
-                    ? "Eliminar tú usuario"
+                    ? "Eliminar usuario"
                     : "Eliminar usuario"}
                 </button>
                 <DeleteModal
@@ -849,6 +851,28 @@ function DataRow({ action, usuario, setOperationAsCompleted }: DataRowProps) {
             )}
           </>
         )}
+        {isDropup && (
+          <IndividualDropup
+            close={() => setIsDropup(false)}
+            selectAction={selectAction}
+            openAddModal={() => {}}
+            openSearchModal={() => {}}
+            id={usuario?.id}
+            top={
+              ref?.current?.getBoundingClientRect().top! +
+              window.scrollY +
+              ref?.current?.getBoundingClientRect().height! - 15
+            }
+            right={ref?.current?.getBoundingClientRect().left! + window.scrollX + 45}
+          />
+        )}
+        <button
+          id={`acciones-btn-${usuario?.id}`}
+          className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+          onClick={() => setIsDropup(!isDropup)}
+        >
+          <More className="w-5 h-5 inline fill-black" />
+        </button>
       </td>
     </tr>
   );
@@ -1029,11 +1053,12 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
-function Dropup({
+function IndividualDropup({
+  id,
   close,
   selectAction,
-  openAddModal,
-  openSearchModal,
+  top,
+  right,
 }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
@@ -1042,7 +1067,7 @@ function Dropup({
       if (
         dropupRef.current &&
         !dropupRef.current.contains(event.target) &&
-        event.target.id !== "acciones-btn"
+        event.target.id !== `acciones-btn-${id}`
       ) {
         close();
       }
@@ -1058,12 +1083,10 @@ function Dropup({
       ref={dropupRef}
       className="
           min-w-max
-          absolute
+          fixed
           bg-white
           text-base
           z-50
-          right-8
-          top-14
           py-2
           list-none
           text-left
@@ -1074,6 +1097,7 @@ function Dropup({
           bg-clip-padding
           border
         "
+      style={{ top: top, left: right }}
     >
       <li>
         <div
@@ -1121,11 +1145,55 @@ function Dropup({
           Eliminar usuario
         </div>
       </li>
-      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+    </ul>
+  );
+}
+
+function Dropup({ close, selectAction }: DropupProps) {
+  const dropupRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (
+        dropupRef.current &&
+        !dropupRef.current.contains(event.target) &&
+        event.target.id !== "acciones-btn"
+      ) {
+        close();
+      }
+    };
+    document.addEventListener("click", handleClickOutside, true);
+    return () => {
+      document.removeEventListener("click", handleClickOutside, true);
+    };
+  }, []);
+
+  return (
+    <ul
+      ref={dropupRef}
+      className="
+          min-w-max
+          absolute
+          bg-white
+          text-base
+          z-50
+          right-8
+          top-14
+          py-2
+          list-none
+          text-left
+          rounded-lg
+          shadow-xl
+          mt-2
+          m-0
+          bg-clip-padding
+          border
+        "
+    >
       <li>
         <div
           onClick={() => {
-            openAddModal();
+            selectAction("ADD");
             close();
           }}
           className="
@@ -1142,13 +1210,13 @@ function Dropup({
               cursor-pointer
             "
         >
-          Crear usuario
+          Añadir usuario
         </div>
       </li>
       <li>
         <div
           onClick={() => {
-            openSearchModal?.();
+            selectAction("SEARCH");
             close();
           }}
           className="
@@ -1179,7 +1247,7 @@ type PermissionPanelProps = {
 
 function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
   const [permissions, setPermissions] = useState<Permisos>(permisos);
-  
+
   useEffect(() => {
     onChange(permissions);
   }, [permissions]);
@@ -2070,7 +2138,7 @@ export default function UsersDataDisplay() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("NONE");
+  const [action, setAction] = useState<`${Action}`>("ADD");
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -2269,26 +2337,39 @@ export default function UsersDataDisplay() {
               Usuarios
             </span>
           </div>
-          <div>
+          <div className="flex gap-2">
             {isDropup && (
               <Dropup
                 close={closeDropup}
                 selectAction={selectAction}
-                openAddModal={openAddModal}
-                openSearchModal={() => {
-                  setIsSearch(true);
-                }}
+                openAddModal={() => {}}
+                openSearchModal={() => {}}
               />
             )}
+            {action === "ADD" ? (
+              <button
+                onClick={openAddModal}
+                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              >
+                Añadir usuario
+              </button>
+            ) : null}
+            {action === "SEARCH" ? (
+              <button
+                onClick={() => setIsSearch(true)}
+                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              >
+                Buscar usuario
+              </button>
+            ) : null}
             <button
               id="acciones-btn"
               onClick={() => {
                 setIsDropup(!isDropup);
               }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              className="bg-gray-300 border hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
             >
-              Acciones
-              <Down className="ml-2 mb-0.5 w-3 h-3 inline fill-white" />
+              <More className="w-5 h-5 inline fill-black" />
             </button>
           </div>
         </nav>
@@ -2322,7 +2403,7 @@ export default function UsersDataDisplay() {
                 {users.map((user) => {
                   return (
                     <DataRow
-                      action={action}
+                      action={""}
                       usuario={user}
                       setOperationAsCompleted={setAsCompleted}
                       key={user.id}

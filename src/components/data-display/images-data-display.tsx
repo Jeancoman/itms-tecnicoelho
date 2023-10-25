@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
+import { ReactComponent as More } from "/src/assets/more_vert.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -324,9 +324,12 @@ function DeleteModal({
   );
 }
 
-function DataRow({ action, imagen, setOperationAsCompleted }: DataRowProps) {
+function DataRow({ imagen, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [isDropup, setIsDropup] = useState(false);
+  const ref = useRef<HTMLTableCellElement>(null);
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -334,6 +337,10 @@ function DataRow({ action, imagen, setOperationAsCompleted }: DataRowProps) {
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const selectAction = (action: `${Action}`) => {
+    setAction(action);
   };
 
   return (
@@ -344,19 +351,19 @@ function DataRow({ action, imagen, setOperationAsCompleted }: DataRowProps) {
       >
         {imagen?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">{imagen?.url}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
+        {imagen?.url}
+      </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
         {imagen?.descripción}
       </td>
       <td className="px-6 py-4 border border-slate-300">
         {format(new Date(imagen?.añadida!), "dd/MM/yyyy")}
       </td>
-      <td className="px-6 py-3 border border-slate-300 w-[200px]">
-        {action === "NONE" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
-            Ninguna seleccionada
-          </button>
-        )}
+      <td
+        ref={ref}
+        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+      >
         {action === "EDIT" && (
           <>
             <button
@@ -393,6 +400,32 @@ function DataRow({ action, imagen, setOperationAsCompleted }: DataRowProps) {
             />
           </>
         )}
+        {isDropup && (
+          <IndividualDropup
+            close={() => setIsDropup(false)}
+            selectAction={selectAction}
+            openAddModal={() => {}}
+            id={imagen?.id}
+            top={
+              ref?.current?.getBoundingClientRect().top! +
+              window.scrollY +
+              ref?.current?.getBoundingClientRect().height! -
+              15
+            }
+            right={
+              ref?.current?.getBoundingClientRect().left! +
+              window.scrollX -
+              1070
+            }
+          />
+        )}
+        <button
+          id={`acciones-btn-${imagen?.id}`}
+          className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+          onClick={() => setIsDropup(!isDropup)}
+        >
+          <More className="w-5 h-5 inline fill-black" />
+        </button>
       </td>
     </tr>
   );
@@ -563,12 +596,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
-function Dropup({
-  close,
-  selectAction,
-  openAddModal,
-  openSearchModal,
-}: DropupProps) {
+function Dropup({ close, selectAction }: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -608,6 +636,105 @@ function Dropup({
           bg-clip-padding
           border
         "
+    >
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.crear.imagen) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("ADD");
+              close();
+            }}
+            className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+          >
+            Añadir imagen
+          </div>
+        </li>
+      )}
+      <li>
+        <div
+          onClick={() => {
+            selectAction("SEARCH");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Buscar imagen
+        </div>
+      </li>
+    </ul>
+  );
+}
+
+function IndividualDropup({
+  id,
+  close,
+  selectAction,
+  top,
+  right,
+}: DropupProps) {
+  const dropupRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (
+        dropupRef.current &&
+        !dropupRef.current.contains(event.target) &&
+        event.target.id !== `acciones-btn-${id}`
+      ) {
+        close();
+      }
+    };
+    document.addEventListener("click", handleClickOutside, true);
+    return () => {
+      document.removeEventListener("click", handleClickOutside, true);
+    };
+  }, []);
+
+  return (
+    <ul
+      ref={dropupRef}
+      className="
+          min-w-max
+          fixed
+          bg-white
+          text-base
+          z-50
+          py-2
+          list-none
+          text-left
+          rounded-lg
+          shadow-xl
+          mt-2
+          m-0
+          bg-clip-padding
+          border
+        "
+      style={{ top: top, right: right }}
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         permissions.find()?.editar.imagen) && (
@@ -661,60 +788,6 @@ function Dropup({
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        (permissions.find()?.editar.imagen &&
-          permissions.find()?.eliminar.imagen)) && (
-        <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.imagen) && (
-        <li>
-          <div
-            onClick={() => {
-              openAddModal();
-              close();
-            }}
-            className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-          >
-            Añadir imagen
-          </div>
-        </li>
-      )}
-      <li>
-        <div
-          onClick={() => {
-            openSearchModal?.();
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Buscar imagen
-        </div>
-      </li>
     </ul>
   );
 }
@@ -726,7 +799,7 @@ export default function ImagesDataDisplay() {
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("NONE");
+  const [action, setAction] = useState<`${Action}`>("ADD");
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -887,26 +960,38 @@ export default function ImagesDataDisplay() {
               Galería
             </span>
           </div>
-          <div>
+          <div className="flex gap-2">
             {isDropup && (
               <Dropup
                 close={closeDropup}
                 selectAction={selectAction}
-                openAddModal={openAddModal}
-                openSearchModal={() => {
-                  setIsSearch(true);
-                }}
+                openAddModal={() => {}}
               />
             )}
+            {action === "ADD" ? (
+              <button
+                onClick={openAddModal}
+                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              >
+                Añadir imagen
+              </button>
+            ) : null}
+            {action === "SEARCH" ? (
+              <button
+                onClick={() => setIsSearch(true)}
+                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              >
+                Buscar imagen
+              </button>
+            ) : null}
             <button
               id="acciones-btn"
               onClick={() => {
                 setIsDropup(!isDropup);
               }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              className="bg-gray-300 border hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
             >
-              Acciones
-              <Down className="ml-2 mb-0.5 w-3 h-3 inline fill-white" />
+              <More className="w-5 h-5 inline fill-black" />
             </button>
           </div>
         </nav>

@@ -68,6 +68,9 @@ export type DropupProps = {
   openAddModalFour?: () => void;
   toEdit?: boolean;
   toAdd?: boolean;
+  id?: number;
+  top?: number;
+  right?: number;
 };
 
 export type DataRowProps = {
@@ -194,7 +197,10 @@ export type Action =
   | "ADD"
   | "ADD_ENTREGA"
   | "REDUCE"
-  | "SEARCH";
+  | "SEARCH"
+  | "REPORT"
+  | "OPTIONS"
+  | "MESSAGING";
 
 export type UsuarioRol = "EMPLEADO" | "ADMINISTRADOR" | "SUPERADMINISTRADOR";
 

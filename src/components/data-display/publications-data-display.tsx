@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
+import { ReactComponent as More } from "/src/assets/more_vert.svg";
 import Slugifier from "../../utils/slugifier";
 import Pagination from "../misc/pagination";
 import {
@@ -66,15 +66,15 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
         e.preventDefault();
         close();
         resetFormData();
-        const loadingToast = toast.loading("Creando publicación...");
+        const loadingToast = toast.loading("Añadiendo publicación...");
         PublicationService.create(formData).then((data) => {
           toast.dismiss(loadingToast);
           setOperationAsCompleted();
           close();
           if (data === false) {
-            toast.error("Publicación no pudo ser creada.");
+            toast.error("Publicación no pudo ser añadida.");
           } else {
-            toast.success("Publicación creada con exito.");
+            toast.success("Publicación añadida con exito.");
           }
         });
       }}
@@ -235,7 +235,7 @@ function EditSection({
         e.preventDefault();
         close();
         const loadingToast = toast.loading("Editando publicación...");
-        ImageService.update(imageFormData?.id!, imageFormData)
+        ImageService.update(imageFormData?.id!, imageFormData);
         PublicationService.update(publicación?.id!, formData).then((data) => {
           toast.dismiss(loadingToast);
           setOperationAsCompleted();
@@ -459,15 +459,21 @@ function DeleteModal({
 }
 
 function DataRow({
-  action,
   publicación,
   setOperationAsCompleted,
   onClick,
 }: DataRowProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [isDropup, setIsDropup] = useState(false);
+  const ref = useRef<HTMLTableCellElement>(null);
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const selectAction = (action: `${Action}`) => {
+    setAction(action);
   };
 
   return (
@@ -498,12 +504,10 @@ function DataRow({
           </div>
         )}
       </td>
-      <td className="px-6 py-3 border border-slate-300 w-[210px]">
-        {action === "NONE" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
-            Ninguna seleccionada
-          </button>
-        )}
+      <td
+        ref={ref}
+        className="px-6 py-3 border border-slate-300 w-[220px] relative"
+      >
         {action === "EDIT" && (
           <>
             <button
@@ -532,81 +536,38 @@ function DataRow({
             />
           </>
         )}
-        {action === "PREVIEW" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg">
-            Previsualizar publicación
-          </button>
-        )}
-      </td>
-    </tr>
-  );
-}
-
-/*
-function EmbeddedDataRow({ onClick }: EmbeddedDataRowProps) {
-  return (
-    <tr>
-      <th
-        scope="row"
-        className="px-6 py-3 font-bold whitespace-nowrap border border-slate-300"
-      >
-        <div className="mb-[0.125rem] min-h-[1.5rem] justify-center flex items-center">
-          <input
-            className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-            type="checkbox"
-            id="checkbox"
+        {isDropup && (
+          <IndividualDropup
+            close={() => setIsDropup(false)}
+            selectAction={selectAction}
+            openAddModal={() => {}}
+            id={publicación?.id}
+            top={
+              ref?.current?.getBoundingClientRect().top! +
+              window.scrollY +
+              ref?.current?.getBoundingClientRect().height! -
+              15
+            }
+            right={
+              ref?.current?.getBoundingClientRect().left! +
+              window.scrollX -
+              1085
+            }
           />
-        </div>
-      </th>
-      <td className="font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 text-center">
-        1
-      </td>
-      <td className="px-6 border border-slate-300 flex justify-center">
-        <img
-          src="https://i.natgeofe.com/n/4f5aaece-3300-41a4-b2a8-ed2708a0a27c/domestic-dog_thumb_3x2.jpg"
-          className="h-8 w-8 object-cover"
-        />
-      </td>
-      <td className="px-6 py-2 border border-slate-300 max-w-[250px] truncate">
-        https://i.natgeofe.com/n/4f5aaece-3300-41a4-b2a8-ed2708a0a27c/domestic-dog_thumb_3x2.jpg
+        )}
+        <button
+          id={`acciones-btn-${publicación?.id}`}
+          className="bg-gray-300 border right-4 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+          onClick={() => setIsDropup(!isDropup)}
+        >
+          <More className="w-5 h-5 inline fill-black" />
+        </button>
       </td>
     </tr>
   );
 }
 
-function EmbeddedTable({ onClick }: EmbeddedTableProps) {
-  return (
-    <div className="relative overflow-x-auto h-full">
-      <table className="w-full text-sm font-medium text-slate-600 text-left">
-        <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
-          <tr className="border-2 border-[#2096ed]">
-            <th scope="col" className="px-6 py-2 border border-slate-300"></th>
-            <th scope="col" className="px-6 py-2 border border-slate-300">
-              #
-            </th>
-            <th scope="col" className="px-6 py-2 border border-slate-300">
-              Preview
-            </th>
-            <th scope="col" className="px-6 py-2 border border-slate-300">
-              URL
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <EmbeddedDataRow onClick={onClick} />
-        </tbody>
-      </table>
-    </div>
-  );
-}
-*/
-
-function Dropup({
-  close,
-  selectAction,
-  openAddModal,
-  openSearchModal,
-}: DropupProps) {
+function Dropup({ close, selectAction }: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -646,6 +607,105 @@ function Dropup({
           bg-clip-padding
           border
         "
+    >
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        permissions.find()?.crear.publicación) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("ADD");
+              close();
+            }}
+            className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+          >
+            Añadir publicación
+          </div>
+        </li>
+      )}
+      <li>
+        <div
+          onClick={() => {
+            selectAction("SEARCH");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Buscar publicación
+        </div>
+      </li>
+    </ul>
+  );
+}
+
+function IndividualDropup({
+  id,
+  close,
+  selectAction,
+  top,
+  right,
+}: DropupProps) {
+  const dropupRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (
+        dropupRef.current &&
+        !dropupRef.current.contains(event.target) &&
+        event.target.id !== `acciones-btn-${id}`
+      ) {
+        close();
+      }
+    };
+    document.addEventListener("click", handleClickOutside, true);
+    return () => {
+      document.removeEventListener("click", handleClickOutside, true);
+    };
+  }, []);
+
+  return (
+    <ul
+      ref={dropupRef}
+      className="
+          min-w-max
+          fixed
+          bg-white
+          text-base
+          z-50
+          py-2
+          list-none
+          text-left
+          rounded-lg
+          shadow-xl
+          mt-2
+          m-0
+          bg-clip-padding
+          border
+        "
+      style={{ top: top, right: right }}
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         permissions.find()?.editar.publicación) && (
@@ -699,60 +759,6 @@ function Dropup({
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        (permissions.find()?.editar.publicación &&
-          permissions.find()?.eliminar.publicación)) && (
-        <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.publicación) && (
-        <li>
-          <div
-            onClick={() => {
-              openAddModal();
-              close();
-            }}
-            className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-          >
-            Crear publicación
-          </div>
-        </li>
-      )}
-      <li>
-        <div
-          onClick={() => {
-            openSearchModal?.();
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Buscar publicación
-        </div>
-      </li>
     </ul>
   );
 }
@@ -921,7 +927,7 @@ export default function PublicationsDataDisplay() {
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("NONE");
+  const [action, setAction] = useState<`${Action}`>("ADD");
   const [publication, setPublication] = useState<Publicación>();
   const [toEdit, setToEdit] = useState(false);
   const [toAdd, setToAdd] = useState(false);
@@ -1021,7 +1027,7 @@ export default function PublicationsDataDisplay() {
             {toAdd ? (
               <>
                 <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-                <span className="text-[#2096ed]">Crear publicación</span>
+                <span className="text-[#2096ed]">Añadir publicación</span>
               </>
             ) : toEdit ? (
               <>
@@ -1030,26 +1036,38 @@ export default function PublicationsDataDisplay() {
               </>
             ) : null}
           </div>
-          <div>
+          <div className="flex gap-2">
             {isDropup && (
               <Dropup
                 close={closeDropup}
                 selectAction={selectAction}
-                openAddModal={openAddModal}
-                openSearchModal={() => {
-                  setIsSearch(true);
-                }}
+                openAddModal={() => {}}
               />
             )}
+            {action === "ADD" ? (
+              <button
+                onClick={openAddModal}
+                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              >
+                Añadir publicación
+              </button>
+            ) : null}
+            {action === "SEARCH" ? (
+              <button
+                onClick={() => setIsSearch(true)}
+                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              >
+                Buscar publicación
+              </button>
+            ) : null}
             <button
               id="acciones-btn"
               onClick={() => {
                 setIsDropup(!isDropup);
               }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              className="bg-gray-300 border hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
             >
-              Acciones
-              <Down className="ml-2 mb-0.5 w-3 h-3 inline fill-white" />
+              <More className="w-5 h-5 inline fill-black" />
             </button>
           </div>
         </nav>
@@ -1121,7 +1139,7 @@ export default function PublicationsDataDisplay() {
                     {publications.map((publication) => {
                       return (
                         <DataRow
-                          action={action}
+                          action={""}
                           publicación={publication}
                           setOperationAsCompleted={setAsCompleted}
                           key={publication.id}

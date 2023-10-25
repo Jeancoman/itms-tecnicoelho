@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
-import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
+import { ReactComponent as More } from "/src/assets/more_vert.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Check } from "/src/assets/check_circle.svg";
 import Pagination from "../misc/pagination";
@@ -554,7 +554,7 @@ function EditModal({
   );
 }
 
-function DataRow({ action, plantilla, setOperationAsCompleted }: DataRowProps) {
+function DataRow({ plantilla, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   const closeEditModal = () => {
@@ -587,29 +587,20 @@ function DataRow({ action, plantilla, setOperationAsCompleted }: DataRowProps) {
         )}
       </td>
       <td className="px-6 py-3 border border-slate-300 w-[200px]">
-        {action === "NONE" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
-            Ninguna seleccionada
-          </button>
-        )}
-        {action === "EDIT" && (
-          <>
-            <button
-              onClick={() => {
-                setIsEditOpen(true);
-              }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-            >
-              Editar plantilla
-            </button>
-            <EditModal
-              plantilla={plantilla}
-              isOpen={isEditOpen}
-              closeModal={closeEditModal}
-              setOperationAsCompleted={setOperationAsCompleted}
-            />
-          </>
-        )}
+        <button
+          onClick={() => {
+            setIsEditOpen(true);
+          }}
+          className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+        >
+          Editar plantilla
+        </button>
+        <EditModal
+          plantilla={plantilla}
+          isOpen={isEditOpen}
+          closeModal={closeEditModal}
+          setOperationAsCompleted={setOperationAsCompleted}
+        />
       </td>
     </tr>
   );
@@ -618,8 +609,6 @@ function DataRow({ action, plantilla, setOperationAsCompleted }: DataRowProps) {
 function Dropup({
   close,
   selectAction,
-  openAddModal,
-  openOptionModal,
 }: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
@@ -664,31 +653,7 @@ function Dropup({
       <li>
         <div
           onClick={() => {
-            selectAction("EDIT");
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Editar plantilla
-        </div>
-      </li>
-      <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      <li>
-        <div
-          onClick={() => {
-            openOptionModal?.();
+            selectAction("OPTIONS");
             close();
           }}
           className="
@@ -711,7 +676,7 @@ function Dropup({
       <li>
         <div
           onClick={() => {
-            openAddModal();
+            selectAction("MESSAGING");
             close();
           }}
           className="
@@ -742,7 +707,7 @@ export default function MessagingDataDisplay() {
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [isOption, setIsOption] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("NONE");
+  const [action, setAction] = useState<`${Action}`>("OPTIONS");
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -794,24 +759,38 @@ export default function MessagingDataDisplay() {
             Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">Mensajería</span>
           </div>
-          <div>
+          <div className="flex gap-2">
             {isDropup && (
               <Dropup
                 close={closeDropup}
                 selectAction={selectAction}
-                openOptionModal={() => setIsOption(true)}
-                openAddModal={() => setIsAddOpen(true)}
+                openAddModal={() => {}}
               />
             )}
+            {action === "OPTIONS" ? (
+              <button
+                onClick={() => setIsOption(true)}
+                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              >
+                Configurar mensajería
+              </button>
+            ) : null}
+            {action === "MESSAGING" ? (
+              <button
+              onClick={() => setIsAddOpen(true)}
+                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              >
+                Servicio mensajero
+              </button>
+            ) : null}
             <button
               id="acciones-btn"
               onClick={() => {
                 setIsDropup(!isDropup);
               }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              className="bg-gray-300 border hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
             >
-              Acciones
-              <Down className="ml-2 mb-0.5 w-3 h-3 inline fill-white" />
+              <More className="w-5 h-5 inline fill-black" />
             </button>
           </div>
         </nav>

@@ -3,6 +3,7 @@ import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
+import { ReactComponent as More } from "/src/assets/more_vert.svg";
 import { ReactComponent as Search } from "/src/assets/search.svg";
 import Pagination from "../misc/pagination";
 import {
@@ -127,15 +128,15 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
       onSubmit={(e) => {
         e.preventDefault();
         close();
-        const loadingToast = toast.loading("Registrando venta...");
+        const loadingToast = toast.loading("Añadiendo venta...");
         SaleService.create(formData).then((data) => {
           toast.dismiss(loadingToast);
           setOperationAsCompleted();
           resetFormData();
           if (data === false) {
-            toast.error("Venta no pudo ser registrada.");
+            toast.error("Venta no pudo ser añadida.");
           } else {
-            toast.success("Venta registrada con exito.");
+            toast.success("Venta añadida con exito.");
             formData.detalles?.forEach(async (detalle) => {
               //@ts-ignore
               await ProductService.update(detalle.producto_id!, {
@@ -174,12 +175,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
               <SelectWithSearch
                 options={clients.map((client) => ({
                   value: client.id,
-                  label:
-                    client.nombre +
-                    " " +
-                    client.apellido +
-                    ", " +
-                    client.documento,
+                  label: `${client.nombre} ${client.apellido}${client.documento ? "," : ""} ${client.documento ? client.documento : ""}`,
                   onClick: (value, label) => {
                     setSelectedClient({
                       value,
@@ -395,12 +391,7 @@ function EditSection({
   const [productos, setProductos] = useState<Producto[]>();
   const [selectedClient, setSelectedClient] = useState<Selected>({
     value: venta?.cliente_id,
-    label:
-      venta?.cliente?.nombre +
-      " " +
-      venta?.cliente?.apellido +
-      ", " +
-      venta?.cliente?.documento,
+    label: `${venta?.cliente?.nombre} ${venta?.cliente?.apellido}${venta?.cliente?.documento ? "," : ""} ${venta?.cliente?.documento ? venta?.cliente?.documento : ""}`
   });
   const [formData, setFormData] = useState<Venta>(venta!);
   const [page, setPage] = useState(1);
@@ -521,12 +512,7 @@ function EditSection({
               <SelectWithSearch
                 options={clients.map((client) => ({
                   value: client.id,
-                  label:
-                    client.nombre +
-                    " " +
-                    client.apellido +
-                    ", " +
-                    client.documento,
+                  label: `${client.nombre} ${client.apellido}${client.documento ? "," : ""} ${client.documento ? client.documento : ""}`,
                   onClick: (value, label) => {
                     setSelectedClient({
                       value,
@@ -815,19 +801,20 @@ function DeleteModal({
   );
 }
 
-function DataRow({
-  action,
-  venta,
-  setOperationAsCompleted,
-  onClick,
-}: DataRowProps) {
+function DataRow({ venta, setOperationAsCompleted, onClick }: DataRowProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const navigate = useNavigate();
+  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [isDropup, setIsDropup] = useState(false);
+  const ref = useRef<HTMLTableCellElement>(null);
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
   };
 
+  const selectAction = (action: `${Action}`) => {
+    setAction(action);
+  };
   return (
     <tr>
       <th
@@ -845,12 +832,10 @@ function DataRow({
       <td className="px-6 py-4 border border-slate-300">{venta?.impuesto}</td>
       <td className="px-6 py-2 border border-slate-300">{venta?.subtotal}</td>
       <td className="px-6 py-2 border border-slate-300">{venta?.total}</td>
-      <td className="px-6 py-2 border border-slate-300 w-[210px]">
-        {action === "NONE" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
-            Ninguna seleccionada
-          </button>
-        )}
+      <td
+        ref={ref}
+        className="px-6 py-2 border border-slate-300 w-[210px] relative"
+      >
         {action === "EDIT" && (
           <>
             <button
@@ -869,7 +854,7 @@ function DataRow({
               }}
               className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
-              Mostrar factura
+              Factura
             </button>
           </>
         )}
@@ -891,6 +876,32 @@ function DataRow({
             />
           </>
         )}
+        {isDropup && (
+          <IndividualDropup
+            close={() => setIsDropup(false)}
+            selectAction={selectAction}
+            openAddModal={() => {}}
+            id={venta?.id}
+            top={
+              ref?.current?.getBoundingClientRect().top! +
+              window.scrollY +
+              ref?.current?.getBoundingClientRect().height! -
+              15
+            }
+            right={
+              ref?.current?.getBoundingClientRect().left! +
+              window.scrollX -
+              1085
+            }
+          />
+        )}
+        <button
+          id={`acciones-btn-${venta?.id}`}
+          className="bg-gray-300 border right-4 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+          onClick={() => setIsDropup(!isDropup)}
+        >
+          <More className="w-5 h-5 inline fill-black" />
+        </button>
       </td>
     </tr>
   );
@@ -917,7 +928,11 @@ function EmbeddedDataRow({
   );
 
   useEffect(() => {
-    if(typeof detalle_venta === "undefined" || !isEqual(detalle_venta, detalle)) onChange(detalle);
+    if (
+      typeof detalle_venta === "undefined" ||
+      !isEqual(detalle_venta, detalle)
+    )
+      onChange(detalle);
   }, [detalle]);
 
   return (
@@ -983,11 +998,11 @@ function EmbeddedDetailsDataRow({
   detalle_venta,
   producto,
   action,
-  onChange
+  onChange,
 }: EmbeddedDataRowProps) {
   const max = producto?.stock!;
   const precio = producto?.precio!;
-    const [detalle, setDetalle] = useState<DetalleVenta>(
+  const [detalle, setDetalle] = useState<DetalleVenta>(
     detalle_venta
       ? { ...detalle_venta, subtotal: Number(detalle_venta.subtotal) }
       : {
@@ -1000,7 +1015,11 @@ function EmbeddedDetailsDataRow({
   );
 
   useEffect(() => {
-    if(typeof detalle_venta === "undefined" || !isEqual(detalle_venta, detalle)) onChange(detalle);
+    if (
+      typeof detalle_venta === "undefined" ||
+      !isEqual(detalle_venta, detalle)
+    )
+      onChange(detalle);
   }, [detalle]);
 
   return (
@@ -1103,8 +1122,12 @@ function EmbeddedTable({
     }
   }, [page, products]);
 
-    useEffect(() => {
-    if(typeof detalles_venta === "undefined" || !isEqual(detalles_venta, detalles)) onChange(detalles);
+  useEffect(() => {
+    if (
+      typeof detalles_venta === "undefined" ||
+      !isEqual(detalles_venta, detalles)
+    )
+      onChange(detalles);
   }, [detalles]);
 
   useEffect(() => {
@@ -1218,14 +1241,18 @@ function EmbeddedDetailsTable({
   detalles_venta,
   action,
   products,
-  onChange
+  onChange,
 }: EmbeddedTableProps) {
   const [detalles, setDetalles] = useState<DetalleVenta[]>(
     detalles_venta ? detalles_venta : []
   );
 
   useEffect(() => {
-    if(typeof detalles_venta === "undefined" || !isEqual(detalles_venta, detalles)) onChange(detalles);
+    if (
+      typeof detalles_venta === "undefined" ||
+      !isEqual(detalles_venta, detalles)
+    )
+      onChange(detalles);
   }, [detalles]);
 
   useEffect(() => {
@@ -1469,7 +1496,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 <SelectWithSearch
                   options={clients.map((client) => ({
                     value: client.id,
-                    label: `${client.nombre} ${client.apellido}, ${client.documento}`,
+                    label: `${client.nombre} ${client.apellido}${client.documento ? "," : ""} ${client.documento ? client.documento : ""}`,
                     onClick: (value, label) => {
                       setSelectedClient({
                         value,
@@ -1965,7 +1992,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                 <SelectWithSearch
                   options={clients.map((client) => ({
                     value: client.id,
-                    label: `${client.nombre} ${client.apellido}, ${client.documento}`,
+                    label: `${client.nombre} ${client.apellido}${client.documento ? "," : ""} ${client.documento ? client.documento : ""}`,
                     onClick: (value, label) => {
                       setSelectedClient({
                         value,
@@ -2124,12 +2151,9 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
 function Dropup({
   close,
   selectAction,
-  openAddModal,
   toAdd,
   toEdit,
   selectSecondAction,
-  openSearchModal,
-  openReportModal,
 }: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
@@ -2246,6 +2270,129 @@ function Dropup({
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+        permissions.find()?.crear.venta) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("ADD");
+              close();
+            }}
+            className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+          >
+            Registrar venta
+          </div>
+        </li>
+      )}
+      <li>
+        <div
+          onClick={() => {
+            selectAction("SEARCH");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Buscar venta
+        </div>
+      </li>
+      <li>
+        <div
+          onClick={() => {
+            selectAction("REPORT");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Generar reporte
+        </div>
+      </li>
+    </ul>
+  );
+}
+
+function IndividualDropup({
+  id,
+  close,
+  selectAction,
+  top,
+  right,
+}: DropupProps) {
+  const dropupRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (
+        dropupRef.current &&
+        !dropupRef.current.contains(event.target) &&
+        event.target.id !== `acciones-btn-${id}`
+      ) {
+        close();
+      }
+    };
+    document.addEventListener("click", handleClickOutside, true);
+    return () => {
+      document.removeEventListener("click", handleClickOutside, true);
+    };
+  }, []);
+
+  return (
+    <ul
+      ref={dropupRef}
+      className="
+          min-w-max
+          fixed
+          bg-white
+          text-base
+          z-50
+          py-2
+          list-none
+          text-left
+          rounded-lg
+          shadow-xl
+          mt-2
+          m-0
+          bg-clip-padding
+          border
+        "
+      style={{ top: top, right: right }}
+    >
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
         permissions.find()?.editar.venta) && (
         <li>
           <div
@@ -2318,86 +2465,7 @@ function Dropup({
               cursor-pointer
             "
         >
-          Mostrar factura
-        </div>
-      </li>
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        (permissions.find()?.editar.venta &&
-          permissions.find()?.eliminar.venta)) && (
-        <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.crear.venta) && (
-        <li>
-          <div
-            onClick={() => {
-              openAddModal();
-              close();
-            }}
-            className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-          >
-            Registrar venta
-          </div>
-        </li>
-      )}
-      <li>
-        <div
-          onClick={() => {
-            openSearchModal?.();
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Buscar venta
-        </div>
-      </li>
-      <li>
-        <div
-          onClick={() => {
-            openReportModal?.();
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Generar reporte
+          Factura
         </div>
       </li>
     </ul>
@@ -2410,7 +2478,7 @@ export default function SalesDataDisplay() {
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("NONE");
+  const [action, setAction] = useState<`${Action}`>("ADD");
   const [secondAction, setSecondAction] = useState<`${Action}`>("ADD");
   const [sale, setSale] = useState<Venta>();
   const [toEdit, setToEdit] = useState(false);
@@ -2453,11 +2521,10 @@ export default function SalesDataDisplay() {
   };
 
   useEffect(() => {
-    if(toEdit == false && toAdd == false){
-      selectSecondAction("ADD")
+    if (toEdit == false && toAdd == false) {
+      selectSecondAction("ADD");
     }
-
-  }, [toEdit, toAdd])
+  }, [toEdit, toAdd]);
 
   useEffect(() => {
     if (searchCount === 0 || isOperationCompleted) {
@@ -2620,42 +2687,78 @@ export default function SalesDataDisplay() {
             {toAdd ? (
               <>
                 <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-                <span className="text-[#2096ed]">Registrar venta</span>
+                <span className="text-[#2096ed]">Añadir venta</span>
               </>
             ) : toEdit ? (
               <>
                 <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-                <span className="text-[#2096ed]">Editar ventas</span>
+                <span className="text-[#2096ed]">Editar venta</span>
               </>
             ) : null}
           </div>
-          <div>
+          <div className="flex gap-2">
             {isDropup && (
               <Dropup
                 close={closeDropup}
                 selectAction={selectAction}
                 selectSecondAction={selectSecondAction}
-                openAddModal={openAddModal}
-                openSearchModal={() => {
-                  setIsSearch(true);
-                }}
-                openReportModal={() => {
-                  setIsReport(true);
-                }}
+                openAddModal={() => {}}
                 toAdd={toAdd}
                 toEdit={toEdit}
+                openSearchModal={() => {}}
+                openReportModal={() => {}}
               />
             )}
-            <button
-              id="acciones-btn"
-              onClick={() => {
-                setIsDropup(!isDropup);
-              }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-            >
-              Acciones
-              <Down className="ml-2 mb-0.5 w-3 h-3 inline fill-white" />
-            </button>
+            {!(toAdd || toEdit) ? (
+              <>
+                {action === "ADD" ? (
+                  <button
+                    onClick={openAddModal}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Añadir venta
+                  </button>
+                ) : null}
+                {action === "SEARCH" ? (
+                  <button
+                    onClick={() => setIsSearch(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Buscar venta
+                  </button>
+                ) : null}
+                {action === "REPORT" ? (
+                  <button
+                    onClick={() => setIsReport(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Generar reporte
+                  </button>
+                ) : null}
+              </>
+            ) : null}
+            {toAdd || toEdit ? (
+              <button
+                id="acciones-btn"
+                onClick={() => {
+                  setIsDropup(!isDropup);
+                }}
+                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              >
+                Acciones
+                <Down className="ml-2 mb-0.5 w-3 h-3 inline fill-white" />
+              </button>
+            ) : (
+              <button
+                id="acciones-btn"
+                onClick={() => {
+                  setIsDropup(!isDropup);
+                }}
+                className="bg-gray-300 border hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+              >
+                <More className="w-5 h-5 inline fill-black" />
+              </button>
+            )}
           </div>
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
