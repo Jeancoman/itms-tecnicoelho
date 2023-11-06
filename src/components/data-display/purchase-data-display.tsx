@@ -35,6 +35,7 @@ import { usePurchaseSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import ProviderService from "../../services/provider-service";
 import ExportCSV from "../misc/export-to-cvs";
+import clsx from "clsx";
 
 function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   const [loading, setLoading] = useState(true);
@@ -106,7 +107,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   useEffect(() => {
     if (providers.length === 0) {
       setLoading(true);
-      Provider.getAll(1, 100).then((data) => {
+      Provider.getAll(1, 100000000).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
@@ -119,7 +120,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
 
   return (
     <form
-      className="grid grid-cols-[2fr,_1fr] gap-5 h-fit w-full"
+      className="grid grid-cols-[2fr,_1fr] gap-5 h-fit w-full group"
       autoComplete="off"
       onSubmit={(e) => {
         e.preventDefault();
@@ -149,7 +150,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
         <div className="flex gap-4">
           <input
             type="number"
-            placeholder="Impuesto*"
+            placeholder="Impuesto"
             onChange={(e) => {
               const impuesto = isNaN(Number(e.target.value))
                 ? 0
@@ -162,8 +163,6 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
             }}
             value={formData.impuesto <= 0 ? "" : formData.impuesto}
             className="border p-2 border-slate-300 rounded outline-none focus:border-[#2096ed] w-3/12"
-            min={0}
-            required
             name="tax"
           />
           <div className="relative w-1/3">
@@ -238,9 +237,9 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
               formData.subtotal <= 0 ? "" : Number(formData.subtotal).toFixed(2)
             }
             className="border p-2 border-slate-300 rounded outline-none focus:border-[#2096ed] w-3/12"
-            min={0}
+            min={1}
             required
-            disabled
+            readOnly={true}
             name="subtotal"
           />
           <input
@@ -248,9 +247,9 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
             placeholder="Total"
             value={formData.total <= 0 ? "" : Number(formData.total).toFixed(2)}
             className="border p-2 border-slate-300 rounded outline-none focus:border-[#2096ed] w-1/3"
-            min={0}
+            min={1}
             required
-            disabled
+            readOnly={true}
             name="total"
           />
         </div>
@@ -366,7 +365,16 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  selectedProvider.label?.startsWith("Seleccionar") ||
+                  formData.subtotal <= 0 ||
+                  formData.total <= 0,
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  true,
+              })}
+            >
               Completar
             </button>
           </div>
@@ -436,7 +444,7 @@ function EditSection({
   useEffect(() => {
     if (providers.length === 0) {
       setLoading(true);
-      Provider.getAll(1, 100).then((data) => {
+      Provider.getAll(1, 100000000).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
@@ -449,7 +457,7 @@ function EditSection({
 
   return (
     <form
-      className="grid grid-cols-[2fr,_1fr] gap-5 h-fit w-full"
+      className="grid grid-cols-[2fr,_1fr] gap-5 h-fit w-full group"
       autoComplete="off"
       onSubmit={(e) => {
         e.preventDefault();
@@ -486,7 +494,7 @@ function EditSection({
         <div className="flex gap-4">
           <input
             type="number"
-            placeholder="Impuesto*"
+            placeholder="Impuesto"
             onChange={(e) => {
               const impuesto = isNaN(Number(e.target.value))
                 ? 0
@@ -499,8 +507,6 @@ function EditSection({
             }}
             value={formData.impuesto <= 0 ? "" : Number(formData.impuesto)}
             className="border p-2 border-slate-300 rounded outline-none focus:border-[#2096ed] w-3/12"
-            min={0}
-            required
             name="tax"
           />
           <div className="relative w-1/3">
@@ -575,9 +581,9 @@ function EditSection({
               formData.subtotal <= 0 ? "" : Number(formData.subtotal).toFixed(2)
             }
             className="border p-2 border-slate-300 rounded outline-none focus:border-[#2096ed] w-3/12"
-            min={0}
+            min={1}
             required
-            disabled
+            readOnly={true}
             name="subtotal"
           />
           <input
@@ -585,9 +591,9 @@ function EditSection({
             placeholder="Total"
             value={formData.total <= 0 ? "" : Number(formData.total).toFixed(2)}
             className="border p-2 border-slate-300 rounded outline-none focus:border-[#2096ed] w-1/3"
-            min={0}
+            min={1}
             required
-            disabled
+            readOnly={true}
             name="total"
           />
         </div>
@@ -703,7 +709,16 @@ function EditSection({
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  selectedProvider.label?.startsWith("Seleccionar") ||
+                  formData.subtotal <= 0 ||
+                  formData.total <= 0,
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  true,
+              })}
+            >
               Completar
             </button>
           </div>
@@ -799,9 +814,23 @@ function DeleteModal({
 
 function DataRow({ compra, setOperationAsCompleted, onClick }: DataRowProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.compra
+      ? "EDIT"
+      : permissions.find()?.eliminar.compra
+      ? "DELETE"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction =
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+    permissions.find()?.editar.compra
+      ? true
+      : permissions.find()?.eliminar.compra
+      ? true
+      : false;
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
@@ -810,6 +839,11 @@ function DataRow({ compra, setOperationAsCompleted, onClick }: DataRowProps) {
   const selectAction = (action: `${Action}`) => {
     setAction(action);
   };
+
+  const formatter = new Intl.NumberFormat("es-VE", {
+    style: "currency",
+    currency: "USD",
+  });
 
   return (
     <tr>
@@ -826,8 +860,12 @@ function DataRow({ compra, setOperationAsCompleted, onClick }: DataRowProps) {
         {compra?.proveedor?.nombre!}
       </td>
       <td className="px-6 py-4 border border-slate-300">{compra?.impuesto}</td>
-      <td className="px-6 py-2 border border-slate-300">{compra?.subtotal}</td>
-      <td className="px-6 py-2 border border-slate-300">{compra?.total}</td>
+      <td className="px-6 py-2 border border-slate-300">
+        {formatter.format(compra?.subtotal || 0)}
+      </td>
+      <td className="px-6 py-2 border border-slate-300">
+        {formatter.format(compra?.total || 0)}
+      </td>
       <td
         ref={ref}
         className="px-6 py-2 border border-slate-300 w-[210px] relative"
@@ -875,17 +913,23 @@ function DataRow({ compra, setOperationAsCompleted, onClick }: DataRowProps) {
             right={
               ref?.current?.getBoundingClientRect().left! +
               window.scrollX -
-              1085
+              1060
             }
           />
         )}
-        <button
-          id={`acciones-btn-${compra?.id}`}
-          className="bg-gray-300 border right-4 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-          onClick={() => setIsDropup(!isDropup)}
-        >
-          <More className="w-5 h-5 inline fill-black" />
-        </button>
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${compra?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -918,6 +962,11 @@ function EmbeddedDataRow({
       onChange(detalle);
   }, [detalle]);
 
+  const formatter = new Intl.NumberFormat("es-VE", {
+    style: "currency",
+    currency: "USD",
+  });
+
   return (
     <tr>
       <th
@@ -932,7 +981,9 @@ function EmbeddedDataRow({
       <td className="px-6 py-2 border border-slate-300 max-w-[150px] truncate">
         {producto?.nombre}
       </td>
-      <td className="px-6 py-2 border border-slate-300">{producto?.precio}</td>
+      <td className="px-6 py-2 border border-slate-300">
+        {formatter.format(producto?.precio || 0)}
+      </td>
       <td className="px-6 py-2 border border-slate-300">
         {detalle_compra?.cantidad || 0}
       </td>
@@ -1157,6 +1208,11 @@ function EmbeddedDetailsDataRow({
       onChange(detalle);
   }, [detalle]);
 
+  const formatter = new Intl.NumberFormat("es-VE", {
+    style: "currency",
+    currency: "USD",
+  });
+
   return (
     <tr>
       <th
@@ -1171,7 +1227,9 @@ function EmbeddedDetailsDataRow({
       <td className="px-6 py-2 border border-slate-300 max-w-[150px] truncate">
         {producto?.nombre}
       </td>
-      <td className="px-6 py-2 border border-slate-300">{producto?.precio}</td>
+      <td className="px-6 py-2 border border-slate-300">
+        {formatter.format(producto?.precio || 0)}
+      </td>
       <td className="px-6 py-2 border border-slate-300">
         {detalle_compra?.cantidad || 0}
       </td>
@@ -1426,7 +1484,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar compra</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -1455,7 +1513,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 },
               },
               {
-                value: "Proveedor",
+                value: "CLIENTE",
                 label: "Proveedor",
                 onClick: (value, label) => {
                   setSelectedSearchType({
@@ -1468,7 +1526,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             selected={selectedSearchType}
           />
         </div>
-        {selectedSearchType.value === "PROVEEDOR" ? (
+        {selectedSearchType.value === "CLIENTE" ? (
           <>
             <div className="relative">
               {providers.length > 0 && (
@@ -1541,6 +1599,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               }}
               options={[
                 {
+                  value: "HOY",
+                  label: "Hoy",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
                   value: "RECIENTEMENTE",
                   label: "Recientemente",
                   onClick: (value, label) => {
@@ -1607,6 +1675,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 setInput(e.target.value);
                 setTempInput(e.target.value);
               }}
+              required
             />
             <input
               type="date"
@@ -1617,18 +1686,33 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 setSecondInput(e.target.value);
                 setSecondTempInput(e.target.value);
               }}
+              required
             />
           </>
         ) : null}
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              resetSearch();
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button
+            className={clsx({
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedSearchType.label?.startsWith("Seleccionar") ||
+                (selectedFecha.label?.startsWith("Seleccionar") &&
+                  selectedSearchType?.value === "FECHA") ||
+                (selectedProvider.label?.startsWith("Seleccionar") &&
+                  selectedSearchType?.value === "CLIENTE"),
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                true,
+            })}
+          >
             Buscar
           </button>
         </div>
@@ -1730,7 +1814,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Generar reporte</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -1746,7 +1830,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                     ExportCSV.handleDownload(
                       data.rows.map((venta) => {
                         return {
-                          Fecha: venta?.fecha,
+                          Fecha: format(new Date(venta?.fecha), "dd/MM/yyyy"),
                           Impuesto: venta?.impuesto,
                           Subtotal: venta?.subtotal,
                           Total: venta?.total,
@@ -1769,7 +1853,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                     ExportCSV.handleDownload(
                       data.rows.map((venta) => {
                         return {
-                          Fecha: venta?.fecha,
+                          Fecha: format(new Date(venta?.fecha), "dd/MM/yyyy"),
                           Impuesto: venta?.impuesto,
                           Subtotal: venta?.subtotal,
                           Total: venta?.total,
@@ -1792,7 +1876,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                     ExportCSV.handleDownload(
                       data.rows.map((venta) => {
                         return {
-                          Fecha: venta?.fecha,
+                          Fecha: format(new Date(venta?.fecha), "dd/MM/yyyy"),
                           Impuesto: venta?.impuesto,
                           Subtotal: venta?.subtotal,
                           Total: venta?.total,
@@ -1815,7 +1899,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                     ExportCSV.handleDownload(
                       data.rows.map((venta) => {
                         return {
-                          Fecha: venta?.fecha,
+                          Fecha: format(new Date(venta?.fecha), "dd/MM/yyyy"),
                           Impuesto: venta?.impuesto,
                           Subtotal: venta?.subtotal,
                           Total: venta?.total,
@@ -1838,7 +1922,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                     ExportCSV.handleDownload(
                       data.rows.map((venta) => {
                         return {
-                          Fecha: venta?.fecha,
+                          Fecha: format(new Date(venta?.fecha), "dd/MM/yyyy"),
                           Impuesto: venta?.impuesto,
                           Subtotal: venta?.subtotal,
                           Total: venta?.total,
@@ -1866,7 +1950,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                     ExportCSV.handleDownload(
                       data.rows.map((venta) => {
                         return {
-                          Fecha: venta?.fecha,
+                          Fecha: format(new Date(venta?.fecha), "dd/MM/yyyy"),
                           Impuesto: venta?.impuesto,
                           Subtotal: venta?.subtotal,
                           Total: venta?.total,
@@ -1895,7 +1979,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                   ExportCSV.handleDownload(
                     data.rows.map((venta) => {
                       return {
-                        Fecha: venta?.fecha,
+                        Fecha: format(new Date(venta?.fecha), "dd/MM/yyyy"),
                         Impuesto: venta?.impuesto,
                         Subtotal: venta?.subtotal,
                         Total: venta?.total,
@@ -2013,6 +2097,16 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               }}
               options={[
                 {
+                  value: "HOY",
+                  label: "Hoy",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
                   value: "RECIENTEMENTE",
                   label: "Recientemente",
                   onClick: (value, label) => {
@@ -2078,6 +2172,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               onChange={(e) => {
                 setInput(e.target.value);
               }}
+              required
             />
             <input
               type="date"
@@ -2087,18 +2182,33 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               onChange={(e) => {
                 setSecondInput(e.target.value);
               }}
+              required
             />
           </>
         ) : null}
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              resetSearch();
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button
+            className={clsx({
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedSearchType.label?.startsWith("Seleccionar") ||
+                (selectedFecha.label?.startsWith("Seleccionar") &&
+                  selectedSearchType?.value === "FECHA") ||
+                (selectedClient.label?.startsWith("Seleccionar") &&
+                  selectedSearchType?.value === "CLIENTE"),
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                true,
+            })}
+          >
             Generar
           </button>
         </div>
@@ -2411,7 +2521,12 @@ export default function PurchaseDataDisplay() {
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("ADD");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.crear.compra
+      ? "ADD"
+      : "SEARCH"
+  );
   const [secondAction, setSecondAction] = useState<`${Action}`>("ADD");
   const [purchase, setPurchase] = useState<Compra>();
   const [toEdit, setToEdit] = useState(false);
@@ -2460,7 +2575,7 @@ export default function PurchaseDataDisplay() {
   }, [toEdit, toAdd]);
 
   useEffect(() => {
-    if (searchCount === 0 || isOperationCompleted) {
+    if (searchCount === 0) {
       PurchaseService.getAll(page, 8).then((data) => {
         if (data === false) {
           setNotFound(true);
@@ -2613,7 +2728,7 @@ export default function PurchaseDataDisplay() {
       <div className="absolute w-full h-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]" onClick={resetSearchCount}>
               Compras{" "}
             </span>
@@ -2653,12 +2768,23 @@ export default function PurchaseDataDisplay() {
                   </button>
                 ) : null}
                 {action === "SEARCH" ? (
-                  <button
-                    onClick={() => setIsSearch(true)}
-                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                  >
-                    Buscar compra
-                  </button>
+                  <>
+                    {searchCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={resetSearchCount}
+                        className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                      >
+                        Cancelar busqueda
+                      </button>
+                    ) : null}
+                    <button
+                      onClick={() => setIsSearch(true)}
+                      className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                    >
+                      Buscar compra
+                    </button>
+                  </>
                 ) : null}
                 {action === "REPORT" ? (
                   <button

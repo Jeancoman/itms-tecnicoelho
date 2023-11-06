@@ -3,6 +3,7 @@ import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import { ReactComponent as More } from "/src/assets/more_vert.svg";
+import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -20,6 +21,7 @@ import permissions from "../../utils/permissions";
 import session from "../../utils/session";
 import { useCategorySearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
+import clsx from "clsx";
 
 function EditModal({
   isOpen,
@@ -29,7 +31,7 @@ function EditModal({
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [formData, setFormData] = useState<Categoría>(categoría!);
-  const [selectedType, setSelectedType] = useState<Selected>({
+  const [selectedType] = useState<Selected>({
     label:
       categoría?.tipo === "PRODUCTO"
         ? "Producto"
@@ -38,6 +40,10 @@ function EditModal({
         : "Servicio",
     value: categoría?.tipo,
   });
+
+  const resetFormData = () => {
+    setFormData(categoría!);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -69,13 +75,13 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md scrollbar-none text-base"
+      className="w-2/5 h-fit rounded-md shadow-md scrollbar-none text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar categoría</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -92,73 +98,53 @@ function EditModal({
           });
         }}
       >
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          placeholder="Nombre*"
-          value={formData.nombre}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-        />
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <div className="relative">
-          <Select
-            onChange={() => {
+        <div>
+          <input
+            type="text"
+            onChange={(e) => {
               setFormData({
                 ...formData,
-                tipo: selectedType.value as CategoríaTipo,
+                nombre: e.target.value,
               });
             }}
-            options={[
-              {
-                value: "PRODUCTO",
-                label: "Producto",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "SERVICIO",
-                label: "Servicio",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "ELEMENTO",
-                label: "Elemento",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
-            ]}
-            selected={selectedType}
+            value={formData.nombre}
+            placeholder="Nombre*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
           />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
+        <div>
+          <textarea
+            rows={3}
+            placeholder="Descripción de portada"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
+        <div className="relative">
+          <select
+            className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+            value={selectedType.value}
+            disabled={true}
+          >
+            <option value={selectedType.value}>{selectedType.label}</option>
+          </select>
+          <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
         </div>
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -184,12 +170,15 @@ function EditModal({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => {
+                closeModal();
+                resetFormData();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
               Completar
             </button>
           </div>
@@ -218,6 +207,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       descripción: "",
       tipo: "PRODUCTO",
       esDigital: false,
+    });
+    setSelectedType({
+      label: "Seleccionar tipo",
+      value: "",
     });
   };
 
@@ -259,7 +252,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Añadir categoría</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -276,31 +269,44 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           });
         }}
       >
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          placeholder="Nombre*"
-          value={formData.nombre}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-        />
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div>
+          <input
+            type="text"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            value={formData.nombre}
+            placeholder="Nombre*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
+        <div>
+          <textarea
+            rows={3}
+            placeholder="Descripción de portada"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="relative">
           <Select
             onChange={() => {
@@ -373,7 +379,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
               Completar
             </button>
           </div>
@@ -549,7 +555,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar categoría</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -605,6 +611,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               setInput(e.target.value);
               setTempInput(e.target.value);
             }}
+            required
           />
         ) : null}
         {selectedSearchType.value === "TIPO" ? (
@@ -660,10 +667,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               }}
               checked={tempIsPrecise}
               id="checkbox"
-              disabled={
-                selectedSearchType.value !== "TIPO" &&
-                selectedSearchType.value !== ""
-              }
+              disabled={selectedSearchType.value === "TIPO"}
             />
             <label
               className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
@@ -675,12 +679,24 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={closeModal}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              onClick={() => {
+                closeModal();
+                resetSearch();
+              }}
+              className="text-gray-500  bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  selectedSearchType.label?.startsWith("Seleccionar") ||
+                  (selectedType.label?.startsWith("Seleccionar") &&
+                    selectedSearchType.value === "TIPO"),
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  true,
+              })}
+            >
               Buscar
             </button>
           </div>
@@ -693,9 +709,23 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.categoría
+      ? "EDIT"
+      : permissions.find()?.eliminar.categoría
+      ? "DELETE"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction =
+  session.find()?.usuario.rol === "ADMINISTRADOR" ||
+  permissions.find()?.editar.categoría
+    ? true
+    : permissions.find()?.eliminar.categoría
+    ? true
+    : false;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -719,7 +749,11 @@ function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
       </th>
       <td className="px-6 py-4 border border-slate-300">{categoría?.nombre}</td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">
-        {categoría?.descripción}
+        {categoría?.descripción
+          ? categoría.descripción !== ""
+            ? categoría.descripción
+            : "N/A"
+          : "N/A"}
       </td>
       <td className="px-6 py-4 border border-slate-300">{categoría?.tipo}</td>
       <td
@@ -787,13 +821,19 @@ function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
             }
           />
         )}
-        <button
-          id={`acciones-btn-${categoría?.id}`}
-          className="bg-gray-300 border right-4 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-          onClick={() => setIsDropup(!isDropup)}
-        >
-          <More className="w-5 h-5 inline fill-black" />
-        </button>
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${categoría?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -1005,7 +1045,12 @@ export default function CategoriesDataDisplay() {
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("ADD");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.crear.categoría
+      ? "ADD"
+      : "SEARCH"
+  );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -1129,10 +1174,8 @@ export default function CategoriesDataDisplay() {
       <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]" onClick={resetSearchCount}>
-              Categorías
-            </span>
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span className="text-[#2096ed]">Categorías</span>
           </div>
           <div className="flex gap-2">
             {isDropup && (
@@ -1152,12 +1195,23 @@ export default function CategoriesDataDisplay() {
               </button>
             ) : null}
             {action === "SEARCH" ? (
-              <button
-                onClick={() => setIsSearch(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Buscar categoría
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setIsSearch(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Buscar categoría
+                </button>
+              </>
             ) : null}
             <button
               id="acciones-btn"

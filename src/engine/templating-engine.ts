@@ -4,6 +4,8 @@ import {
   LogicalOperator,
   Operation,
   Options,
+  PlantillaEsDe,
+  PlantillaEvento,
   Result,
   TypeOperator,
 } from "../types";
@@ -11,14 +13,23 @@ import {
 export default class TemplatingEngine {
   private template: string;
   private options: Options;
+  private event?: PlantillaEvento;
+  private entity?: PlantillaEsDe;
 
-  public constructor(template: string, options: Options) {
+  public constructor(
+    template: string,
+    options: Options,
+    event?: PlantillaEvento,
+    entity?: PlantillaEsDe
+  ) {
     this.template = template;
     this.options = options;
+    this.event = event;
+    this.entity = entity;
   }
 
   private parseTemplate(template: string): CommandBlock[] {
-    const regex = /\[(SINO PERO|SINO|SI|DEFAULT)([^\]]*)\](.*?)\[FIN\]/gs;
+    const regex = /\[(SINO PERO|SINO|SI|BASE)([^\]]*)\](.*?)\[FIN\]/gs;
     const result: CommandBlock[] = [];
     let match;
 
@@ -63,7 +74,8 @@ export default class TemplatingEngine {
   }
 
   private parseToParts(text: string): string[] {
-    const regex = /({{.*?}})|(ES IGUAL QUE|NO ES IGUAL QUE)/g;
+    const regex =
+      /({{.*?}})|(ES IGUAL QUE|NO ES IGUAL QUE|HA CAMBIADO A|HA CAMBIADO ES|ESTA EN BLANCO ES|CONTIENE|EMPIEZA CON|TERMINA CON)/g;
 
     let match;
     let matches = [];
@@ -88,6 +100,10 @@ export default class TemplatingEngine {
       return stripped.slice(1, -1);
     } else if (!isNaN(Number(stripped))) {
       return Number(stripped);
+    } else if (stripped === "verdadero") {
+      return true;
+    } else if (stripped === "falso") {
+      return false;
     }
 
     const parts = stripped.split(".");
@@ -119,6 +135,12 @@ export default class TemplatingEngine {
       case "previamente":
         object = this.options.previamente;
         break;
+      case "categoría_de_elemento":
+        object = this.options.categoría_de_elemento;
+        break;
+      case "categoría_de_servicio":
+        object = this.options.categoría_de_servicio;
+        break;
       default:
         throw new Error(`Invalid object name ${parts[0]}`);
     }
@@ -135,24 +157,188 @@ export default class TemplatingEngine {
   }
 
   private processOperation(operation: Operation): Result {
-    const processed = {
-      leftSideValue: this.processPlaceholder(operation.leftSideValue as string),
-      rightSideValue: this.processPlaceholder(
-        operation.rightSideValue as string
-      ),
-    };
+    const leftSideValue = this.processPlaceholder(
+      operation.leftSideValue as string
+    );
+
+    const rightSideValue = this.processPlaceholder(
+      operation.rightSideValue as string
+    );
 
     switch (operation.comparisonOperator) {
       case "ES IGUAL QUE":
         return {
-          isTrue: processed.leftSideValue === processed.rightSideValue,
+          isTrue: leftSideValue === rightSideValue,
           logicalOperator: operation.logicalOperator,
         };
       case "NO ES IGUAL QUE":
         return {
-          isTrue: processed.leftSideValue !== processed.rightSideValue,
+          isTrue: leftSideValue !== rightSideValue,
           logicalOperator: operation.logicalOperator,
         };
+      case "HA CAMBIADO A":
+        if (this.event === "MODIFICACIÓN" && this.entity === "TICKET") {
+          const equalNow = leftSideValue === rightSideValue;
+          const equalBefore = Object.values(
+            this.options.previamente?.ticket || {}
+          ).includes(rightSideValue);
+
+          return {
+            isTrue: equalNow && !equalBefore,
+            logicalOperator: operation.logicalOperator,
+          };
+        } else if (
+          this.event === "MODIFICACIÓN" &&
+          this.entity === "PROBLEMA"
+        ) {
+          const equalNow = leftSideValue === rightSideValue;
+          const equalBefore = Object.values(
+            this.options.previamente?.problema || {}
+          ).includes(rightSideValue);
+
+          return {
+            isTrue: equalNow && !equalBefore,
+            logicalOperator: operation.logicalOperator,
+          };
+        } else if (
+          this.event === "MODIFICACIÓN" &&
+          this.entity === "SERVICIO"
+        ) {
+          const equalNow = leftSideValue === rightSideValue;
+          const equalBefore = Object.values(
+            this.options.previamente?.servicio || {}
+          ).includes(rightSideValue);
+
+          return {
+            isTrue: equalNow && !equalBefore,
+            logicalOperator: operation.logicalOperator,
+          };
+        } else if (
+          this.event === "MODIFICACIÓN" &&
+          this.entity === "OPERACIÓN"
+        ) {
+          const equalNow = leftSideValue === rightSideValue;
+          const equalBefore = Object.values(
+            this.options.previamente?.operación || {}
+          ).includes(rightSideValue);
+
+          return {
+            isTrue: equalNow && !equalBefore,
+            logicalOperator: operation.logicalOperator,
+          };
+        } else {
+          return {
+            isTrue: false,
+          };
+        }
+      case "HA CAMBIADO ES":
+        if (this.event === "MODIFICACIÓN" && this.entity === "TICKET") {
+          const equalBefore = Object.values(
+            this.options.previamente?.ticket || {}
+          ).includes(leftSideValue);
+
+          return {
+            isTrue: rightSideValue === !equalBefore,
+            logicalOperator: operation.logicalOperator,
+          };
+        } else if (
+          this.event === "MODIFICACIÓN" &&
+          this.entity === "PROBLEMA"
+        ) {
+          const equalBefore = Object.values(
+            this.options.previamente?.problema || {}
+          ).includes(leftSideValue);
+
+          return {
+            isTrue: rightSideValue === !equalBefore,
+            logicalOperator: operation.logicalOperator,
+          };
+        } else if (
+          this.event === "MODIFICACIÓN" &&
+          this.entity === "SERVICIO"
+        ) {
+          const equalBefore = Object.values(
+            this.options.previamente?.servicio || {}
+          ).includes(leftSideValue);
+
+          return {
+            isTrue: rightSideValue === !equalBefore,
+            logicalOperator: operation.logicalOperator,
+          };
+        } else if (
+          this.event === "MODIFICACIÓN" &&
+          this.entity === "OPERACIÓN"
+        ) {
+          const equalBefore = Object.values(
+            this.options.previamente?.operación || {}
+          ).includes(leftSideValue);
+
+          return {
+            isTrue: rightSideValue === !equalBefore,
+            logicalOperator: operation.logicalOperator,
+          };
+        } else {
+          return {
+            isTrue: false,
+          };
+        }
+      case "ESTA EN BLANCO ES":
+        if (typeof leftSideValue === "string") {
+          return {
+            isTrue: (leftSideValue.length === 0) === rightSideValue,
+            logicalOperator: operation.logicalOperator,
+          };
+        } else {
+          return {
+            isTrue: false,
+            logicalOperator: operation.logicalOperator,
+          };
+        }
+      case "CONTIENE":
+        if (
+          typeof leftSideValue === "string" &&
+          typeof rightSideValue === "string"
+        ) {
+          return {
+            isTrue: leftSideValue.includes(rightSideValue),
+            logicalOperator: operation.logicalOperator,
+          };
+        } else {
+          return {
+            isTrue: false,
+            logicalOperator: operation.logicalOperator,
+          };
+        }
+      case "EMPIEZA CON":
+        if (
+          typeof leftSideValue === "string" &&
+          typeof rightSideValue === "string"
+        ) {
+          return {
+            isTrue: leftSideValue.startsWith(rightSideValue),
+            logicalOperator: operation.logicalOperator,
+          };
+        } else {
+          return {
+            isTrue: false,
+            logicalOperator: operation.logicalOperator,
+          };
+        }
+      case "TERMINA CON":
+        if (
+          typeof leftSideValue === "string" &&
+          typeof rightSideValue === "string"
+        ) {
+          return {
+            isTrue: leftSideValue.endsWith(rightSideValue),
+            logicalOperator: operation.logicalOperator,
+          };
+        } else {
+          return {
+            isTrue: false,
+            logicalOperator: operation.logicalOperator,
+          };
+        }
       default:
         return {
           isTrue: false,
@@ -208,11 +394,11 @@ export default class TemplatingEngine {
         }
       );
 
-      const DEFAULT = commandBlock.find(
-        (commandBlock) => commandBlock.type === "DEFAULT"
+      const BASE = commandBlock.find(
+        (commandBlock) => commandBlock.type === "BASE"
       );
 
-      if (DEFAULT) return this.processTemplate(DEFAULT.template);
+      if (BASE) return this.processTemplate(BASE.template);
 
       const SI = commandBlock.find(
         (commandBlock) => commandBlock.type === "SI"

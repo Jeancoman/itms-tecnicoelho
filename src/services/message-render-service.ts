@@ -30,6 +30,7 @@ export default class MessageRender {
       ticket: ticket,
       elemento: ticket.elemento,
       usuario: session.find()?.usuario,
+      categoría_de_elemento: ticket.elemento?.categoría,
     });
 
     return engine.start();
@@ -63,7 +64,8 @@ export default class MessageRender {
       previamente: {
         ticket: ticket_previo,
       },
-    });
+      categoría_de_elemento: ticket.elemento?.categoría,
+    }, "MODIFICACIÓN", "TICKET");
 
     return engine.start();
   }
@@ -81,9 +83,8 @@ export default class MessageRender {
       cliente: ticket_previo.elemento?.cliente,
       elemento: ticket_previo.elemento,
       usuario: session.find()?.usuario,
-      previamente: {
-        ticket: ticket_previo,
-      },
+      ticket: ticket_previo,
+      categoría_de_elemento: ticket_previo.elemento?.categoría,
     });
 
     return engine.start();
@@ -121,6 +122,8 @@ export default class MessageRender {
       elemento: ticket.elemento,
       servicio: servicio,
       usuario: session.find()?.usuario,
+      categoría_de_elemento: ticket.elemento?.categoría,
+      categoría_de_servicio: servicio.categoría,
     });
 
     return engine.start();
@@ -151,8 +154,6 @@ export default class MessageRender {
       return false;
     }
 
-    console.log(ticket);
-
     const engine = new TemplatingEngine(template.contenido, {
       cliente: ticket.elemento?.cliente,
       ticket: ticket,
@@ -162,7 +163,9 @@ export default class MessageRender {
       previamente: {
         servicio: servicio_previo,
       },
-    });
+      categoría_de_elemento: ticket.elemento?.categoría,
+      categoría_de_servicio: servicio.categoría,
+    }, "MODIFICACIÓN", "SERVICIO");
 
     return engine.start();
   }
@@ -190,9 +193,9 @@ export default class MessageRender {
       ticket: ticket,
       elemento: ticket.elemento,
       usuario: session.find()?.usuario,
-      previamente: {
-        servicio: servicio_previo,
-      },
+      servicio: servicio_previo,
+      categoría_de_elemento: ticket.elemento?.categoría,
+      categoría_de_servicio: servicio_previo.categoría,
     });
 
     return engine.start();
@@ -233,8 +236,6 @@ export default class MessageRender {
       return false;
     }
 
-    console.log(ticket);
-
     const engine = new TemplatingEngine(template.contenido, {
       cliente: ticket.elemento?.cliente,
       ticket: ticket,
@@ -242,6 +243,8 @@ export default class MessageRender {
       servicio: servicio,
       operación: operación,
       usuario: session.find()?.usuario,
+      categoría_de_elemento: ticket.elemento?.categoría,
+      categoría_de_servicio: servicio?.categoría,
     });
 
     return engine.start();
@@ -294,8 +297,10 @@ export default class MessageRender {
       usuario: session.find()?.usuario,
       previamente: {
         operación: operación_previa
-      }
-    });
+      },
+      categoría_de_elemento: ticket.elemento?.categoría,
+      categoría_de_servicio: servicio?.categoría,
+    }, "MODIFICACIÓN", "OPERACIÓN");
 
     return engine.start();
   }
@@ -330,10 +335,10 @@ export default class MessageRender {
       ticket: ticket,
       elemento: ticket.elemento,
       servicio: servicio,
-      previamente: {
-        operación: operación_previa
-      },
+      operación: operación_previa,
       usuario: session.find()?.usuario,
+      categoría_de_elemento: ticket.elemento?.categoría,
+      categoría_de_servicio: servicio?.categoría,
     });
 
     return engine.start();
@@ -373,7 +378,8 @@ export default class MessageRender {
         problema: problema_previamente
       },
       usuario: session.find()?.usuario,
-    });
+      categoría_de_elemento: ticket.elemento?.categoría,
+    }, "MODIFICACIÓN", "PROBLEMA");
 
     return engine.start();
   }
@@ -408,6 +414,7 @@ export default class MessageRender {
       elemento: ticket.elemento,
       problema: problema,
       usuario: session.find()?.usuario,
+      categoría_de_elemento: ticket.elemento?.categoría,
     });
 
     return engine.start();
@@ -435,10 +442,9 @@ export default class MessageRender {
       cliente: ticket.elemento?.cliente,
       ticket: ticket,
       elemento: ticket.elemento,
-      previamente: {
-        problema: problema_previamente
-      },
+      problema: problema_previamente,
       usuario: session.find()?.usuario,
+      categoría_de_elemento: ticket.elemento?.categoría,
     });
 
     return engine.start();

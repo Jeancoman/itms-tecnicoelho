@@ -111,11 +111,9 @@ function OptionGroup({
 
 export default function Select({ selected, options, onChange, small }: SelectProps) {
   const [drop, setDrop] = useState(false);
-  const [thisLabel, setThisLabel] = useState(selected.label);
   const divRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setThisLabel(selected.label);
     onChange?.();
   }, [selected]);
 
@@ -125,20 +123,20 @@ export default function Select({ selected, options, onChange, small }: SelectPro
         ref={divRef}
         className={clsx({
           ["border border-slate-300 relative p-2 rounded-md cursor-default select-none overflow-hidden font-base"]:
-            !drop && !(thisLabel?.startsWith("Seleccionar")),
+            !drop && !(selected.label?.startsWith("Seleccionar")),
           ["border border-blue-300 text-blue-400 relative p-2 rounded-md cursor-default select-none overflow-hidden font-base"]:
-            drop && thisLabel?.startsWith("Seleccionar"),
+            drop && selected.label?.startsWith("Seleccionar"),
             ["border border-blue-300 relative p-2 rounded-md cursor-default select-none overflow-hidden font-base"]:
-            drop && !(thisLabel?.startsWith("Seleccionar")),
+            drop && !(selected.label?.startsWith("Seleccionar")),
           ["border border-slate-300 text-slate-400 relative p-2 rounded-md cursor-default select-none overflow-hidden font-base"]:
-            !drop && thisLabel?.startsWith("Seleccionar"),
+            !drop && selected.label?.startsWith("Seleccionar"),
         })}
         onClick={() => {
           setDrop(!drop);
         }}
         id="custom-select"
       >
-        <div id="custom-select-inside" className="truncate">{thisLabel}</div>
+        <input type="text" readOnly={true} pattern="^(?!Seleccionar)" id="custom-select-inside" className="truncate cursor-none pointer-events-none w-full outline-none caret-transparent" value={selected.label} />
         <Down
           id="custom-select-button"
           className={clsx({

@@ -15,7 +15,7 @@ export default function ProblemsPage() {
     } else {
       if (
         session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-        !permissions.find()?.ver.ticket
+        !permissions.find()?.ver.problema
       ) {
         navigate("/");
       }
@@ -27,7 +27,7 @@ export default function ProblemsPage() {
   } else {
     if (
       session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-      !permissions.find()?.ver.ticket
+      !permissions.find()?.ver.problema
     ) {
       return null;
     }

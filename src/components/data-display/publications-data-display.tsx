@@ -28,8 +28,10 @@ import {
 import Select from "../misc/select";
 import { useSearchedStore } from "../../store/searchedStore";
 import ImageService from "../../services/image-service";
+import clsx from "clsx";
 
 function AddSection({ close, setOperationAsCompleted }: SectionProps) {
+  const [randomString, setRandomString] = useState(Slugifier.randomString());
   const [formData, setFormData] = useState<Publicación>({
     slug: "",
     título: "",
@@ -56,11 +58,12 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
       },
       usuario_id: session.find()?.usuario.id,
     });
+    setRandomString(Slugifier.randomString());
   };
 
   return (
     <form
-      className="h-fit grid grid-cols-2 gap-5 py-4"
+      className="h-fit grid grid-cols-2 gap-5 py-4 group"
       autoComplete="off"
       onSubmit={(e) => {
         e.preventDefault();
@@ -125,54 +128,76 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           disabled
         />
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              título: e.target.value,
-              slug: Slugifier.slugifyWithRandomString(e.target.value),
-            });
-          }}
-          value={formData.título}
-          placeholder="Título*"
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-        />
-        <input
-          type="url"
-          placeholder="URL de portada*"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              imagen: {
-                url: e.target.value || "",
-                descripción: formData.imagen?.descripción,
-                esPública: false,
-              },
-            });
-          }}
-          value={formData.imagen?.url}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-          name="url"
-        />
-        <textarea
-          rows={6}
-          placeholder="Descripción de portada"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              imagen: {
-                url: formData.imagen?.url || "",
-                descripción: e.target.value,
-                esPública: false,
-              },
-            });
-          }}
-          value={formData.imagen?.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div>
+          <input
+            type="text"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                título: e.target.value,
+                slug: `${Slugifier.slugifyWithRandomString(e.target.value)}${
+                  e.target.value === "" ? "" : "-"
+                }${e.target.value === "" ? "" : randomString}`,
+              });
+            }}
+            value={formData.título}
+            placeholder="Título*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
+        <div>
+          <input
+            type="url"
+            placeholder="Enlace de portada*"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                imagen: {
+                  url: e.target.value || "",
+                  descripción: formData.imagen?.descripción,
+                  esPública: false,
+                },
+              });
+            }}
+            value={formData.imagen?.url}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png)$"
+            name="url"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Enlace de imagen invalido
+          </span>
+        </div>
+        <div>
+          <textarea
+            rows={6}
+            placeholder="Descripción de portada"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                imagen: {
+                  url: formData.imagen?.url || "",
+                  descripción: e.target.value,
+                  esPública: false,
+                },
+              });
+            }}
+            value={formData.imagen?.descripción}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="flex h-full items-end">
           <div className="flex w-full justify-between items-center">
             <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -207,7 +232,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
               Completar
             </button>
           </div>
@@ -222,14 +247,21 @@ function EditSection({
   setOperationAsCompleted,
   publicación,
 }: SectionProps) {
+  const [randomString, setRandomString] = useState(Slugifier.randomString());
   const [formData, setFormData] = useState<Publicación>(publicación!);
   const [imageFormData, setImageFormData] = useState<Imagen>(
     publicación?.imagen!
   );
 
+  const resetFormData = () => {
+    setFormData(publicación!);
+    setImageFormData(publicación?.imagen!);
+    setRandomString(Slugifier.randomString());
+  };
+
   return (
     <form
-      className="h-fit grid grid-cols-2 gap-5 py-4"
+      className="h-fit grid grid-cols-2 gap-5 py-4 group"
       autoComplete="off"
       onSubmit={(e) => {
         e.preventDefault();
@@ -293,46 +325,67 @@ function EditSection({
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           disabled
         />
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              título: e.target.value,
-              slug: Slugifier.slugifyWithRandomString(e.target.value),
-            });
-          }}
-          value={formData.título}
-          placeholder="Título*"
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-        />
-        <input
-          type="url"
-          placeholder="URL de portada*"
-          onChange={(e) => {
-            setImageFormData({
-              ...imageFormData,
-              url: e.target.value,
-            });
-          }}
-          value={imageFormData.url}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-          name="url"
-        />
-        <textarea
-          rows={6}
-          placeholder="Descripción de portada"
-          onChange={(e) => {
-            setImageFormData({
-              ...imageFormData,
-              descripción: e.target.value,
-            });
-          }}
-          value={imageFormData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div>
+          <input
+            type="text"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                título: e.target.value,
+                slug: `${Slugifier.slugifyWithRandomString(e.target.value)}${
+                  e.target.value === "" ? "" : "-"
+                }${e.target.value === "" ? "" : randomString}`,
+              });
+            }}
+            value={formData.título}
+            placeholder="Título*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
+        <div>
+          <input
+            type="url"
+            placeholder="Enlace de portada*"
+            onChange={(e) => {
+              setImageFormData({
+                ...imageFormData,
+                url: e.target.value || "",
+              });
+            }}
+            value={imageFormData.url}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png)$"
+            name="url"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Enlace de imagen invalido
+          </span>
+        </div>
+        <div>
+          <textarea
+            rows={6}
+            placeholder="Descripción de portada"
+            onChange={(e) => {
+              setImageFormData({
+                ...imageFormData,
+                descripción: e.target.value,
+              });
+            }}
+            value={imageFormData.descripción}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="flex h-full items-end">
           <div className="flex w-full justify-between items-center">
             <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -359,12 +412,15 @@ function EditSection({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={close}
+              onClick={() => {
+                close();
+                resetFormData();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
               Completar
             </button>
           </div>
@@ -412,10 +468,10 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-2/5 h-fit rounded-xl shadow text-base font-normal"
     >
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center text-base"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -464,9 +520,23 @@ function DataRow({
   onClick,
 }: DataRowProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.publicación
+      ? "EDIT"
+      : permissions.find()?.eliminar.publicación
+      ? "DELETE"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction =
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+    permissions.find()?.editar.publicación
+      ? true
+      : permissions.find()?.eliminar.publicación
+      ? true
+      : false;
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
@@ -487,9 +557,6 @@ function DataRow({
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {publicación?.título}
       </td>
-      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
-        {publicación?.contenido}
-      </td>
       <td className="px-6 py-4 border border-slate-300">
         {format(new Date(publicación?.creada!), "dd/MM/yyyy")}
       </td>
@@ -503,6 +570,14 @@ function DataRow({
             No
           </div>
         )}
+      </td>
+      <td className="px-6 py-2 border border-slate-300">
+        <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg">
+          {publicación?.usuario?.nombreUsuario}{" "}
+          {session.find()?.usuario?.id === publicación?.usuario?.id
+            ? "(Tu usuario)"
+            : null}
+        </div>
       </td>
       <td
         ref={ref}
@@ -551,17 +626,23 @@ function DataRow({
             right={
               ref?.current?.getBoundingClientRect().left! +
               window.scrollX -
-              1085
+              1060
             }
           />
         )}
-        <button
-          id={`acciones-btn-${publicación?.id}`}
-          className="bg-gray-300 border right-4 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-          onClick={() => setIsDropup(!isDropup)}
-        >
-          <More className="w-5 h-5 inline fill-black" />
-        </button>
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${publicación?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -840,7 +921,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar publicaciones</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -882,6 +963,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               setInput(e.target.value);
               setTempInput(e.target.value);
             }}
+            required
           />
         ) : null}
         <div className="flex w-full justify-between items-center">
@@ -906,12 +988,22 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => {
+                closeModal();
+                resetSearch();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  selectedSearchType.label?.startsWith("Seleccionar"),
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  true,
+              })}
+            >
               Buscar
             </button>
           </div>
@@ -927,7 +1019,12 @@ export default function PublicationsDataDisplay() {
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("ADD");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.crear.publicación
+      ? "ADD"
+      : "SEARCH"
+  );
   const [publication, setPublication] = useState<Publicación>();
   const [toEdit, setToEdit] = useState(false);
   const [toAdd, setToAdd] = useState(false);
@@ -963,7 +1060,7 @@ export default function PublicationsDataDisplay() {
   };
 
   useEffect(() => {
-    if (searchCount === 0 || isOperationCompleted) {
+    if (searchCount === 0) {
       PublicationService.getAll(page, 8).then((data) => {
         if (data === false) {
           setNotFound(true);
@@ -1015,13 +1112,20 @@ export default function PublicationsDataDisplay() {
     }
   }, [isOperationCompleted, searchCount, toEdit, toAdd, page]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [searchCount]);
+
   return (
     <>
       <div className="absolute w-full h-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]" onClick={resetSearchCount}>
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span
+              className="text-[#2096ed] cursor-pointer hover:text-[#1182d5] transition ease-in-out delay-100 duration-300"
+              onClick={resetSearchCount}
+            >
               Publicaciones
             </span>{" "}
             {toAdd ? (
@@ -1053,12 +1157,23 @@ export default function PublicationsDataDisplay() {
               </button>
             ) : null}
             {action === "SEARCH" ? (
-              <button
-                onClick={() => setIsSearch(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Buscar publicación
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setIsSearch(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Buscar publicación
+                </button>
+              </>
             ) : null}
             <button
               id="acciones-btn"
@@ -1113,12 +1228,6 @@ export default function PublicationsDataDisplay() {
                         scope="col"
                         className="px-6 py-3 border border-slate-300"
                       >
-                        Contenido
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 border border-slate-300"
-                      >
                         Creada
                       </th>
                       <th
@@ -1126,6 +1235,12 @@ export default function PublicationsDataDisplay() {
                         className="px-6 py-3 border border-slate-300"
                       >
                         Publicada
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 border border-slate-300"
+                      >
+                        Autor
                       </th>
                       <th
                         scope="col"

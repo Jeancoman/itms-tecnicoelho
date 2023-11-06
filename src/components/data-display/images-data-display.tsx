@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { useImageSearchParamStore } from "../../store/searchParamStore";
 import Select from "../misc/select";
 import { useSearchedStore } from "../../store/searchedStore";
+import clsx from "clsx";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -75,7 +76,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Añadir imagen</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -92,32 +93,43 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           });
         }}
       >
-        <input
-          type="url"
-          placeholder="URL*"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              url: e.target.value,
-            });
-          }}
-          value={formData.url}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-          name="name"
-        />
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div>
+          <input
+            type="url"
+            placeholder="Enlace de imagen*"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                url: e.target.value,
+              });
+            }}
+            value={formData.url}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png)$"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Enlace de imagen invalido
+          </span>
+        </div>
+        <div>
+          <textarea
+            rows={6}
+            placeholder="Descripción de portada"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
@@ -126,7 +138,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -174,13 +186,13 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md text-base"
+      className="w-2/5 h-fit rounded-md shadow-md text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar imagen</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -198,40 +210,55 @@ function EditModal({
           });
         }}
       >
-        <input
-          type="url"
-          placeholder="URL*"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              url: e.target.value,
-            });
-          }}
-          value={formData.url}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-        />
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div>
+          <input
+            type="url"
+            placeholder="Enlace de imagen*"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                url: e.target.value,
+              });
+            }}
+            value={formData.url}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png)$"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Enlace de imagen invalido
+          </span>
+        </div>
+        <div>
+          <textarea
+            rows={3}
+            placeholder="Descripción de imagen"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              setFormData(imagen!);
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -278,7 +305,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow text-base"
+      className="w-2/5 h-fit rounded-xl shadow text-base font-normal"
     >
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -327,9 +354,23 @@ function DeleteModal({
 function DataRow({ imagen, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.imagen
+      ? "EDIT"
+      : permissions.find()?.eliminar.imagen
+      ? "DELETE"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction =
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+    permissions.find()?.editar.imagen
+      ? true
+      : permissions.find()?.eliminar.imagen
+      ? true
+      : false;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -419,13 +460,19 @@ function DataRow({ imagen, setOperationAsCompleted }: DataRowProps) {
             }
           />
         )}
-        <button
-          id={`acciones-btn-${imagen?.id}`}
-          className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-          onClick={() => setIsDropup(!isDropup)}
-        >
-          <More className="w-5 h-5 inline fill-black" />
-        </button>
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${imagen?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -501,7 +548,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar imagen</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -558,6 +605,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             setInput(e.target.value);
             setTempInput(e.target.value);
           }}
+          required
         />
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -581,12 +629,22 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => {
+                closeModal();
+                resetSearch();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  selectedSearchType.label?.startsWith("Seleccionar"),
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  true,
+              })}
+            >
               Buscar
             </button>
           </div>
@@ -799,7 +857,12 @@ export default function ImagesDataDisplay() {
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("ADD");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.crear.imagen
+      ? "ADD"
+      : "SEARCH"
+  );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -952,7 +1015,7 @@ export default function ImagesDataDisplay() {
       <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span
               onClick={resetSearchCount}
               className="text-[#2096ed] cursor-pointer"
@@ -977,12 +1040,23 @@ export default function ImagesDataDisplay() {
               </button>
             ) : null}
             {action === "SEARCH" ? (
-              <button
-                onClick={() => setIsSearch(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Buscar imagen
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setIsSearch(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Buscar imagen
+                </button>
+              </>
             ) : null}
             <button
               id="acciones-btn"

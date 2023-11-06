@@ -25,6 +25,8 @@ import session from "../../utils/session";
 import permissions from "../../utils/permissions";
 import { useElementSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
+import clsx from "clsx";
+import { useFunctionStore } from "../../store/functionStore";
 
 function EditModal({
   isOpen,
@@ -37,9 +39,17 @@ function EditModal({
   const [categories, setCategories] = useState<Categoría[]>([]);
   const [formData, setFormData] = useState<Elemento>(elemento!);
   const [selectedCategory, setSelectedCategory] = useState<Selected>({
-    value: formData.categoría_id,
-    label: formData.categoría?.nombre,
+    value: elemento?.categoría_id,
+    label: elemento?.categoría?.nombre,
   });
+
+  const resetFormData = () => {
+    setFormData(elemento!);
+    setSelectedCategory({
+      value: elemento?.categoría_id,
+      label: elemento?.categoría?.nombre,
+    });
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -85,13 +95,13 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded shadow scrollbar-none text-base"
+      className="w-2/5 h-fit rounded shadow scrollbar-none text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar elemento</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -113,18 +123,25 @@ function EditModal({
         }}
       >
         <div className="flex gap-2">
-          <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            placeholder="Nombre*"
-            value={formData.nombre}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-          />
+          <div className="w-2/4">
+            <input
+              type="text"
+              placeholder="Nombre*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  nombre: e.target.value,
+                });
+              }}
+              value={formData.nombre}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^.{2,}$"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 2 caracteres
+            </span>
+          </div>
           <div className="relative w-2/4">
             {categories.length > 0 && (
               <SelectWithSearch
@@ -191,27 +208,37 @@ function EditModal({
             )}
           </div>
         </div>
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Descripción"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción || ""}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              resetFormData();
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -301,7 +328,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Añadir elemento</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -319,19 +346,25 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         }}
       >
         <div className="flex gap-2">
-          <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            placeholder="Nombre*"
-            value={formData.nombre}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            required
-          />
+          <div className="w-2/4">
+            <input
+              type="text"
+              placeholder="Nombre*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  nombre: e.target.value,
+                });
+              }}
+              value={formData.nombre}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^.{2,}$"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 2 caracteres
+            </span>
+          </div>
           <div className="relative w-2/4">
             {categories.length > 0 && (
               <SelectWithSearch
@@ -398,18 +431,25 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             )}
           </div>
         </div>
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Descripción"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción || ""}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
@@ -418,7 +458,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button
+            className={clsx({
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                !selectedCategory.label?.startsWith("Seleccionar"),
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedCategory.label?.startsWith("Seleccionar"),
+            })}
+          >
             Completar
           </button>
         </div>
@@ -518,9 +565,23 @@ function DataRow({ elemento, setOperationAsCompleted }: DataRowProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.elemento
+      ? "EDIT"
+      : permissions.find()?.eliminar.elemento
+      ? "DELETE"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction =
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+    permissions.find()?.editar.elemento
+      ? true
+      : permissions.find()?.eliminar.elemento
+      ? true
+      : false;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -546,7 +607,11 @@ function DataRow({ elemento, setOperationAsCompleted }: DataRowProps) {
         {elemento?.nombre}
       </td>
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
-        {elemento?.descripción}
+        {elemento?.descripción
+          ? elemento.descripción !== ""
+            ? elemento.descripción
+            : "N/A"
+          : "N/A"}
       </td>
       <td className="px-6 py-2 border border-slate-300">
         {" "}
@@ -568,7 +633,7 @@ function DataRow({ elemento, setOperationAsCompleted }: DataRowProps) {
       </td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+        className="px-6 py-3 border border-slate-300 w-[205px] relative"
       >
         {action === "EDIT" && (
           <>
@@ -636,17 +701,23 @@ function DataRow({ elemento, setOperationAsCompleted }: DataRowProps) {
             right={
               ref?.current?.getBoundingClientRect().left! +
               window.scrollX -
-              1085
+              1060
             }
           />
         )}
-        <button
-          id={`acciones-btn-${elemento?.id}`}
-          className="bg-gray-300 border right-4 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-          onClick={() => setIsDropup(!isDropup)}
-        >
-          <More className="w-5 h-5 inline fill-black" />
-        </button>
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${elemento?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -986,7 +1057,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar elemento</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -1038,6 +1109,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               setInput(e.target.value);
               setTempInput(e.target.value);
             }}
+            required
           />
         ) : null}
         {selectedSearchType.value === "CATEGORÍA" ? (
@@ -1130,12 +1202,24 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => {
+                closeModal();
+                resetSearch();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  selectedSearchType.label?.startsWith("Seleccionar") ||
+                  (selectedCategory.label?.startsWith("Seleccionar") &&
+                    selectedSearchType.value === "CATEGORÍA"),
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  true,
+              })}
+            >
               Buscar
             </button>
           </div>
@@ -1147,13 +1231,19 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 
 export default function ElementsDataDisplay() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [elements, setElements] = useState<Elemento[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("ADD");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.crear.elemento
+      ? "ADD"
+      : "SEARCH"
+  );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -1168,6 +1258,7 @@ export default function ElementsDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const resetAllSearchs = useFunctionStore((state) => state.resetAllSearchs);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -1190,7 +1281,7 @@ export default function ElementsDataDisplay() {
   };
 
   useEffect(() => {
-    if (searchCount === 0 || isOperationCompleted) {
+    if (searchCount === 0) {
       ElementService.getAll(Number(id), page, 8).then((data) => {
         if (data === false) {
           setNotFound(true);
@@ -1288,13 +1379,19 @@ export default function ElementsDataDisplay() {
       <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Clientes{" "}
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span
+              onClick={() => {
+                navigate("/clientes"), resetAllSearchs();
+              }}
+              className="hover:text-[#2096ed] cursor-pointer"
+            >
+              Clientes
+            </span>{" "}
             <Right className="w-3 h-3 inline" />{" "}
             <span className="text-[#2096ed] font-bold">{id}</span>{" "}
             <Right className="w-3 h-3 inline" />{" "}
-            <span className="text-[#2096ed]" onClick={resetSearchCount}>
-              Elementos
-            </span>
+            <span className="text-[#2096ed]">Elementos</span>
           </div>
           <div className="flex gap-2">
             {isDropup && (
@@ -1314,12 +1411,23 @@ export default function ElementsDataDisplay() {
               </button>
             ) : null}
             {action === "SEARCH" ? (
-              <button
-                onClick={() => setIsSearch(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Buscar elemento
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setIsSearch(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Buscar elemento
+                </button>
+              </>
             ) : null}
             <button
               id="acciones-btn"
@@ -1382,7 +1490,7 @@ export default function ElementsDataDisplay() {
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">
-                Elementos no encontrados
+                Ningún elemento encontrado
               </p>
               <p className="font-medium text text-center mt-1">
                 {searchCount === 0

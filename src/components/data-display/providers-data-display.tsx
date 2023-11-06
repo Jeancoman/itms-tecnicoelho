@@ -18,6 +18,10 @@ import Select from "../misc/select";
 import permissions from "../../utils/permissions";
 import session from "../../utils/session";
 import { useProviderSearchParamStore } from "../../store/searchParamStore";
+import clsx from "clsx";
+import { useSearchedStore } from "../../store/searchedStore";
+import ExportCSV from "../misc/export-to-cvs";
+import { format } from "date-fns";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const [documentType, setDocumentType] = useState<Selected>({
@@ -79,7 +83,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Añadir proveedor</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -102,20 +106,26 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           });
         }}
       >
-        <input
-          type="text"
-          placeholder="Nombre*"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          value={formData.nombre}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-          name="name"
-        />
+        <div className="w-full">
+          <input
+            type="text"
+            placeholder="Nombre*"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            value={formData.nombre}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
         <div className="flex gap-1">
           <div className="relative w-[20%]">
             <Select
@@ -144,43 +154,62 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               selected={documentType}
             />
           </div>
-          <input
-            type="text"
-            placeholder="Documento*"
+          <div className="w-[80%]">
+            <input
+              type="text"
+              placeholder="Documento"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  documento: e.target.value,
+                });
+              }}
+              value={formData.documento}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              pattern="^.{7,}$"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 7 caracteres
+            </span>
+          </div>
+        </div>
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Descripción"
             onChange={(e) => {
               setFormData({
                 ...formData,
-                documento: e.target.value,
+                descripción: e.target.value,
               });
             }}
-            value={formData.documento}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-[80%]"
+            value={formData.descripción}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
           />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
         </div>
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <input
-          type="tel"
-          placeholder="Telefono"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              telefono: e.target.value,
-            });
-          }}
-          value={formData.telefono}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <input
+            type="tel"
+            placeholder="Teléfono"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                telefono: e.target.value,
+              });
+            }}
+            value={formData.telefono}
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            pattern="^\+?(\d{1,3})?[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Formato de teléfono invalido
+          </span>
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
@@ -189,7 +218,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -215,6 +244,19 @@ function EditModal({
       ? proveedor?.documento?.slice(2)
       : proveedor?.documento,
   });
+
+  const resetFormData = () => {
+    setFormData({
+      ...proveedor!,
+      documento: proveedor?.documento?.startsWith("V")
+        ? proveedor?.documento?.slice(2)
+        : proveedor?.documento,
+    });
+    setDocumentType({
+      value: proveedor?.documento?.startsWith("V") ? "V" : "RIF",
+      label: proveedor?.documento?.startsWith("V") ? "V" : "RIF",
+    });
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -246,7 +288,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md text-base"
+      className="w-2/5 h-fit rounded-md shadow text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar proveedor</h1>
@@ -270,19 +312,26 @@ function EditModal({
           });
         }}
       >
-        <input
-          type="text"
-          placeholder="Nombre*"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          value={formData.nombre}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-        />
+        <div className="w-full">
+          <input
+            type="text"
+            placeholder="Nombre*"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            value={formData.nombre}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
         <div className="flex gap-1">
           <div className="relative w-[20%]">
             <Select
@@ -311,52 +360,74 @@ function EditModal({
               selected={documentType}
             />
           </div>
-          <input
-            type="text"
-            placeholder="Documento*"
+          <div className="w-[80%]">
+            <input
+              type="text"
+              placeholder="Documento"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  documento: e.target.value,
+                });
+              }}
+              value={formData.documento}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              pattern="^.{7,}$"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 7 caracteres
+            </span>
+          </div>
+        </div>
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Descripción"
             onChange={(e) => {
               setFormData({
                 ...formData,
-                documento: e.target.value,
+                descripción: e.target.value,
               });
             }}
-            value={formData.documento || ""}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-[80%]"
+            value={formData.descripción || ""}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
           />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
         </div>
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <input
-          type="tel"
-          placeholder="Telefono"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              telefono: e.target.value,
-            });
-          }}
-          value={formData.telefono}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <input
+            type="tel"
+            placeholder="Teléfono"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                telefono: e.target.value,
+              });
+            }}
+            value={formData.telefono}
+            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            pattern="^\+?(\d{1,3})?[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Formato de teléfono invalido
+          </span>
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              resetFormData();
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -403,7 +474,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow text-base"
+      className="w-2/5 h-fit rounded-xl shadow text-base font-normal"
     >
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -473,6 +544,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   const incrementSearchCount = useProviderSearchParamStore(
     (state) => state.incrementSearchCount
   );
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
 
   const resetSearch = () => {
     setTempInput("");
@@ -481,6 +553,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: "",
       label: "Seleccionar parametro de busqueda",
     });
+    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -521,7 +594,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar proveedor</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -529,6 +602,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             resetSearch();
             incrementSearchCount();
             closeModal();
+            setWasSearch(true);
           }
         }}
       >
@@ -577,6 +651,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             setInput(e.target.value);
             setTempInput(e.target.value);
           }}
+          required
         />
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -600,12 +675,22 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => {
+                closeModal();
+                resetSearch();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  selectedSearchType.label?.startsWith("Seleccionar"),
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  true,
+              })}
+            >
               Buscar
             </button>
           </div>
@@ -615,12 +700,236 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
+function ReportModal({ isOpen, closeModal }: ModalProps) {
+  const [param, setParam] = useState("");
+  const ref = useRef<HTMLDialogElement>(null);
+  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
+    value: "",
+    label: "Seleccionar parametro de reporte",
+  });
+
+  const resetSearch = () => {
+    setParam("");
+    setSelectedSearchType({
+      value: "",
+      label: "Seleccionar parametro de reporte",
+    });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          resetSearch();
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      resetSearch();
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-1/3 min-h-[200px] h-fit rounded-md shadow text-base"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Generar reporte</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (selectedSearchType.value !== "") {
+            if (param === "TODOS") {
+              const loadingToast = toast.loading("Generando reporte...");
+              ProviderService.getAll(1, 100000).then((data) => {
+                if (data === false) {
+                  toast.dismiss(loadingToast);
+                  toast.error("Noy datos para reportar.");
+                } else {
+                  ExportCSV.handleDownload(
+                    data.rows.map((venta) => {
+                      return {
+                        "Nombre del proveedor": venta?.nombre,
+                        "Documento del proveedor": venta?.documento,
+                        "Telefono del proveedor": venta?.telefono,
+                        "Fecha de registro": format(
+                          new Date(venta?.registrado),
+                          "dd/MM/yyyy"
+                        ),
+                      };
+                    }),
+                    "reporte-de-proveedores-" + new Date().toISOString()
+                  );
+                  toast.dismiss(loadingToast);
+                }
+                closeModal();
+              });
+            } else if (param === "TOTAL") {
+              const loadingToast = toast.loading("Generando reporte...");
+              ProviderService.orderByTotal(1, 100000).then((data) => {
+                if (data === false) {
+                  toast.dismiss(loadingToast);
+                  toast.error("Error obteniendo datos.");
+                } else {
+                  ExportCSV.handleDownload(
+                    data.rows
+                      .filter((venta) => venta.compra_cantidad > 0)
+                      .map((venta) => {
+                        return {
+                          "Nombre del proveedor": venta?.nombre,
+                          "Documento del proveedor": venta?.documento,
+                          "Telefono del proveedor": venta?.telefono,
+                          "Fecha de registro": format(
+                            new Date(venta?.registrado),
+                            "dd/MM/yyyy"
+                          ),
+                          "Total de compras": venta?.total_compras,
+                        };
+                      }),
+                    "reporte-de-proveedores-" + new Date().toISOString()
+                  );
+                  toast.dismiss(loadingToast);
+                }
+                closeModal();
+              });
+            } else if (param === "CANTIDAD") {
+              const loadingToast = toast.loading("Generando reporte...");
+              ProviderService.orderByCantidad(1, 10000).then((data) => {
+                if (data === false) {
+                  toast.dismiss(loadingToast);
+                  toast.error("Error obteniendo datos.");
+                } else {
+                  ExportCSV.handleDownload(
+                    data.rows.map((venta: any) => {
+                      return {
+                        "Nombre del proveedor": venta?.nombre,
+                        "Documento del proveedor": venta?.documento,
+                        "Telefono del proveedor": venta?.telefono,
+                        "Fecha de registro": format(
+                          new Date(venta?.registrado),
+                          "dd/MM/yyyy"
+                        ),
+                        "Cantidad de compras": venta?.cantidad_compras,
+                      };
+                    }),
+                    "reporte-de-proveedores-" + new Date().toISOString()
+                  );
+                  toast.dismiss(loadingToast);
+                }
+                closeModal();
+              });
+            }
+          }
+          closeModal();
+        }}
+      >
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setParam(selectedSearchType.value as string);
+            }}
+            options={[
+              {
+                value: "TODOS",
+                label: "Todos los proveedores",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "TOTAL",
+                label: "Total de compras",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "CANTIDAD",
+                label: "Cantidad de compras",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedSearchType}
+          />
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              closeModal();
+              resetSearch();
+            }}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cancelar
+          </button>
+          <button
+            className={clsx({
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedSearchType.label?.startsWith("Seleccionar"),
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                true,
+            })}
+          >
+            Generar
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
 function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.proveedor
+      ? "EDIT"
+      : permissions.find()?.eliminar.proveedor
+      ? "DELETE"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction =
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+    permissions.find()?.editar.proveedor
+      ? true
+      : permissions.find()?.eliminar.proveedor
+      ? true
+      : false;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -664,7 +973,15 @@ function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
             : "N/A"
           : "N/A"}
       </td>
-      <td ref={ref} className="px-6 py-3 border border-slate-300 w-[200px] relative">
+      <td className="px-6 py-4 border border-slate-300">
+        {proveedor?.registrado
+          ? format(new Date(proveedor.registrado), "dd/MM/yyyy")
+          : "Formateando..."}
+      </td>
+      <td
+        ref={ref}
+        className="px-6 py-3 border border-slate-300 w-[210px] relative"
+      >
         {action === "EDIT" && (
           <>
             <button
@@ -717,17 +1034,23 @@ function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
             right={
               ref?.current?.getBoundingClientRect().left! +
               window.scrollX -
-              1085
+              1060
             }
           />
         )}
-        <button
-          id={`acciones-btn-${proveedor?.id}`}
-          className="bg-gray-300 border right-4 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-          onClick={() => setIsDropup(!isDropup)}
-        >
-          <More className="w-5 h-5 inline fill-black" />
-        </button>
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${proveedor?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -821,6 +1144,29 @@ function Dropup({ close, selectAction }: DropupProps) {
             "
         >
           Buscar proveedor
+        </div>
+      </li>
+      <li>
+        <div
+          onClick={() => {
+            selectAction("REPORT");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Generar reporte
         </div>
       </li>
     </ul>
@@ -937,7 +1283,12 @@ export default function ProvidersDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("ADD");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.crear.proveedor
+      ? "ADD"
+      : "SEARCH"
+  );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -948,6 +1299,9 @@ export default function ProvidersDataDisplay() {
   const input = useProviderSearchParamStore((state) => state.input);
   const param = useProviderSearchParamStore((state) => state.param);
   const isPrecise = useProviderSearchParamStore((state) => state.isPrecise);
+  const wasSearch = useSearchedStore((state) => state.wasSearch);
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const [isReport, setIsReport] = useState(false);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -976,17 +1330,19 @@ export default function ProvidersDataDisplay() {
           setNotFound(true);
           setProviders([]);
           setLoading(false);
+          setWasSearch(false);
         } else {
           setProviders(data.rows);
           setPages(data.pages);
           setCurrent(data.current);
           setLoading(false);
           setNotFound(false);
+          setWasSearch(true);
         }
         setIsOperationCompleted(false);
       });
     } else {
-      if (isPrecise) {
+      if (isPrecise && wasSearch) {
         if (param === "NOMBRE") {
           ProviderService.getByExactNombre(input, page, 8).then((data) => {
             if (data === false) {
@@ -1063,7 +1419,7 @@ export default function ProvidersDataDisplay() {
       <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span
               onClick={resetSearchCount}
               className="text-[#2096ed] cursor-pointer"
@@ -1089,11 +1445,30 @@ export default function ProvidersDataDisplay() {
               </button>
             ) : null}
             {action === "SEARCH" ? (
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setIsSearch(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Buscar proveedor
+                </button>
+              </>
+            ) : null}
+            {action === "REPORT" ? (
               <button
-                onClick={() => setIsSearch(true)}
+                onClick={() => setIsReport(true)}
                 className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
               >
-                Buscar proveedor
+                Generar reporte
               </button>
             ) : null}
             <button
@@ -1126,7 +1501,10 @@ export default function ProvidersDataDisplay() {
                     Descripción
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Telefono
+                    Teléfono
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Registrado
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
@@ -1215,6 +1593,13 @@ export default function ProvidersDataDisplay() {
       <SearchModal
         isOpen={isSearch}
         closeModal={() => setIsSearch(false)}
+        setOperationAsCompleted={function (): void {
+          throw new Error("Function not implemented.");
+        }}
+      />
+      <ReportModal
+        isOpen={isReport}
+        closeModal={() => setIsReport(false)}
         setOperationAsCompleted={function (): void {
           throw new Error("Function not implemented.");
         }}

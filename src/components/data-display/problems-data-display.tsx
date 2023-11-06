@@ -17,7 +17,7 @@ import {
   Mensaje,
 } from "../../types";
 import ProblemService from "../../services/problem-service";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import Select from "../misc/select";
 import { format } from "date-fns";
@@ -30,6 +30,8 @@ import MessageSenderService from "../../services/message-sender-service";
 import TicketService from "../../services/ticket-service";
 import { useProblemSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
+import clsx from "clsx";
+import { useFunctionStore } from "../../store/functionStore";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id } = useParams();
@@ -102,7 +104,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Añadir problema</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -194,11 +196,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           });
         }}
       >
-        <div className="flex gap-4">
+        <div>
           <input
             type="text"
-            name="name"
-            placeholder="Nombre*"
             onChange={(e) => {
               setFormData({
                 ...formData,
@@ -206,88 +206,116 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               });
             }}
             value={formData.nombre}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4 font-medium"
+            placeholder="Nombre*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
           />
-          <div className="relative w-2/4">
-            <Select
-              onChange={() => {
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setFormData({
+                ...formData,
+                prioridad: selectedPriority.value as ProblemaPrioridad,
+              });
+            }}
+            options={[
+              {
+                value: "BAJA",
+                label: "Baja",
+                onClick: (value, label) => {
+                  setSelectedPriority({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "MEDIA",
+                label: "Media",
+                onClick: (value, label) => {
+                  setSelectedPriority({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "ALTA",
+                label: "Alta",
+                onClick: (value, label) => {
+                  setSelectedPriority({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedPriority}
+          />
+        </div>
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Descripción"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
+        <div className="flex gap-4">
+          <div className="w-2/4">
+            <textarea
+              rows={3}
+              placeholder="Causa"
+              onChange={(e) => {
                 setFormData({
                   ...formData,
-                  prioridad: selectedPriority.value as ProblemaPrioridad,
+                  causa: e.target.value,
                 });
               }}
-              options={[
-                {
-                  value: "BAJA",
-                  label: "Baja",
-                  onClick: (value, label) => {
-                    setSelectedPriority({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "MEDIA",
-                  label: "Media",
-                  onClick: (value, label) => {
-                    setSelectedPriority({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "ALTA",
-                  label: "Alta",
-                  onClick: (value, label) => {
-                    setSelectedPriority({
-                      value,
-                      label,
-                    });
-                  },
-                },
-              ]}
-              selected={selectedPriority}
+              value={formData.causa}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
             />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
+          </div>
+          <div className="w-2/4">
+            <textarea
+              rows={3}
+              placeholder="Solución"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  solución: e.target.value,
+                });
+              }}
+              value={formData.solución}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
           </div>
         </div>
-        <textarea
-          rows={3}
-          placeholder="Descripción*"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] font-medium"
-        />
-        <textarea
-          rows={3}
-          placeholder="Causa"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              causa: e.target.value,
-            });
-          }}
-          value={formData.causa}
-          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] font-medium"
-        />
-        <textarea
-          rows={3}
-          placeholder="Solución"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              solución: e.target.value,
-            });
-          }}
-          value={formData.solución}
-          className="border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 font-medium"
-        />
         <div className="flex gap-2 justify-end">
           <button
             type="button"
@@ -296,7 +324,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button
+            className={clsx({
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                !selectedPriority.label?.startsWith("Seleccionar"),
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedPriority.label?.startsWith("Seleccionar"),
+            })}
+          >
             Completar
           </button>
         </div>
@@ -324,9 +359,26 @@ function EditModal({
         : "Alta",
   });
   const [selectedState, setSelectedState] = useState<Selected>({
-    value: formData.estado,
-    label: formData.estado === "PENDIENTE" ? "Pendiente" : "Resuelto",
+    value: problema?.estado,
+    label: problema?.estado === "PENDIENTE" ? "Pendiente" : "Resuelto",
   });
+
+  const resetFormData = () => {
+    setFormData(problema!);
+    setSelectedPriority({
+      value: problema?.prioridad,
+      label:
+        problema?.prioridad === "BAJA"
+          ? "Baja "
+          : problema?.prioridad === "MEDIA"
+          ? "Media"
+          : "Alta",
+    });
+    setSelectedState({
+      value: problema?.estado,
+      label: problema?.estado === "PENDIENTE" ? "Pendiente" : "Resuelto",
+    });
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -358,13 +410,13 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/4 h-fit rounded-md shadow-md scrollbar-none text-base"
+      className="w-2/4 h-fit rounded-md shadow-md scrollbar-none text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar problema</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -460,11 +512,9 @@ function EditModal({
           );
         }}
       >
-        <div className="flex gap-4">
+        <div>
           <input
             type="text"
-            name="name"
-            placeholder="Nombre*"
             onChange={(e) => {
               setFormData({
                 ...formData,
@@ -472,8 +522,17 @@ function EditModal({
               });
             }}
             value={formData.nombre}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4 font-medium"
+            placeholder="Nombre*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
           />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
+        <div className="flex gap-4">
           <div className="relative w-2/4">
             <Select
               onChange={() => {
@@ -517,89 +576,130 @@ function EditModal({
               selected={selectedPriority}
             />
           </div>
-        </div>
-        {problema?.estado === "PENDIENTE" ? (
-          <div className="relative">
-            <Select
-              options={[
-                {
-                  value: "RESUELTO",
-                  label: "Resuelto",
-                  onClick: (value, label) => {
-                    setSelectedState({
-                      value,
-                      label,
-                    });
+          {problema?.estado === "PENDIENTE" ? (
+            <div className="relative w-2/4">
+              <Select
+                options={[
+                  {
+                    value: "PENDIENTE",
+                    label: "Pendiente",
+                    onClick: (value, label) => {
+                      setSelectedState({
+                        value,
+                        label,
+                      });
+                    },
                   },
-                },
-              ]}
-              selected={selectedState}
-              onChange={() => {
+                  {
+                    value: "RESUELTO",
+                    label: "Resuelto",
+                    onClick: (value, label) => {
+                      setSelectedState({
+                        value,
+                        label,
+                      });
+                    },
+                  },
+                ]}
+                selected={selectedState}
+                onChange={() => {
+                  setFormData({
+                    ...formData,
+                    estado: selectedState.value as ProblemaEstado,
+                  });
+                }}
+              />
+            </div>
+          ) : null}
+          {problema?.estado === "RESUELTO" ? (
+            <div className="relative w-2/4">
+              <select
+                className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                value={0}
+                disabled={true}
+              >
+                <option value={0}>Resuelto</option>
+              </select>
+              <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+            </div>
+          ) : null}
+        </div>
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Descripción"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
+        <div className="flex gap-4">
+          <div className="w-2/4">
+            <textarea
+              rows={4}
+              placeholder="Causa"
+              onChange={(e) => {
                 setFormData({
                   ...formData,
-                  estado: selectedState.value as ProblemaEstado,
+                  causa: e.target.value,
                 });
               }}
+              value={formData.causa}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
             />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
           </div>
-        ) : null}
-        {problema?.estado === "RESUELTO" ? (
-          <div className="relative">
-            <select
-              className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-              value={0}
-              disabled={true}
-            >
-              <option value={0}>Resuelto</option>
-            </select>
-            <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+          <div className="w-2/4">
+            <textarea
+              rows={4}
+              placeholder="Solución"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  solución: e.target.value,
+                });
+              }}
+              value={formData.solución}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
           </div>
-        ) : null}
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] font-medium"
-        />
-        <textarea
-          rows={3}
-          placeholder="Causa"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              causa: e.target.value,
-            });
-          }}
-          value={formData.causa}
-          className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] font-medium"
-        />
-        <textarea
-          rows={3}
-          placeholder="Solución"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              solución: e.target.value,
-            });
-          }}
-          value={formData.solución}
-          className="border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 font-medium"
-        />
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              resetFormData();
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button
+            className={clsx({
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                !selectedPriority.label?.startsWith("Seleccionar"),
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedPriority.label?.startsWith("Seleccionar"),
+            })}
+          >
             Completar
           </button>
         </div>
@@ -770,9 +870,23 @@ function DeleteModal({
 function DataRow({ setOperationAsCompleted, problema }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.problema
+      ? "EDIT"
+      : permissions.find()?.eliminar.problema
+      ? "DELETE"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction =
+  session.find()?.usuario.rol === "ADMINISTRADOR" ||
+  permissions.find()?.editar.problema
+    ? true
+    : permissions.find()?.eliminar.problema
+    ? true
+    : false;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -891,13 +1005,19 @@ function DataRow({ setOperationAsCompleted, problema }: DataRowProps) {
             }
           />
         )}
-        <button
-          id={`acciones-btn-${problema?.id}`}
-          className="bg-gray-300 border right-4 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-          onClick={() => setIsDropup(!isDropup)}
-        >
-          <More className="w-5 h-5 inline fill-black" />
-        </button>
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${problema?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -1195,7 +1315,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar problema</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -1314,6 +1434,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 setInput(e.target.value);
                 setTempInput(e.target.value);
               }}
+              required
             />
             <input
               type="date"
@@ -1324,18 +1445,33 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 setSecondInput(e.target.value);
                 setSecondTempInput(e.target.value);
               }}
+              required
             />
           </>
         ) : null}
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              resetSearch();
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button
+            className={clsx({
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedSearchType.label?.startsWith("Seleccionar") ||
+                (selectedFecha.label?.startsWith("Seleccionar") &&
+                  selectedSearchType.value !== "ESTADO") ||
+                (selectedState.label?.startsWith("Seleccionar") &&
+                  selectedSearchType.value === "ESTADO"),
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                true,
+            })}
+          >
             Buscar
           </button>
         </div>
@@ -1346,13 +1482,19 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 
 export default function ProblemsDataDisplay() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [problems, setProblems] = useState<Problema[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("ADD");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.crear.problema
+      ? "ADD"
+      : "SEARCH"
+  );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -1366,6 +1508,7 @@ export default function ProblemsDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const resetAllSearchs = useFunctionStore((state) => state.resetAllSearchs);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -1388,7 +1531,7 @@ export default function ProblemsDataDisplay() {
   };
 
   useEffect(() => {
-    if (searchCount === 0 || isOperationCompleted) {
+    if (searchCount === 0) {
       ProblemService.getAll(Number(id), page, 8).then((data) => {
         if (data === false) {
           setNotFound(true);
@@ -1484,13 +1627,19 @@ export default function ProblemsDataDisplay() {
       <div className="absolute w-full h-full px-8 py-5">
         <nav className="flex justify-between items-center text-slate-600 select-none">
           <div className="font-medium">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Tickets{" "}
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span
+              onClick={() => {
+                navigate("/tickets"), resetAllSearchs();
+              }}
+              className="hover:text-[#2096ed] cursor-pointer"
+            >
+              Tickets
+            </span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="font-bold text-[#2096ed]">{id}</span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]" onClick={resetSearchCount}>
-              Problemas
-            </span>
+            <span className="text-[#2096ed]">Problemas</span>
           </div>
           <div className="flex gap-2">
             {isDropup && (
@@ -1510,12 +1659,23 @@ export default function ProblemsDataDisplay() {
               </button>
             ) : null}
             {action === "SEARCH" ? (
-              <button
-                onClick={() => setIsSearch(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Buscar problema
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setIsSearch(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Buscar problema
+                </button>
+              </>
             ) : null}
             <button
               id="acciones-btn"

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
 import { ReactComponent as More } from "/src/assets/more_vert.svg";
@@ -23,6 +23,8 @@ import { useSearchedStore } from "../../store/searchedStore";
 import { ReactComponent as On } from "/src/assets/visibility.svg";
 import { ReactComponent as Off } from "/src/assets/visibility_off.svg";
 import session from "../../utils/session";
+import debounce from "lodash.debounce";
+import clsx from "clsx";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const [last, setLast] = useState(false);
@@ -41,9 +43,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       lista: [],
     },
   });
-
   const [permisos, setPermisos] = useState<Permisos>();
   const [visible, setVisible] = useState(false);
+  const [isTaken, setIsTaken] = useState(false);
+  const [stillWriting, setStillWriting] = useState(false);
+  const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
   let iniciales: Permisos = {
     ver: {
@@ -209,6 +213,30 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     };
   };
 
+  const checkUsername = useCallback(
+    debounce(async (username) => {
+      if (username.length >= 3) {
+        const exist = await UserService.getByExactNombreUsuario(
+          username,
+          1,
+          100
+        );
+        if (exist) {
+          setIsTaken(true);
+          setStillWriting(false);
+        } else {
+          setIsTaken(false);
+          setStillWriting(false);
+        }
+      }
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    checkUsername(formData.nombreUsuario);
+  }, [formData.nombreUsuario]);
+
   useEffect(() => {
     if (isOpen) {
       ref.current?.showModal();
@@ -247,7 +275,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Añadir usuario</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -294,46 +322,78 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         ) : (
           <>
             <div className="flex gap-4 w-full">
-              <input
-                type="text"
-                placeholder="Nombre*"
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    nombre: e.target.value,
-                  });
-                }}
-                value={formData.nombre}
-                className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4 border-slate-300"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Apellido*"
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    apellido: e.target.value,
-                  });
-                }}
-                value={formData.apellido}
-                className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4 border-slate-300"
-                required
-              />
+              <div className="w-2/4">
+                <input
+                  type="text"
+                  placeholder="Nombre*"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      nombre: e.target.value,
+                    });
+                  }}
+                  value={formData.nombre}
+                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                  required
+                  pattern="^.{2,}$"
+                />
+                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                  Minimo 2 caracteres
+                </span>
+              </div>
+              <div className="w-2/4">
+                <input
+                  type="text"
+                  placeholder="Apellido"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      apellido: e.target.value,
+                    });
+                  }}
+                  value={formData.apellido}
+                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                  pattern="^.{2,}$"
+                />
+                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                  Minimo 2 caracteres
+                </span>
+              </div>
             </div>
             <div className="flex gap-4">
-              <input
-                type="text"
-                placeholder="Nombre de usuario*"
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    nombreUsuario: e.target.value,
-                  });
-                }}
-                value={formData.nombreUsuario}
-                className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4 border-slate-300"
-              />
+              <div className="w-2/4">
+                <input
+                  type="text"
+                  placeholder="Nombre de usuario*"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      nombreUsuario: e.target.value.toLowerCase(),
+                    });
+                    setStillWriting(true);
+                  }}
+                  value={formData.nombreUsuario}
+                  className={clsx({
+                    ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                      !isTaken,
+                    ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                      isTaken,
+                  })}
+                  required
+                  minLength={3}
+                />
+                <span
+                  className={clsx({
+                    ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                      !isTaken,
+                    ["mt-2 text-sm text-red-500 block"]: isTaken,
+                  })}
+                >
+                  {isTaken
+                    ? "El nombre de usuario ya existe"
+                    : "Minimo 2 caracteres"}
+                </span>
+              </div>
               <div className="relative w-2/4">
                 <Select
                   onChange={() => {
@@ -379,11 +439,16 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   })
                 }
                 value={formData.contraseña}
-                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
-                required
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 name="password"
-                minLength={1}
+                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                required
+                autoComplete="new-password"
               />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Contraseña debe tener minimo 8 caracteres, contener una letra
+                mayuscula, una letra minúscula, un número y un carácter especial
+              </span>
               {visible ? (
                 <On
                   onClick={() => setVisible(false)}
@@ -429,7 +494,19 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  !isTaken,
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  isTaken ||
+                  stillWriting ||
+                  formData?.nombre.length < 2 ||
+                  formData?.nombreUsuario.length < 3 ||
+                  selectedRole.label?.startsWith("Seleccionar") || 
+                  !(pattern.test(formData?.contraseña || "")),
+              })}
+            >
               Completar
             </button>
           </div>
@@ -447,7 +524,7 @@ function EditModal({
 }: ModalProps) {
   const [last, setLast] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
-  const [selectedRole, _setSelectedRole] = useState<Selected>({
+  const [selectedRole, setSelectedRole] = useState<Selected>({
     value: usuario?.rol,
     label: usuario?.rol === "ADMINISTRADOR" ? "Administrador" : "Empleado",
   });
@@ -456,9 +533,47 @@ function EditModal({
     contraseña: "",
   });
   const [permisos, setPermisos] = useState<Permisos | undefined>(
-    formData.permiso!
+    usuario?.permiso!
   );
   const [visible, setVisible] = useState(false);
+  const [isTaken, setIsTaken] = useState(false);
+  const [stillWriting, setStillWriting] = useState(false);
+
+  const resetFormData = () => {
+    setFormData({
+      ...usuario!,
+      contraseña: "",
+    });
+    setSelectedRole({
+      value: usuario?.rol,
+      label: usuario?.rol === "ADMINISTRADOR" ? "Administrador" : "Empleado",
+    });
+    setPermisos(usuario?.permiso!);
+  };
+
+  const checkUsername = useCallback(
+    debounce(async (username) => {
+      if (username.length >= 3) {
+        const exist = await UserService.getByExactNombreUsuario(
+          username,
+          1,
+          100
+        );
+        if (exist && usuario?.nombreUsuario !== username) {
+          setIsTaken(true);
+          setStillWriting(false);
+        } else {
+          setIsTaken(false);
+          setStillWriting(false);
+        }
+      }
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    checkUsername(formData.nombreUsuario);
+  }, [formData.nombreUsuario]);
 
   useEffect(() => {
     if (isOpen) {
@@ -490,7 +605,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md text-base"
+      className="w-2/5 h-fit rounded-md shadow-md text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -501,7 +616,7 @@ function EditModal({
         </h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -532,44 +647,78 @@ function EditModal({
         ) : (
           <>
             <div className="flex gap-4 w-full">
-              <input
-                type="text"
-                placeholder="Nombre"
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    nombre: e.target.value,
-                  });
-                }}
-                value={formData.nombre}
-                className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4 border-slate-300"
-              />
-              <input
-                type="text"
-                placeholder="Apellido"
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    apellido: e.target.value,
-                  });
-                }}
-                value={formData.apellido}
-                className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4 border-slate-300"
-              />
+              <div className="w-2/4">
+                <input
+                  type="text"
+                  placeholder="Nombre*"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      nombre: e.target.value,
+                    });
+                  }}
+                  value={formData.nombre}
+                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                  required
+                  pattern="^.{2,}$"
+                />
+                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                  Minimo 2 caracteres
+                </span>
+              </div>
+              <div className="w-2/4">
+                <input
+                  type="text"
+                  placeholder="Apellido"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      apellido: e.target.value,
+                    });
+                  }}
+                  value={formData.apellido}
+                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                  pattern="^.{2,}$"
+                />
+                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                  Minimo 2 caracteres
+                </span>
+              </div>
             </div>
             <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Nombre de usuario*"
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    nombreUsuario: e.target.value,
-                  });
-                }}
-                value={formData.nombreUsuario}
-                className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4 border-slate-300"
-              />
+              <div className="w-2/4">
+                <input
+                  type="text"
+                  placeholder="Nombre de usuario*"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      nombreUsuario: e.target.value.toLowerCase(),
+                    });
+                    setStillWriting(true);
+                  }}
+                  value={formData.nombreUsuario}
+                  className={clsx({
+                    ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                      !isTaken,
+                    ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                      isTaken,
+                  })}
+                  required
+                  minLength={3}
+                />
+                <span
+                  className={clsx({
+                    ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                      !isTaken,
+                    ["mt-2 text-sm text-red-500 block"]: isTaken,
+                  })}
+                >
+                  {isTaken
+                    ? "El nombre de usuario ya existe"
+                    : "Minimo 3 caracteres"}
+                </span>
+              </div>
               <div className="relative w-2/4">
                 <select
                   className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
@@ -594,10 +743,15 @@ function EditModal({
                   })
                 }
                 value={formData.contraseña}
-                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 name="password"
-                minLength={1}
+                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                autoComplete="new-password"
               />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Contraseña debe tener minimo 8 caracteres, contener una letra
+                mayuscula, una letra minúscula, un número y un carácter especial
+              </span>
               {visible ? (
                 <On
                   onClick={() => setVisible(false)}
@@ -638,12 +792,25 @@ function EditModal({
           <div className="flex gap-2 justify-self-end justify-end">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => {
+                closeModal();
+                resetFormData();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  !isTaken,
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  isTaken ||
+                  stillWriting ||
+                  formData?.nombre.length < 2 ||
+                  formData?.nombreUsuario.length < 3,
+              })}
+            >
               Completar
             </button>
           </div>
@@ -742,7 +909,7 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [action, setAction] = useState<`${Action}`>("EDIT");
   const [isDropup, setIsDropup] = useState(false);
-  const ref = useRef<HTMLTableCellElement>(null)
+  const ref = useRef<HTMLTableCellElement>(null);
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -764,8 +931,9 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
       >
         {usuario?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">{usuario?.nombre}</td>
-      <td className="px-6 py-4 border border-slate-300">{usuario?.apellido}</td>
+      <td className="px-6 py-4 border border-slate-300">
+        {usuario?.nombre} {usuario?.apellido}
+      </td>
       <td className="px-6 py-2 border border-slate-300">
         <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg">
           {usuario?.nombreUsuario}{" "}
@@ -812,8 +980,8 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
                 />
               </>
             ) : (
-              <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
-                Sin permiso
+              <button className="font-medium text-[#2096ed] dark:text-blue-500 line-through cursor-default">
+                Editar usuario
               </button>
             )}
           </>
@@ -845,8 +1013,8 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
                 />
               </>
             ) : (
-              <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
-                Sin permiso
+              <button className="font-medium text-[#2096ed] dark:text-blue-500 line-through cursor-default">
+                Eliminar usuario
               </button>
             )}
           </>
@@ -861,9 +1029,12 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
             top={
               ref?.current?.getBoundingClientRect().top! +
               window.scrollY +
-              ref?.current?.getBoundingClientRect().height! - 15
+              ref?.current?.getBoundingClientRect().height! -
+              15
             }
-            right={ref?.current?.getBoundingClientRect().left! + window.scrollX + 45}
+            right={
+              ref?.current?.getBoundingClientRect().left! + window.scrollX + 45
+            }
           />
         )}
         <button
@@ -946,7 +1117,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar usuario</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -1015,6 +1186,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             setInput(e.target.value);
             setTempInput(e.target.value);
           }}
+          required
         />
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -1038,12 +1210,22 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => {
+                closeModal();
+                resetSearch();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  selectedSearchType.label?.startsWith("Seleccionar"),
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  true,
+              })}
+            >
               Buscar
             </button>
           </div>
@@ -1251,6 +1433,7 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
   useEffect(() => {
     onChange(permissions);
   }, [permissions]);
+
   return (
     <div className="max-h-[300px] overflow-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100 scrollbar-rounded-xl text-sm">
       <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
@@ -1362,6 +1545,115 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
           </label>
         </div>
       </div>
+      <div className="ml-5 mt-2 font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
+        Elementos
+      </div>
+      <div className="ml-10 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox111"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  elemento: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.elemento}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox111"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox112"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  elemento: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  elemento: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.elemento}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox112"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox113"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  elemento: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  elemento: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.elemento}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox113"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox114"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  elemento: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  elemento: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.elemento}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox114"
+          >
+            ELIMINAR
+          </label>
+        </div>
+      </div>
       <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
         Tickets
       </div>
@@ -1466,6 +1758,442 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
           <label
             className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
             htmlFor="checkbox8"
+          >
+            ELIMINAR
+          </label>
+        </div>
+      </div>
+      <div className="ml-5 mt-2 font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
+        Servicios
+      </div>
+      <div className="ml-10 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox1111"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  servicio: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.servicio}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox1111"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox1112"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  servicio: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  servicio: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.servicio}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox1112"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox1113"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  servicio: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  servicio: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.servicio}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox1113"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox1114"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  servicio: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  servicio: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.servicio}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox1114"
+          >
+            ELIMINAR
+          </label>
+        </div>
+      </div>
+      <div className="ml-10 mt-2 font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
+        Operaciones
+      </div>
+      <div className="ml-16 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox2111"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  operación: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.operación}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox2111"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox2112"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  operación: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  operación: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.operación}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox2112"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox2113"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  operación: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  operación: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.operación}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox2113"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox2114"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  operación: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  operación: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.operación}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox2114"
+          >
+            ELIMINAR
+          </label>
+        </div>
+      </div>
+      <div className="ml-5 mt-2 font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
+        Problemas
+      </div>
+      <div className="ml-10 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox3111"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  problema: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.problema}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox3111"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox3112"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  problema: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  problema: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.problema}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox3112"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox3113"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  problema: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  problema: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.problema}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox3113"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox3114"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  problema: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  problema: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.problema}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox3114"
+          >
+            ELIMINAR
+          </label>
+        </div>
+      </div>
+      <div className="ml-5 mt-2 font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
+        Mensajes
+      </div>
+      <div className="ml-10 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox5111"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  mensaje: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.mensaje}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox5111"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox5112"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  mensaje: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  mensaje: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.mensaje}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox5112"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox5113"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  mensaje: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  mensaje: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.mensaje}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox5113"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox5114"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  mensaje: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  mensaje: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.mensaje}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox5114"
           >
             ELIMINAR
           </label>
@@ -2125,6 +2853,115 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
           </label>
         </div>
       </div>
+      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
+        Galería
+      </div>
+      <div className="ml-5 mt-2 flex gap-4">
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox229"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  imagen: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.ver.imagen}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox229"
+          >
+            VER
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox230"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  imagen: true,
+                },
+                crear: {
+                  ...permissions.crear,
+                  imagen: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.crear.imagen}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox230"
+          >
+            CREAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox231"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  imagen: true,
+                },
+                editar: {
+                  ...permissions.editar,
+                  imagen: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.editar.imagen}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox231"
+          >
+            EDITAR
+          </label>
+        </div>
+        <div className="mb-[0.125rem] min-h-[1.5rem] block">
+          <input
+            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+            type="checkbox"
+            id="checkbox232"
+            onChange={(e) => {
+              setPermissions({
+                ...permissions,
+                ver: {
+                  ...permissions.ver,
+                  imagen: true,
+                },
+                eliminar: {
+                  ...permissions.eliminar,
+                  imagen: e.target.checked,
+                },
+              });
+            }}
+            checked={permissions.eliminar.imagen}
+          />
+          <label
+            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+            htmlFor="checkbox232"
+          >
+            ELIMINAR
+          </label>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2173,7 +3010,7 @@ export default function UsersDataDisplay() {
   };
 
   useEffect(() => {
-    if (searchCount === 0 || isOperationCompleted) {
+    if (searchCount === 0) {
       UserService.getAll(page, 7).then((data) => {
         if (data === false) {
           setNotFound(true);
@@ -2329,7 +3166,7 @@ export default function UsersDataDisplay() {
       <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span
               onClick={resetSearchCount}
               className="text-[#2096ed] cursor-pointer"
@@ -2355,12 +3192,23 @@ export default function UsersDataDisplay() {
               </button>
             ) : null}
             {action === "SEARCH" ? (
-              <button
-                onClick={() => setIsSearch(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Buscar usuario
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setIsSearch(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Buscar usuario
+                </button>
+              </>
             ) : null}
             <button
               id="acciones-btn"
@@ -2383,10 +3231,7 @@ export default function UsersDataDisplay() {
                     #
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Nombre
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Apellido
+                    Nombre completo
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Nombre de usuario

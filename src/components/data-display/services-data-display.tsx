@@ -33,6 +33,8 @@ import TicketService from "../../services/ticket-service";
 import MessageSenderService from "../../services/message-sender-service";
 import { useServiceSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
+import clsx from "clsx";
+import { useFunctionStore } from "../../store/functionStore";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id } = useParams();
@@ -52,6 +54,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     descripción: "",
     tipo: "TIENDA",
     estado: "PENDIENTE",
+    necesidades: "",
+    notas: "",
+    resultado: "",
     categoría_id: -1,
     ticket_id: Number(id),
   });
@@ -62,6 +67,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       descripción: "",
       tipo: "TIENDA",
       estado: "PENDIENTE",
+      necesidades: "",
+      notas: "",
+      resultado: "",
       categoría_id: -1,
       ticket_id: Number(id),
     });
@@ -95,7 +103,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   useEffect(() => {
     if (categories.length === 0) {
       setLoading(true);
-      CategoryService.getAll(1, 8).then((data) => {
+      CategoryService.getAll(1, 100000).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
@@ -121,13 +129,13 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md scrollbar-none"
+      className="w-2/4 h-fit rounded-md shadow-md scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir servicio</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -219,19 +227,26 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           });
         }}
       >
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          placeholder="Nombre*"
-          value={formData.nombre}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          required
-        />
+        <div className="w-full">
+          <input
+            type="text"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            value={formData.nombre}
+            placeholder="Nombre*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
         <div className="flex gap-2">
           <div className="relative w-2/4">
             <Select
@@ -342,18 +357,64 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             )}
           </div>
         </div>
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Descripción"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción || ""}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
+        <div className="flex gap-4">
+          <div className="w-2/4">
+            <textarea
+              rows={3}
+              placeholder="Necesidades"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  necesidades: e.target.value,
+                });
+              }}
+              value={formData.necesidades || ""}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
+          </div>
+          <div className="w-2/4">
+            <textarea
+              rows={3}
+              placeholder="Notas"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  notas: e.target.value,
+                });
+              }}
+              value={formData.notas || ""}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
+          </div>
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
@@ -362,7 +423,16 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button
+            className={clsx({
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                !selectedCategory.label?.startsWith("Seleccionar") &&
+                !selectedType.label?.startsWith("Seleccionar"),
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedCategory.label?.startsWith("Seleccionar") ||
+                selectedType.label?.startsWith("Seleccionar"),
+            })}
+          >
             Completar
           </button>
         </div>
@@ -383,19 +453,19 @@ function EditModal({
   const ref = useRef<HTMLDialogElement>(null);
   const [formData, setFormData] = useState<Servicio>(servicio!);
   const [selectedCategory, setSelectedCategory] = useState<Selected>({
-    value: formData.categoría_id,
-    label: formData.categoría?.nombre,
+    value: servicio?.categoría_id,
+    label: servicio?.categoría?.nombre,
   });
   const [selectedState, setSelectedState] = useState<Selected>({
-    value: formData.estado,
+    value: servicio?.estado,
     label:
-      formData.estado === "INICIADO"
+      servicio?.estado === "INICIADO"
         ? "Iniciado"
-        : formData.estado === "PENDIENTE"
+        : servicio?.estado === "PENDIENTE"
         ? "Pendiente"
         : "Completado",
   });
-  const [selectedType, setSelectedType] = useState<Selected>({
+  const [selectedType, _setSelectedType] = useState<Selected>({
     label:
       servicio?.tipo === "DOMICILIO"
         ? "Domicilio"
@@ -404,6 +474,23 @@ function EditModal({
         : "Remoto",
     value: servicio?.tipo,
   });
+
+  const resetFormData = () => {
+    setFormData(servicio!);
+    setSelectedCategory({
+      value: servicio?.categoría_id,
+      label: servicio?.categoría?.nombre,
+    });
+    setSelectedState({
+      value: servicio?.estado,
+      label:
+        servicio?.estado === "INICIADO"
+          ? "Iniciado"
+          : servicio?.estado === "PENDIENTE"
+          ? "Pendiente"
+          : "Completado",
+    });
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -423,7 +510,7 @@ function EditModal({
   useEffect(() => {
     if (categories.length === 0) {
       setLoading(true);
-      CategoryService.getAll(1, 8).then((data) => {
+      CategoryService.getAll(1, 10000).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
@@ -449,7 +536,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow text-base"
+      className="w-2/5 h-fit rounded-md shadow text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar servicio</h1>
@@ -465,10 +552,10 @@ function EditModal({
             (data) => {
               toast.dismiss(loadingToast);
               setOperationAsCompleted();
-              if (data) {
-                toast.success("Servicio editado con exito.");
-              } else {
+              if (!data) {
                 toast.error("Servicio no pudo ser editado.");
+              } else {
+                toast.success("Servicio editado con exito.");
                 if (options.find()?.creación.siempre) {
                   const messageToast = toast.loading("Creando mensaje...");
                   MessageRender.renderServicioModificationTemplate(
@@ -551,61 +638,36 @@ function EditModal({
           );
         }}
       >
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          placeholder="Nombre*"
-          value={formData.nombre}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <input
+            type="text"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            value={formData.nombre}
+            placeholder="Nombre*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
         <div className="flex gap-2">
           <div className="relative w-2/4">
-            <Select
-              onChange={() => {
-                setFormData({
-                  ...formData,
-                  tipo: selectedType.value as ServicioTipo,
-                });
-              }}
-              options={[
-                {
-                  value: "DOMICILIO",
-                  label: "Domicilio",
-                  onClick: (value, label) => {
-                    setSelectedType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "TIENDA",
-                  label: "Tienda",
-                  onClick: (value, label) => {
-                    setSelectedType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "REMOTO",
-                  label: "Remoto",
-                  onClick: (value, label) => {
-                    setSelectedType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-              ]}
-              selected={selectedType}
-            />
+            <select
+              className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+              value={selectedType.value}
+              disabled={true}
+            >
+              <option value={selectedType.value}>{selectedType.label}</option>
+            </select>
+            <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
           </div>
           <div className="relative w-2/4">
             {categories.length > 0 && (
@@ -680,9 +742,23 @@ function EditModal({
                 setFormData({
                   ...formData,
                   estado: selectedState.value as ServicioEstado,
+                  resultado:
+                    selectedState.value !== "COMPLETADO"
+                      ? ""
+                      : formData.resultado,
                 });
               }}
               options={[
+                {
+                  value: "PENDIENTE",
+                  label: "Pendiente",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
                 {
                   value: "INICIADO",
                   label: "Iniciado",
@@ -713,6 +789,16 @@ function EditModal({
             <Select
               options={[
                 {
+                  value: "INICIADO",
+                  label: "Iniciado",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
                   value: "COMPLETADO",
                   label: "Completado",
                   onClick: (value, label) => {
@@ -728,6 +814,10 @@ function EditModal({
                 setFormData({
                   ...formData,
                   estado: selectedState.value as ServicioEstado,
+                  resultado:
+                    selectedState.value !== "COMPLETADO"
+                      ? ""
+                      : formData.resultado,
                 });
               }}
             />
@@ -745,27 +835,107 @@ function EditModal({
             <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
           </div>
         ) : null}
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="flex gap-4">
+          <div className="w-2/4">
+            <textarea
+              rows={3}
+              placeholder="Descripción"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  descripción: e.target.value,
+                });
+              }}
+              value={formData.descripción || ""}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
+          </div>
+          <div className="w-2/4">
+            <textarea
+              rows={3}
+              placeholder="Resultado"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  resultado: e.target.value,
+                });
+              }}
+              value={formData.resultado || ""}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
+              name="name"
+              disabled={formData.estado !== "COMPLETADO"}
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
+          </div>
+        </div>
+        <div className="flex gap-4">
+          <div className="w-2/4">
+            <textarea
+              rows={3}
+              placeholder="Necesidades"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  necesidades: e.target.value,
+                });
+              }}
+              value={formData.necesidades || ""}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
+          </div>
+          <div className="w-2/4">
+            <textarea
+              rows={3}
+              placeholder="Notas"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  notas: e.target.value,
+                });
+              }}
+              value={formData.notas || ""}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
+          </div>
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              resetFormData();
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button
+            className={clsx({
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                !selectedCategory.label?.startsWith("Seleccionar") &&
+                !selectedType.label?.startsWith("Seleccionar"),
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedCategory.label?.startsWith("Seleccionar") ||
+                selectedType.label?.startsWith("Seleccionar"),
+            })}
+          >
             Completar
           </button>
         </div>
@@ -937,9 +1107,27 @@ function DataRow({ setOperationAsCompleted, servicio }: DataRowProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.servicio
+      ? "EDIT"
+      : permissions.find()?.eliminar.servicio
+      ? "DELETE"
+      : permissions.find()?.ver.operación
+      ? "VIEW_OPERATIONS"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction =
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+    permissions.find()?.editar.servicio
+      ? true
+      : permissions.find()?.eliminar.servicio
+      ? true
+      : permissions.find()?.ver.operación
+      ? true
+      : false;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -964,31 +1152,42 @@ function DataRow({ setOperationAsCompleted, servicio }: DataRowProps) {
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {servicio?.nombre}
       </td>
-      <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
-        {servicio?.descripción}
-      </td>
       <td className="px-6 py-2 border border-slate-300">
-        <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg capitalize">
-          {servicio?.tipo}
+        <div className="bg-gray-200 text-center text-gray-600 text-xs p-2 font-bold rounded-lg capitalize">
+          {servicio?.tipo === "TIENDA"
+            ? "Tienda"
+            : servicio?.tipo === "DOMICILIO"
+            ? "Domicilio"
+            : "Remoto"}
         </div>
       </td>
       <td className="px-6 py-2 border border-slate-300">
         {servicio?.estado === "COMPLETADO" ? (
-          <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
+          <div className="bg-green-200 text-center text-green-600 text-xs p-2 font-bold rounded-lg capitalize">
             Completado
           </div>
         ) : servicio?.estado === "INICIADO" ? (
-          <div className="bg-blue-200 text-center text-blue-600 text-xs py-2 font-bold rounded-lg capitalize">
+          <div className="bg-blue-200 text-center text-blue-600 text-xs p-2 font-bold rounded-lg capitalize">
             Iniciado
           </div>
         ) : (
-          <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg capitalize">
+          <div className="bg-gray-200 text-center text-gray-600 text-xs p-2 font-bold rounded-lg capitalize">
             Pendiente
           </div>
         )}
       </td>
       <td className="px-6 py-4 border border-slate-300">
         {format(new Date(servicio?.añadido!), "dd/MM/yyyy")}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">
+        {servicio?.iniciado
+          ? format(new Date(servicio?.iniciado!), "dd/MM/yyyy")
+          : "Nunca"}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">
+        {servicio?.completado
+          ? format(new Date(servicio?.completado!), "dd/MM/yyyy")
+          : "Nunca"}
       </td>
       <td
         ref={ref}
@@ -1060,13 +1259,19 @@ function DataRow({ setOperationAsCompleted, servicio }: DataRowProps) {
             }
           />
         )}
-        <button
-          id={`acciones-btn-${servicio?.id}`}
-          className="bg-gray-300 border right-4 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-          onClick={() => setIsDropup(!isDropup)}
-        >
-          <More className="w-5 h-5 inline fill-black" />
-        </button>
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${servicio?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -1115,7 +1320,7 @@ function Dropup({ close, selectAction }: DropupProps) {
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.crear.ticket) && (
+        permissions.find()?.crear.servicio) && (
         <li>
           <div
             onClick={() => {
@@ -1215,7 +1420,7 @@ function IndividualDropup({
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.editar.ticket) && (
+        permissions.find()?.editar.servicio) && (
         <li>
           <div
             onClick={() => {
@@ -1242,7 +1447,7 @@ function IndividualDropup({
       )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.eliminar.ticket) && (
+        permissions.find()?.eliminar.servicio) && (
         <li>
           <div
             onClick={() => {
@@ -1269,33 +1474,37 @@ function IndividualDropup({
       )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        (permissions.find()?.editar.ticket &&
-          permissions.find()?.eliminar.ticket)) && (
+        (permissions.find()?.editar.servicio &&
+          permissions.find()?.eliminar.servicio)) && (
         <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       )}
-      <li>
-        <div
-          onClick={() => {
-            selectAction("VIEW_OPERATIONS");
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Operaciones
-        </div>
-      </li>
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+        permissions.find()?.ver.operación) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("VIEW_OPERATIONS");
+              close();
+            }}
+            className="
+                text-sm
+                py-2
+                px-4
+                font-medium
+                block
+                w-full
+                whitespace-nowrap
+                bg-transparent
+                text-slate-600
+                hover:bg-slate-100
+                cursor-pointer
+              "
+          >
+            Operaciones
+          </div>
+        </li>
+      )}
     </ul>
   );
 }
@@ -1393,7 +1602,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar servicio</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -1463,8 +1672,8 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               }}
               options={[
                 {
-                  value: "AÑADIDO",
-                  label: "Añadido",
+                  value: "PENDIENTE",
+                  label: "Pendiente",
                   onClick: (value, label) => {
                     setSelectedState({
                       value,
@@ -1533,6 +1742,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 setInput(e.target.value);
                 setTempInput(e.target.value);
               }}
+              required
             />
             <input
               type="date"
@@ -1543,18 +1753,33 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 setSecondInput(e.target.value);
                 setSecondTempInput(e.target.value);
               }}
+              required
             />
           </>
         ) : null}
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              resetSearch();
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button
+            className={clsx({
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedSearchType.label?.startsWith("Seleccionar") ||
+                (selectedFecha.label?.startsWith("Seleccionar") &&
+                  selectedSearchType.value !== "ESTADO") ||
+                (selectedState.label?.startsWith("Seleccionar") &&
+                  selectedSearchType.value === "ESTADO"),
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                true,
+            })}
+          >
             Buscar
           </button>
         </div>
@@ -1565,13 +1790,19 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 
 export default function ServicesDataDisplay() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [services, setServices] = useState<Servicio[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("ADD");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.crear.servicio
+      ? "ADD"
+      : "SEARCH"
+  );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -1585,6 +1816,7 @@ export default function ServicesDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const resetAllSearchs = useFunctionStore((state) => state.resetAllSearchs);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -1607,7 +1839,7 @@ export default function ServicesDataDisplay() {
   };
 
   useEffect(() => {
-    if (searchCount === 0 || isOperationCompleted) {
+    if (searchCount === 0) {
       ServiceService.getAll(Number(id), page, 8).then((data) => {
         if (data === false) {
           setNotFound(true);
@@ -1725,13 +1957,19 @@ export default function ServicesDataDisplay() {
       <div className="absolute w-full h-full px-8 py-5">
         <nav className="flex justify-between items-center text-slate-600 select-none">
           <div className="font-medium">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Tickets{" "}
+            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span
+              onClick={() => {
+                navigate(`/tickets`), resetAllSearchs();
+              }}
+              className="hover:text-[#2096ed] cursor-pointer"
+            >
+              Tickets
+            </span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">{id}</span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]" onClick={resetSearchCount}>
-              Servicios
-            </span>
+            <span className="text-[#2096ed]">Servicios</span>
           </div>
           <div className="flex gap-2">
             {isDropup && (
@@ -1751,12 +1989,23 @@ export default function ServicesDataDisplay() {
               </button>
             ) : null}
             {action === "SEARCH" ? (
-              <button
-                onClick={() => setIsSearch(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Buscar servicio
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setIsSearch(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Buscar servicio
+                </button>
+              </>
             ) : null}
             <button
               id="acciones-btn"
@@ -1782,9 +2031,6 @@ export default function ServicesDataDisplay() {
                     Nombre
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Descripción
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Tipo
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
@@ -1792,6 +2038,12 @@ export default function ServicesDataDisplay() {
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Añadido
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Iniciado
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Completado
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
@@ -1815,7 +2067,7 @@ export default function ServicesDataDisplay() {
         )}
         {(notFound === true ||
           (services.length === 0 && loading === false)) && (
-          <div className="grid w-full h-4/5 text-slate-600">
+          <div className="grid w-full h-4/5">
             <div className="place-self-center flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">

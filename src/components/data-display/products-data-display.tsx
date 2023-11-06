@@ -27,10 +27,13 @@ import permissions from "../../utils/permissions";
 import { useProductSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import ExportCSV from "../misc/export-to-cvs";
+import clsx from "clsx";
+import { format } from "date-fns";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [loading, setLoading] = useState(true);
+  const [randomString, setRandomString] = useState(Slugifier.randomString());
   const [categories, setCategories] = useState<Categoría[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Selected>({
     value: -1,
@@ -58,7 +61,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     setSelectedCategory({
       value: -1,
       label: "Seleccionar categoría",
-    })
+    });
+    setRandomString(Slugifier.randomString());
   };
 
   useEffect(() => {
@@ -81,7 +85,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   useEffect(() => {
     if (categories.length === 0) {
       setLoading(true);
-      CategoryService.getAll(1, 100).then((data) => {
+      CategoryService.getAll(1, 10000000).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
@@ -113,7 +117,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Añadir producto</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -137,51 +141,71 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           disabled
         />
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-              slug: Slugifier.slugifyWithRandomString(e.target.value),
-            });
-          }}
-          value={formData.nombre}
-          placeholder="Nombre*"
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <div className="flex gap-2">
+        <div className="w-full">
           <input
-            type="number"
-            placeholder="Stock*"
+            type="text"
             onChange={(e) => {
               setFormData({
                 ...formData,
-                stock: Number(e.target.value),
+                nombre: e.target.value,
+                slug: `${Slugifier.slugifyWithRandomString(e.target.value)}${
+                  e.target.value === "" ? "" : "-"
+                }${e.target.value === "" ? "" : randomString}`,
               });
             }}
-            value={formData.stock === 0 ? "" : formData.stock}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            min={0}
+            value={formData.nombre}
+            placeholder="Nombre*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             required
+            pattern="^.{2,}$"
+            name="name"
           />
-          <input
-            type="number"
-            placeholder="Precio*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                precio: !isNaN(Number(e.target.value))
-                  ? Number(e.target.value)
-                  : 0.0,
-              });
-            }}
-            step="0.01"
-            min="0"
-            value={formData.precio === 0 ? "" : String(formData.precio)}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            required
-          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
+        <div className="flex gap-4">
+          <div className="w-2/4">
+            <input
+              type="number"
+              placeholder="Stock*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  stock: Number(e.target.value),
+                });
+              }}
+              value={formData.stock === 0 ? "" : formData.stock}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              min={0}
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Número invalido
+            </span>
+          </div>
+          <div className="w-2/4">
+            <input
+              type="number"
+              placeholder="Precio*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  precio: !isNaN(Number(e.target.value))
+                    ? Number(e.target.value)
+                    : 0.0,
+                });
+              }}
+              value={formData.precio === 0 ? "" : String(formData.precio)}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              min={0}
+              step="0.01"
+              required
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Formato debe ser 0,00 o 0.00
+            </span>
+          </div>
         </div>
         <div className="relative">
           {categories.length > 0 && (
@@ -248,18 +272,25 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             </>
           )}
         </div>
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Descripción"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción || ""}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
             <input
@@ -289,7 +320,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  selectedCategory.label?.startsWith("Seleccionar"),
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  true,
+              })}
+            >
               Completar
             </button>
           </div>
@@ -309,10 +347,20 @@ function EditModal({
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Categoría[]>([]);
   const [formData, setFormData] = useState<Producto>(producto!);
+  const [randomString, setRandomString] = useState(Slugifier.randomString());
   const [selectedCategory, setSelectedCategory] = useState<Selected>({
-    value: formData.categoría_id,
-    label: formData.categoría?.nombre,
+    value: producto?.categoría_id,
+    label: producto?.categoría?.nombre,
   });
+
+  const resetFormData = () => {
+    setFormData(producto!);
+    setSelectedCategory({
+      value: producto?.categoría_id,
+      label: producto?.categoría?.nombre,
+    });
+    setRandomString(Slugifier.randomString());
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -332,7 +380,7 @@ function EditModal({
   useEffect(() => {
     if (categories.length === 0) {
       setLoading(true);
-      CategoryService.getAll(1, 100).then((data) => {
+      CategoryService.getAll(1, 1000000000).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
@@ -358,13 +406,13 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded shadow scrollbar-none text-base"
+      className="w-2/5 h-fit rounded shadow scrollbar-none text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar producto</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -388,51 +436,71 @@ function EditModal({
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           disabled
         />
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-              slug: Slugifier.slugifyWithRandomString(e.target.value),
-            });
-          }}
-          value={formData.nombre}
-          placeholder="Nombre*"
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <input
+            type="text"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+                slug: `${Slugifier.slugifyWithRandomString(e.target.value)}${
+                  e.target.value === "" ? "" : "-"
+                }${e.target.value === "" ? "" : randomString}`,
+              });
+            }}
+            value={formData.nombre}
+            placeholder="Nombre*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
         <div className="flex gap-4">
-          <input
-            type="number"
-            placeholder="Stock*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                stock: Number(e.target.value),
-              });
-            }}
-            value={formData.stock === 0 ? "" : formData.stock}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            required
-            min={0}
-          />
-          <input
-            type="number"
-            placeholder="Precio*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                precio: !isNaN(Number(e.target.value))
-                  ? Number(e.target.value)
-                  : 0.0,
-              });
-            }}
-            value={formData.precio === 0 ? "" : String(formData.precio)}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-            min={0}
-            step="0.01"
-            required
-          />
+          <div className="w-2/4">
+            <input
+              type="number"
+              placeholder="Stock*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  stock: Number(e.target.value),
+                });
+              }}
+              value={formData.stock === 0 ? "" : formData.stock}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              min={0}
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Número invalido
+            </span>
+          </div>
+          <div className="w-2/4">
+            <input
+              type="number"
+              placeholder="Precio*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  precio: !isNaN(Number(e.target.value))
+                    ? Number(e.target.value)
+                    : 0.0,
+                });
+              }}
+              value={formData.precio === 0 ? "" : String(formData.precio)}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              min={0}
+              step="0.01"
+              required
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Formato debe ser 0,00 o 0.00
+            </span>
+          </div>
         </div>
         <div className="relative">
           {categories.length > 0 && (
@@ -499,18 +567,25 @@ function EditModal({
             </>
           )}
         </div>
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Descripción"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción || ""}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
             <input
@@ -535,12 +610,15 @@ function EditModal({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => {
+                closeModal();
+                resetFormData();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
               Completar
             </button>
           </div>
@@ -559,13 +637,17 @@ function ImagesModal({
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [toUpdate, setToUpdate] = useState<Imagen[]>(imagenes || []);
-  const [toCreate, setToCreate] = useState<Imagen[]>([
-    {
-      id: -1,
-      url: "",
-      esPública: false,
-    },
-  ]);
+  const [toCreate, setToCreate] = useState<Imagen[]>(
+    imagenes?.length === 0
+      ? [
+          {
+            id: -1,
+            url: "",
+            esPública: false,
+          },
+        ]
+      : []
+  );
   const [toDelete, setToDelete] = useState<Imagen[]>([]);
   const [lastID, setLastID] = useState(-2);
 
@@ -609,6 +691,19 @@ function ImagesModal({
     }
   };
 
+  const resetFormData = () => {
+    setToUpdate(imagenes || []);
+    setToCreate([
+      {
+        id: -1,
+        url: "",
+        esPública: false,
+      },
+    ]);
+    setToDelete([]);
+    setLastID(-2);
+  };
+
   return (
     <dialog
       ref={ref}
@@ -624,13 +719,13 @@ function ImagesModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded shadow scrollbar-none text-base"
+      className="w-2/5 h-fit rounded shadow scrollbar-none text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar imagenes</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -654,22 +749,29 @@ function ImagesModal({
       >
         {toUpdate.map((imagen) => (
           <div className="w-full flex gap-2 items-center" key={imagen.id}>
-            <input
-              type="url"
-              onChange={(e) => {
-                const data = {
-                  ...imagen,
-                  url: e.target.value,
-                };
-                setToUpdate([
-                  ...toUpdate.filter((img) => img.id !== imagen.id),
-                  ...[data],
-                ]);
-              }}
-              value={imagen.url}
-              placeholder="URL de imagen*"
-              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
-            />
+            <div className="w-full">
+              <input
+                type="url"
+                onChange={(e) => {
+                  const data = {
+                    ...imagen,
+                    url: e.target.value,
+                  };
+                  setToUpdate([
+                    ...toUpdate.filter((img) => img.id !== imagen.id),
+                    ...[data],
+                  ]);
+                }}
+                value={imagen.url}
+                placeholder="Enlace de imagen*"
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                required
+                pattern="^(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png)$"
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Enlace de imagen invalido
+              </span>
+            </div>
             <Delete
               onClick={() => handleDeleteImage(imagen.id!)}
               className="fill-white bg-red-400 p-2 h-10 w-10 rounded-lg cursor-pointer hover:bg-red-500 transition ease-in-out delay-100 duration-300"
@@ -678,22 +780,29 @@ function ImagesModal({
         ))}
         {toCreate.map((imagen) => (
           <div className="w-full flex gap-2 items-center" key={imagen.id}>
-            <input
-              type="url"
-              onChange={(e) => {
-                const data = {
-                  ...imagen,
-                  url: e.target.value,
-                };
-                setToCreate([
-                  ...toCreate.filter((img) => img.id !== imagen.id),
-                  ...[data],
-                ]);
-              }}
-              value={imagen.url}
-              placeholder="URL de imagen*"
-              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
-            />
+            <div className="w-full">
+              <input
+                type="url"
+                onChange={(e) => {
+                  const data = {
+                    ...imagen,
+                    url: e.target.value,
+                  };
+                  setToCreate([
+                    ...toCreate.filter((img) => img.id !== imagen.id),
+                    ...[data],
+                  ]);
+                }}
+                value={imagen.url}
+                placeholder="Enlace de imagen*"
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                required
+                pattern="^(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png)$"
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Enlace de imagen invalido
+              </span>
+            </div>
             <Delete
               onClick={() => handleDeleteImage(imagen.id!)}
               className="fill-white bg-red-400 p-2 h-10 w-10 rounded-lg cursor-pointer hover:bg-red-500 transition ease-in-out delay-100 duration-300"
@@ -711,12 +820,15 @@ function ImagesModal({
           <div className="flex gap-2 justify-self-end justify-end">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => {
+                closeModal();
+                resetFormData();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
               Completar
             </button>
           </div>
@@ -884,7 +996,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar producto</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -941,6 +1053,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             setInput(e.target.value);
             setTempInput(e.target.value);
           }}
+          required
         />
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -964,12 +1077,22 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => {
+                closeModal();
+                resetSearch();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  selectedSearchType.label?.startsWith("Seleccionar"),
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  true,
+              })}
+            >
               Buscar
             </button>
           </div>
@@ -983,9 +1106,22 @@ function DataRow({ producto, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isImageOpen, setIsImageOpen] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.producto
+      ? "EDIT"
+      : permissions.find()?.eliminar.producto
+      ? "DELETE"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction = session.find()?.usuario.rol === "ADMINISTRADOR" ||
+  permissions.find()?.editar.producto
+  ? true
+  : permissions.find()?.eliminar.producto
+  ? true
+  : false
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -1002,6 +1138,11 @@ function DataRow({ producto, setOperationAsCompleted }: DataRowProps) {
   const selectAction = (action: `${Action}`) => {
     setAction(action);
   };
+
+  const formatter = new Intl.NumberFormat("es-VE", {
+    style: "currency",
+    currency: "USD",
+  });
 
   return (
     <tr>
@@ -1020,7 +1161,9 @@ function DataRow({ producto, setOperationAsCompleted }: DataRowProps) {
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
         {producto?.categoría?.nombre}
       </td>
-      <td className="px-6 py-4 border border-slate-300">{producto?.precio}</td>
+      <td className="px-6 py-4 border border-slate-300">
+        {formatter.format(producto?.precio || 0)}
+      </td>
       <td className="px-6 py-4 border border-slate-300">{producto?.stock}</td>
       <td
         ref={ref}
@@ -1077,6 +1220,7 @@ function DataRow({ producto, setOperationAsCompleted }: DataRowProps) {
               isOpen={isImageOpen}
               closeModal={closeImageModal}
               setOperationAsCompleted={setOperationAsCompleted}
+              imagenes={producto?.imagens}
             />
           </>
         )}
@@ -1099,13 +1243,19 @@ function DataRow({ producto, setOperationAsCompleted }: DataRowProps) {
             }
           />
         )}
-        <button
-          id={`acciones-btn-${producto?.id}`}
-          className="bg-gray-300 border right-4 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-          onClick={() => setIsDropup(!isDropup)}
-        >
-          <More className="w-5 h-5 inline fill-black" />
-        </button>
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${producto?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -1177,7 +1327,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Generar reporte</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -1195,7 +1345,10 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                         .filter((venta) => venta.venta_cantidad > 0)
                         .map((venta) => {
                           return {
-                            Fecha: venta?.venta_fecha,
+                            Fecha: format(
+                              new Date(venta?.venta_fecha),
+                              "dd/MM/yyyy"
+                            ),
                             Código: venta?.código,
                             Nombre: venta?.nombre,
                             Precio: venta?.precio,
@@ -1229,7 +1382,10 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                         .filter((venta) => venta.venta_cantidad > 0)
                         .map((venta) => {
                           return {
-                            Fecha: venta?.venta_fecha,
+                            Fecha: format(
+                              new Date(venta?.venta_fecha),
+                              "dd/MM/yyyy"
+                            ),
                             Código: venta?.código,
                             Nombre: venta?.nombre,
                             Precio: venta?.precio,
@@ -1263,7 +1419,10 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                         .filter((venta) => venta.compra_cantidad > 0)
                         .map((venta) => {
                           return {
-                            Fecha: venta?.compra_fecha,
+                            Fecha: format(
+                              new Date(venta?.compra_fecha),
+                              "dd/MM/yyyy"
+                            ),
                             Código: venta?.código,
                             Nombre: venta?.nombre,
                             Precio: venta?.precio,
@@ -1295,7 +1454,10 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                         .filter((venta) => venta.compra_cantidad > 0)
                         .map((venta) => {
                           return {
-                            Fecha: venta?.compra_fecha,
+                            Fecha: format(
+                              new Date(venta?.compra_fecha),
+                              "dd/MM/yyyy"
+                            ),
                             Código: venta?.código,
                             Nombre: venta?.nombre,
                             Precio: venta?.precio,
@@ -1490,6 +1652,16 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               }}
               options={[
                 {
+                  value: "HOY",
+                  label: "Hoy",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
                   value: "RECIENTEMENTE",
                   label: "Recientemente",
                   onClick: (value, label) => {
@@ -1557,6 +1729,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               onChange={(e) => {
                 setInput(e.target.value);
               }}
+              required
             />
             <input
               type="date"
@@ -1566,19 +1739,31 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               onChange={(e) => {
                 setSecondInput(e.target.value);
               }}
+              required
             />
           </>
         ) : null}
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              resetSearch();
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Generar
+          <button
+            className={clsx({
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedSearchType.label?.startsWith("Seleccionar") ||
+                selectedFecha.label?.startsWith("Seleccionar"),
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                true,
+            })}
+          >
+            Buscar
           </button>
         </div>
       </form>
@@ -1840,7 +2025,12 @@ export default function ProductsDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("ADD");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.crear.producto
+      ? "ADD"
+      : "SEARCH"
+  );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -1876,7 +2066,7 @@ export default function ProductsDataDisplay() {
   };
 
   useEffect(() => {
-    if (searchCount === 0 || isOperationCompleted) {
+    if (searchCount === 0) {
       ProductService.getAll(page, 8).then((data) => {
         if (data === false) {
           setNotFound(true);
@@ -1976,7 +2166,7 @@ export default function ProductsDataDisplay() {
       <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-600" />{" "}
+            Menú <Right className="w-3 h-3 inline fill-600" />{" "}
             <span
               onClick={resetSearchCount}
               className="text-[#2096ed] cursor-pointer"
@@ -2001,12 +2191,23 @@ export default function ProductsDataDisplay() {
               </button>
             ) : null}
             {action === "SEARCH" ? (
-              <button
-                onClick={() => setIsSearch(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Buscar producto
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setIsSearch(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Buscar producto
+                </button>
+              </>
             ) : null}
             {action === "REPORT" ? (
               <button

@@ -22,6 +22,7 @@ import { useClientSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import { ReactComponent as On } from "/src/assets/visibility.svg";
 import { ReactComponent as Off } from "/src/assets/visibility_off.svg";
+import clsx from "clsx";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -190,31 +191,44 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 small={true}
               />
             </div>
+            <div className="w-[72%]">
+              <input
+                type="text"
+                placeholder="Documento"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    documento: e.target.value,
+                  });
+                }}
+                value={formData.documento}
+                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                pattern="^.{7,}$"
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Minimo 7 caracteres
+              </span>
+            </div>
+          </div>
+          <div className="w-2/4">
             <input
-              type="text"
-              placeholder="Documento"
+              type="tel"
+              placeholder="Teléfono"
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  documento: e.target.value,
+                  telefono: e.target.value,
                 });
               }}
-              value={formData.documento}
-              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-[72%]"
+              value={formData.telefono}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
+              required={formData.enviarMensajes}
             />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Teléfono debe estar en formato E.164
+            </span>
           </div>
-          <input
-            type="tel"
-            placeholder="Telefono"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                telefono: e.target.value,
-              });
-            }}
-            value={formData.telefono}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-          />
         </div>
         <div className="w-full">
           <input
@@ -257,7 +271,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <div className="relative w-full">
           <input
             type={visible ? "text" : "password"}
-            placeholder="Contraseña*"
+            placeholder="Contraseña"
             onChange={(e) =>
               setFormData({
                 ...formData,
@@ -266,7 +280,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             }
             value={formData.contraseña}
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
             name="password"
             pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
             autoComplete="new-password"
@@ -346,6 +359,21 @@ function EditModal({
   });
   const [visible, setVisible] = useState(false);
 
+  const resetFormData = () => {
+    setFormData({
+      ...cliente!,
+      contraseña: "",
+      documento: cliente?.documento?.startsWith("V")
+        ? cliente?.documento?.slice(2)
+        : cliente?.documento,
+    });
+    setDocumentType({
+      value: cliente?.documento?.startsWith("V") ? "V" : "RIF",
+      label: cliente?.documento?.startsWith("V") ? "V" : "RIF",
+    });
+    setVisible(false);
+  };
+
   useEffect(() => {
     if (isOpen) {
       ref.current?.showModal();
@@ -376,7 +404,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow text-base text-black"
+      className="w-2/5 h-fit rounded-md shadow text-base font-normal text-black"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar cliente</h1>
@@ -474,31 +502,44 @@ function EditModal({
                 small={true}
               />
             </div>
+            <div className="w-[72%]">
+              <input
+                type="text"
+                placeholder="Documento"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    documento: e.target.value,
+                  });
+                }}
+                value={formData.documento}
+                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                pattern="^.{7,}$"
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Minimo 7 caracteres
+              </span>
+            </div>
+          </div>
+          <div className="w-2/4">
             <input
-              type="text"
-              placeholder="Documento"
+              type="tel"
+              placeholder="Teléfono"
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  documento: e.target.value,
+                  telefono: e.target.value,
                 });
               }}
-              value={formData.documento}
-              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-[72%]"
+              value={formData.telefono}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
+              required={formData.enviarMensajes}
             />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Teléfono debe estar en formato E.164
+            </span>
           </div>
-          <input
-            type="tel"
-            placeholder="Telefono"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                telefono: e.target.value,
-              });
-            }}
-            value={formData.telefono}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-2/4"
-          />
         </div>
         <div className="w-full">
           <input
@@ -594,7 +635,10 @@ function EditModal({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => {
+                closeModal();
+                resetFormData();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
@@ -763,7 +807,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar cliente</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -844,6 +888,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             setInput(e.target.value);
             setTempInput(e.target.value);
           }}
+          required
         />
         <div className="flex w-full justify-between items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
@@ -867,12 +912,22 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => {
+                closeModal();
+                resetSearch();
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  selectedSearchType.label?.startsWith("Seleccionar"),
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  true,
+              })}
+            >
               Buscar
             </button>
           </div>
@@ -886,9 +941,27 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const navigate = useNavigate();
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.cliente
+      ? "EDIT"
+      : permissions.find()?.eliminar.cliente
+      ? "DELETE"
+      : permissions.find()?.ver.elemento
+      ? "VIEW_ELEMENTS"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction =
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+    permissions.find()?.editar.cliente
+      ? true
+      : permissions.find()?.eliminar.cliente
+      ? true
+      : permissions.find()?.ver.elemento
+      ? true
+      : false;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -941,7 +1014,10 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
             : "N/A"
           : "N/A"}
       </td>
-      <td ref={ref} className="px-6 py-3 border border-slate-300 w-[200px] relative">
+      <td
+        ref={ref}
+        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+      >
         {action === "EDIT" && (
           <>
             <button
@@ -1004,18 +1080,23 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
               15
             }
             right={
-              ref?.current?.getBoundingClientRect().left! +
-              window.scrollX + 35
+              ref?.current?.getBoundingClientRect().left! + window.scrollX + 35
             }
           />
         )}
-        <button
-          id={`acciones-btn-${cliente?.id}`}
-          className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-          onClick={() => setIsDropup(!isDropup)}
-        >
-          <More className="w-5 h-5 inline fill-black" />
-        </button>
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${cliente?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -1218,29 +1299,32 @@ function IndividualDropup({
           permissions.find()?.eliminar.cliente)) && (
         <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       )}
-      <li>
-        <div
-          onClick={() => {
-            selectAction("VIEW_ELEMENTS");
-            close();
-          }}
-          className="
-              text-sm
-              py-2
-              px-4
-              font-medium
-              block
-              w-full
-              whitespace-nowrap
-              bg-transparent
-              text-slate-600
-              hover:bg-slate-100
-              cursor-pointer
-            "
-        >
-          Elementos
-        </div>
-      </li>
+      {(session.find()?.usuario.rol == "ADMINISTRADOR" ||
+        permissions.find()?.ver.elemento) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("VIEW_ELEMENTS");
+              close();
+            }}
+            className="
+                text-sm
+                py-2
+                px-4
+                font-medium
+                block
+                w-full
+                whitespace-nowrap
+                bg-transparent
+                text-slate-600
+                hover:bg-slate-100
+                cursor-pointer
+              "
+          >
+            Elementos
+          </div>
+        </li>
+      )}
     </ul>
   );
 }
@@ -1252,7 +1336,12 @@ export default function ClientsDataDisplay() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("ADD");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.crear.cliente
+      ? "ADD"
+      : "SEARCH"
+  );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -1288,7 +1377,7 @@ export default function ClientsDataDisplay() {
   };
 
   useEffect(() => {
-    if (searchCount === 0 || isOperationCompleted) {
+    if (searchCount === 0) {
       ClientService.getAll(page, 8).then((data) => {
         if (data === false) {
           setNotFound(true);
@@ -1455,13 +1544,8 @@ export default function ClientsDataDisplay() {
       <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span
-              onClick={resetSearchCount}
-              className="text-[#2096ed] cursor-pointer"
-            >
-              Clientes
-            </span>
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span className="text-[#2096ed] cursor-pointer">Clientes</span>
           </div>
           <div className="flex gap-2">
             {isDropup && (
@@ -1481,12 +1565,23 @@ export default function ClientsDataDisplay() {
               </button>
             ) : null}
             {action === "SEARCH" ? (
-              <button
-                onClick={() => setIsSearch(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Buscar cliente
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setIsSearch(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Buscar cliente
+                </button>
+              </>
             ) : null}
             <button
               id="acciones-btn"
@@ -1518,7 +1613,7 @@ export default function ClientsDataDisplay() {
                     Email
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Telefono
+                    Teléfono
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Dirección

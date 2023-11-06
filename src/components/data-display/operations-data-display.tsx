@@ -15,7 +15,7 @@ import {
   Mensaje,
   Selected,
 } from "../../types";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import OperationService from "../../services/operation-service";
 import session from "../../utils/session";
@@ -29,6 +29,8 @@ import { useOperationSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import Select from "../misc/select";
 import { format } from "date-fns";
+import clsx from "clsx";
+import { useFunctionStore } from "../../store/functionStore";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id, service_id } = useParams();
@@ -37,6 +39,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     nombre: "",
     descripción: "",
     necesidades: "",
+    notas: "",
+    resultado: "",
     estado: "PENDIENTE",
     servicio_id: Number(service_id),
   });
@@ -46,6 +50,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       nombre: "",
       descripción: "",
       necesidades: "",
+      resultado: "",
+      notas: "",
       estado: "PENDIENTE",
       servicio_id: Number(service_id),
     });
@@ -89,7 +95,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Añadir operación</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -186,42 +192,83 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           });
         }}
       >
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          placeholder="Nombre*"
-          value={formData.nombre}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <textarea
-          rows={3}
-          placeholder="Descripción*"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <textarea
-          rows={3}
-          placeholder="Necesidades"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              necesidades: e.target.value,
-            });
-          }}
-          value={formData.necesidades}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <input
+            type="text"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            value={formData.nombre}
+            placeholder="Nombre*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Descripción"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción || ""}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Necesidades"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                necesidades: e.target.value,
+              });
+            }}
+            value={formData.necesidades || ""}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Notas"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                notas: e.target.value,
+              });
+            }}
+            value={formData.notas || ""}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
@@ -230,7 +277,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -249,14 +296,27 @@ function EditModal({
   const ref = useRef<HTMLDialogElement>(null);
   const [formData, setFormData] = useState<Operación>(operación!);
   const [selectedState, setSelectedState] = useState<Selected>({
-    value: formData.estado,
+    value: operación?.estado,
     label:
-      formData.estado === "INICIADA"
+      operación?.estado === "INICIADA"
         ? "Iniciada"
-        : formData.estado === "PENDIENTE"
+        : operación?.estado === "PENDIENTE"
         ? "Pendiente"
         : "Completada",
   });
+
+  const resetFormData = () => {
+    setFormData(operación!);
+    setSelectedState({
+      value: operación?.estado,
+      label:
+        operación?.estado === "INICIADA"
+          ? "Iniciada"
+          : operación?.estado === "PENDIENTE"
+          ? "Pendiente"
+          : "Completada",
+    });
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -288,13 +348,13 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow"
+      className="w-2/4 h-fit rounded-md shadow text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar operación</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 text-base"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -304,7 +364,7 @@ function EditModal({
             Number(id),
             Number(service_id),
             operación?.id!,
-            operación!
+            formData!
           ).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
@@ -316,7 +376,7 @@ function EditModal({
                   Number(id),
                   Number(service_id),
                   operación?.id!,
-                  formData
+                  operación!
                 ).then((rendered) => {
                   if (rendered) {
                     if (rendered === "Plantilla desactivada") {
@@ -394,31 +454,95 @@ function EditModal({
           });
         }}
       >
-        <input
-          type="text"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              nombre: e.target.value,
-            });
-          }}
-          placeholder="Nombre*"
-          value={formData.nombre}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
-        <textarea
-          rows={3}
-          placeholder="Descripción"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              descripción: e.target.value,
-            });
-          }}
-          value={formData.descripción}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <input
+            type="text"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            value={formData.nombre}
+            placeholder="Nombre*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Descripción"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                descripción: e.target.value,
+              });
+            }}
+            value={formData.descripción || ""}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         {operación?.estado === "PENDIENTE" ? (
+          <div className="relative">
+            <Select
+              options={[
+                {
+                  value: "PENDIENTE",
+                  label: "Pendiente",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "INICIADA",
+                  label: "Iniciada",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "COMPLETADA",
+                  label: "Completada",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedState}
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  estado: selectedState.value as OperaciónEstado,
+                  resultado:
+                    selectedState.value !== "COMPLETADA"
+                      ? ""
+                      : formData.resultado,
+                });
+              }}
+            />
+          </div>
+        ) : null}
+        {operación?.estado === "INICIADA" ? (
           <div className="relative">
             <Select
               options={[
@@ -448,31 +572,10 @@ function EditModal({
                 setFormData({
                   ...formData,
                   estado: selectedState.value as OperaciónEstado,
-                });
-              }}
-            />
-          </div>
-        ) : null}
-        {operación?.estado === "INICIADA" ? (
-          <div className="relative">
-            <Select
-              options={[
-                {
-                  value: "COMPLETADA",
-                  label: "Completada",
-                  onClick: (value, label) => {
-                    setSelectedState({
-                      value,
-                      label,
-                    });
-                  },
-                },
-              ]}
-              selected={selectedState}
-              onChange={() => {
-                setFormData({
-                  ...formData,
-                  estado: selectedState.value as OperaciónEstado,
+                  resultado:
+                    selectedState.value !== "COMPLETADA"
+                      ? ""
+                      : formData.resultado,
                 });
               }}
             />
@@ -490,27 +593,78 @@ function EditModal({
             <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
           </div>
         ) : null}
-        <textarea
-          rows={3}
-          placeholder="Necesidades"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              necesidades: e.target.value,
-            });
-          }}
-          value={formData.necesidades}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="flex gap-4">
+          <div className="w-2/4">
+            <textarea
+              rows={3}
+              placeholder="Necesidades"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  necesidades: e.target.value,
+                });
+              }}
+              value={formData.necesidades}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
+          </div>
+          <div className="w-2/4">
+            <textarea
+              rows={3}
+              placeholder="Notas"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  notas: e.target.value,
+                });
+              }}
+              value={formData.notas}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
+          </div>
+        </div>
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Resultado"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                resultado: e.target.value,
+              });
+            }}
+            value={formData.resultado}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
+            disabled={formData.estado !== "COMPLETADA"}
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              resetFormData();
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -688,9 +842,23 @@ function DeleteModal({
 function DataRow({ setOperationAsCompleted, operación }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.operación
+      ? "EDIT"
+      : permissions.find()?.eliminar.operación
+      ? "DELETE"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction =
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+    permissions.find()?.editar.operación
+      ? true
+      : permissions.find()?.eliminar.operación
+      ? true
+      : false;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -713,9 +881,6 @@ function DataRow({ setOperationAsCompleted, operación }: DataRowProps) {
         {operación?.id}
       </th>
       <td className="px-6 py-4 border border-slate-300">{operación?.nombre}</td>
-      <td className="px-6 py-4 border border-slate-300">
-        {operación?.descripción}
-      </td>
       <td className="px-6 py-2 border border-slate-300">
         {operación?.estado === "COMPLETADA" ? (
           <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
@@ -734,9 +899,19 @@ function DataRow({ setOperationAsCompleted, operación }: DataRowProps) {
       <td className="px-6 py-4 border border-slate-300">
         {format(new Date(operación?.añadida!), "dd/MM/yyyy")}
       </td>
+      <td className="px-6 py-4 border border-slate-300">
+        {operación?.iniciada
+          ? format(new Date(operación?.iniciada!), "dd/MM/yyyy")
+          : "Nunca"}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">
+        {operación?.completada
+          ? format(new Date(operación?.completada!), "dd/MM/yyyy")
+          : "Nunca"}
+      </td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+        className="px-6 py-3 border border-slate-300 w-[205px] relative"
       >
         {action === "EDIT" && (
           <>
@@ -794,13 +969,19 @@ function DataRow({ setOperationAsCompleted, operación }: DataRowProps) {
             }
           />
         )}
-        <button
-          id={`acciones-btn-${operación?.id}`}
-          className="bg-gray-300 border right-4 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-          onClick={() => setIsDropup(!isDropup)}
-        >
-          <More className="w-5 h-5 inline fill-black" />
-        </button>
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${operación?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -849,7 +1030,7 @@ function Dropup({ close, selectAction }: DropupProps) {
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.crear.ticket) && (
+        permissions.find()?.crear.operación) && (
         <li>
           <div
             onClick={() => {
@@ -949,7 +1130,7 @@ function IndividualDropup({
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.editar.ticket) && (
+        permissions.find()?.editar.operación) && (
         <li>
           <div
             onClick={() => {
@@ -976,7 +1157,7 @@ function IndividualDropup({
       )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.eliminar.ticket) && (
+        permissions.find()?.eliminar.operación) && (
         <li>
           <div
             onClick={() => {
@@ -1098,7 +1279,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar operación</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -1168,8 +1349,8 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               }}
               options={[
                 {
-                  value: "AÑADIDA",
-                  label: "Añadida",
+                  value: "PENDIENTE",
+                  label: "Pendiente",
                   onClick: (value, label) => {
                     setSelectedState({
                       value,
@@ -1238,6 +1419,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 setInput(e.target.value);
                 setTempInput(e.target.value);
               }}
+              required
             />
             <input
               type="date"
@@ -1248,18 +1430,33 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 setSecondInput(e.target.value);
                 setSecondTempInput(e.target.value);
               }}
+              required
             />
           </>
         ) : null}
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              resetSearch();
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button
+            className={clsx({
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedSearchType.label?.startsWith("Seleccionar") ||
+                (selectedFecha.label?.startsWith("Seleccionar") &&
+                  selectedSearchType.value !== "ESTADO") ||
+                (selectedState.label?.startsWith("Seleccionar") &&
+                  selectedSearchType.value === "ESTADO"),
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                true,
+            })}
+          >
             Buscar
           </button>
         </div>
@@ -1270,13 +1467,19 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 
 export default function OperationsDataDisplay() {
   const { id, service_id } = useParams();
+  const navigate = useNavigate();
   const [operations, setOperations] = useState<Operación[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("ADD");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.crear.operación
+      ? "ADD"
+      : "SEARCH"
+  );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -1294,6 +1497,7 @@ export default function OperationsDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const resetAllSearchs = useFunctionStore((state) => state.resetAllSearchs);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -1316,7 +1520,7 @@ export default function OperationsDataDisplay() {
   };
 
   useEffect(() => {
-    if (searchCount === 0 || isOperationCompleted) {
+    if (searchCount === 0) {
       OperationService.getAll(Number(id), Number(service_id), page, 8).then(
         (data) => {
           if (data === false) {
@@ -1445,16 +1649,30 @@ export default function OperationsDataDisplay() {
       <div className="absolute w-full h-full px-8 py-5">
         <nav className="flex justify-between items-center text-slate-600 select-none">
           <div className="font-medium">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" /> Tickets{" "}
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />
+            <span
+              onClick={() => {
+                navigate(`/tickets`), resetAllSearchs();
+              }}
+              className="hover:text-[#2096ed] cursor-pointer"
+            >
+              Tickets
+            </span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">{id}</span>{" "}
-            <Right className="w-3 h-3 inline fill-slate-600" /> Servicios{" "}
+            <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span
+              onClick={() => {
+                navigate(`/tickets/${id}/servicios`), resetAllSearchs();
+              }}
+              className="hover:text-[#2096ed] cursor-pointer"
+            >
+              Servicios
+            </span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">{service_id}</span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]" onClick={resetSearchCount}>
-              Operaciones
-            </span>
+            <span className="text-[#2096ed]">Operaciones</span>
           </div>
           <div className="flex gap-2">
             {isDropup && (
@@ -1474,12 +1692,23 @@ export default function OperationsDataDisplay() {
               </button>
             ) : null}
             {action === "SEARCH" ? (
-              <button
-                onClick={() => setIsSearch(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Buscar operación
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setIsSearch(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Buscar operación
+                </button>
+              </>
             ) : null}
             <button
               id="acciones-btn"
@@ -1505,13 +1734,16 @@ export default function OperationsDataDisplay() {
                     Nombre
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Descripción
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Estado
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Añadida
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Iniciada
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Completada
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
@@ -1535,7 +1767,7 @@ export default function OperationsDataDisplay() {
         )}
         {(notFound === true ||
           (operations.length === 0 && loading === false)) && (
-          <div className="grid w-full h-4/5 text-slate-600">
+          <div className="grid w-full h-4/5">
             <div className="place-self-center flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">

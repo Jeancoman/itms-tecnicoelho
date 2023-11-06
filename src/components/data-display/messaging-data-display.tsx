@@ -24,18 +24,8 @@ import MessageSenderService from "../../services/message-sender-service";
 hljs.registerLanguage("tecniplantilla", () => {
   return {
     case_insensitive: false,
-    keywords: "SI SINO SINO PERO DEFAULT FIN",
+    keywords: "SI SINO SINO PERO BASE FIN",
     contains: [
-      {
-        scope: "string",
-        begin: '"',
-        end: '"',
-      },
-      {
-        scope: "operator",
-        begin: "ES",
-        end: "QUE",
-      },
       {
         scope: "variable",
         begin: /\{\{/,
@@ -52,6 +42,7 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
   const [isOn, setIsOn] = useState(false);
   const [status, setStatus] = useState("");
   const [QRCode, setQRCode] = useState("");
+  const [timeoutID, setTimeoutID] = useState<NodeJS.Timeout>()
 
   const checkBackendStatus = async () => {
     try {
@@ -70,10 +61,12 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
         setSocket(socket);
         setIsOn(true);
       } else {
-        setTimeout(checkBackendStatus, 5000);
+        const timeout = setTimeout(checkBackendStatus, 5000);
+        setTimeoutID(timeout)
       }
     } catch (error) {
-      setTimeout(checkBackendStatus, 5000);
+      const timeout = setTimeout(checkBackendStatus, 5000);
+      setTimeoutID(timeout)
     }
   };
 
@@ -93,6 +86,10 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
 
   useEffect(() => {
     checkBackendStatus();
+    
+    return () => {
+      clearTimeout(timeoutID)
+    }
   }, []);
 
   useEffect(() => {
@@ -187,7 +184,7 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
           <div className="flex flex-col items-center gap-2">
             <div className="grid w-full h-4/5">
               {QRCode !== "" ? (
-                <img src={QRCode} className="place-self-center h-68 w-68" />
+                <img src={QRCode} className="place-self-center h-68 w-80" />
               ) : (
                 <div className="place-self-center">
                   <div role="status">
@@ -271,7 +268,7 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
       className="w-2/5 h-fit rounded-md shadow-md"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar mensajería</h1>
+        <h1 className="text-xl font-bold text-white">Configurar mensajería</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4"
@@ -467,7 +464,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-3/6 h-fit rounded shadow-md text-base"
+      className="w-3/5 h-fit rounded shadow-md text-base"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar plantilla</h1>
@@ -606,10 +603,7 @@ function DataRow({ plantilla, setOperationAsCompleted }: DataRowProps) {
   );
 }
 
-function Dropup({
-  close,
-  selectAction,
-}: DropupProps) {
+function Dropup({ close, selectAction }: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -756,7 +750,7 @@ export default function MessagingDataDisplay() {
       <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">Mensajería</span>
           </div>
           <div className="flex gap-2">
@@ -777,7 +771,7 @@ export default function MessagingDataDisplay() {
             ) : null}
             {action === "MESSAGING" ? (
               <button
-              onClick={() => setIsAddOpen(true)}
+                onClick={() => setIsAddOpen(true)}
                 className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
               >
                 Servicio mensajero

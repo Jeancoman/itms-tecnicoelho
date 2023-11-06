@@ -65,6 +65,54 @@ export default class ProviderService {
     }
   }
 
+  static async orderByTotal(page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/reportes/proveedores/compras?page=${page}&size=${size}&order_by=TOTAL`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async orderByCantidad(page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/reportes/proveedores/compras?page=${page}&size=${size}&order_by=CANTIDAD`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
   static async getByExactNombre(nombre: string, page: number, size: number) {
     try {
       const response = await fetch(

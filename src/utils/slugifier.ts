@@ -7,8 +7,11 @@ export default class Slugifier {
       .toLowerCase()
       .replace(/[^a-zA-Z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
-    const randomString = Math.random().toString(36).substring(2, 12);
-    const result = `${slug}-${randomString}`;
-    return result;
+      
+    return slug;
+  }
+
+  static randomString(){
+    return Math.random().toString(36).substring(2, 12)
   }
 }

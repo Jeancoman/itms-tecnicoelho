@@ -267,6 +267,30 @@ export default class TicketService {
     }
   }
 
+    static async getByElemento(elemento_id: number, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/tickets/busqueda?page=${page}&size=${size}&elemento_id=${elemento_id}`
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
   static async getByState(estado: string, page: number, size: number) {
     try {
       const response = await fetch(

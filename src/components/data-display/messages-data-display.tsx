@@ -15,13 +15,17 @@ import {
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
 import MessageService from "../../services/message-service";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import permissions from "../../utils/permissions";
 import session from "../../utils/session";
 import Select from "../misc/select";
 import { useMessageSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
+import TicketService from "../../services/ticket-service";
+import MessageSenderService from "../../services/message-sender-service";
+import clsx from "clsx";
+import { useFunctionStore } from "../../store/functionStore";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id } = useParams();
@@ -76,7 +80,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Añadir mensaje</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -93,18 +97,25 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           });
         }}
       >
-        <textarea
-          rows={3}
-          placeholder="Contenido*"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              contenido: e.target.value,
-            });
-          }}
-          value={formData.contenido}
-          className="border p-2 rounded-lg outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <textarea
+            rows={8}
+            placeholder="Contenido"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                contenido: e.target.value,
+              });
+            }}
+            value={formData.contenido}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            required
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
@@ -113,7 +124,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -130,11 +141,19 @@ function EditModal({
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const { id } = useParams();
-  const [formData, setFormData] = useState<Mensaje>({ ...mensaje! });
+  const [formData, setFormData] = useState<Mensaje>(mensaje!);
   const [selectedState, setSelectedState] = useState<Selected>({
-    value: formData.estado,
-    label: formData.estado === "ENVIADO" ? "Enviado" : "No enviado",
+    value: mensaje?.estado,
+    label: mensaje?.estado === "ENVIADO" ? "Enviado" : "No enviado",
   });
+
+  const resetFormData = () => {
+    setFormData(mensaje!);
+    setSelectedState({
+      value: mensaje?.estado,
+      label: mensaje?.estado === "ENVIADO" ? "Enviado" : "No enviado",
+    });
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -166,13 +185,13 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md text-base"
+      className="w-2/5 h-fit rounded-md shadow-md text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar mensaje</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4"
+        className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -225,28 +244,37 @@ function EditModal({
             selected={selectedState}
           />
         </div>
-
-        <textarea
-          rows={3}
-          placeholder="Contenido*"
-          onChange={(e) => {
-            setFormData({
-              ...formData,
-              contenido: e.target.value,
-            });
-          }}
-          value={formData.contenido}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-        />
+        <div className="w-full">
+          <textarea
+            rows={8}
+            placeholder="Contenido*"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                contenido: e.target.value,
+              });
+            }}
+            value={formData.contenido}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            required
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 10 caracteres
+          </span>
+        </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={() => {
+              closeModal();
+              resetFormData();
+            }}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -343,9 +371,23 @@ function DeleteModal({
 function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.mensaje
+      ? "EDIT"
+      : permissions.find()?.eliminar.mensaje
+      ? "DELETE"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction =
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+    permissions.find()?.editar.mensaje
+      ? true
+      : permissions.find()?.eliminar.mensaje
+      ? true
+      : false;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -357,6 +399,40 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
 
   const selectAction = (action: `${Action}`) => {
     setAction(action);
+  };
+
+  const send = () => {
+    TicketService.getById(mensaje?.ticket_id!).then((resTicket) => {
+      if (resTicket) {
+        if (resTicket.elemento?.cliente?.enviarMensajes) {
+          const sendingToast = toast.loading("Enviando mensaje...");
+          MessageSenderService.send(
+            resTicket.elemento?.cliente.telefono || "",
+            mensaje?.contenido || ""
+          ).then((res) => {
+            if (res) {
+              toast.dismiss(sendingToast);
+              toast.success("Mensaje enviado exitosamente.");
+              MessageService.update(
+                mensaje?.ticket_id!,
+                mensaje?.id!,
+                //@ts-ignore
+                {
+                  id: mensaje?.id!,
+                  estado: "ENVIADO",
+                  ticket_id: mensaje?.ticket_id,
+                }
+              ).then(() => {
+                setOperationAsCompleted();
+              });
+            } else {
+              toast.dismiss(sendingToast);
+              toast.error("Mensaje no pudo ser enviado.");
+            }
+          });
+        }
+      }
+    });
   };
 
   return (
@@ -384,7 +460,10 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
       <td className="px-6 py-4 border border-slate-300">
         {format(new Date(mensaje?.creado!), "dd/MM/yyyy")}
       </td>
-      <td ref={ref} className="px-6 py-3 border border-slate-300 w-[200px] relative">
+      <td
+        ref={ref}
+        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+      >
         {action === "EDIT" && (
           <>
             <button
@@ -401,6 +480,22 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
               closeModal={closeEditModal}
               setOperationAsCompleted={setOperationAsCompleted}
             />
+          </>
+        )}
+        {action === "SEND" && (
+          <>
+            {mensaje?.estado === "NO_ENVIADO" ? (
+              <button
+                onClick={send}
+                className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+              >
+                Enviar mensaje
+              </button>
+            ) : (
+              <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+                Enviar mensaje
+              </button>
+            )}
           </>
         )}
         {action === "DELETE" && (
@@ -421,7 +516,7 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
             />
           </>
         )}
-                {isDropup && (
+        {isDropup && (
           <IndividualDropup
             close={() => setIsDropup(false)}
             selectAction={selectAction}
@@ -441,13 +536,19 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
             }
           />
         )}
-        <button
-          id={`acciones-btn-${mensaje?.id}`}
-          className="bg-gray-300 border right-4 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-          onClick={() => setIsDropup(!isDropup)}
-        >
-          <More className="w-5 h-5 inline fill-black" />
-        </button>
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${mensaje?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -463,7 +564,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     value: "",
     label: "Seleccionar estado",
   });
-  const setSecondParam = useMessageSearchParamStore((state) => state.setSecondParam);
+  const setSecondParam = useMessageSearchParamStore(
+    (state) => state.setSecondParam
+  );
   const setParam = useMessageSearchParamStore((state) => state.setParam);
   const incrementSearchCount = useMessageSearchParamStore(
     (state) => state.incrementSearchCount
@@ -516,7 +619,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <h1 className="text-xl font-bold text-white">Buscar Messagen</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -549,58 +652,65 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           />
         </div>
         {selectedSearchType.value === "ESTADO" ? (
-                  <div className="relative">
-                  <Select
-                    onChange={() => {
-                      setSecondParam(selectedState.value as string);
-                    }}
-                    options={[
-                      {
-                        value: "ENVIADO",
-                        label: "Enviado",
-                        onClick: (value, label) => {
-                          setSelectedState({
-                            value,
-                            label,
-                          });
-                        },
-                      },
-                                            {
-                        value: "NO_ENVIADO",
-                        label: "No enviado",
-                        onClick: (value, label) => {
-                          setSelectedState({
-                            value,
-                            label,
-                          });
-                        },
-                      },
-                    ]}
-                    selected={selectedState}
-                  />
-                </div>
+          <div className="relative">
+            <Select
+              onChange={() => {
+                setSecondParam(selectedState.value as string);
+              }}
+              options={[
+                {
+                  value: "ENVIADO",
+                  label: "Enviado",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "NO_ENVIADO",
+                  label: "No enviado",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedState}
+            />
+          </div>
         ) : null}
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Buscar
-            </button>
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              closeModal();
+              resetSearch();
+            }}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cancelar
+          </button>
+          <button
+            className={clsx({
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedSearchType.label?.startsWith("Seleccionar"),
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                true,
+            })}
+          >
+            Buscar
+          </button>
         </div>
       </form>
     </dialog>
   );
 }
 
-function Dropup({
-  close,
-  selectAction,
-}: DropupProps) {
+function Dropup({ close, selectAction }: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -643,7 +753,7 @@ function Dropup({
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.crear.ticket) && (
+        permissions.find()?.crear.mensaje) && (
         <li>
           <div
             onClick={() => {
@@ -743,7 +853,7 @@ function IndividualDropup({
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.editar.ticket) && (
+        permissions.find()?.editar.mensaje) && (
         <li>
           <div
             onClick={() => {
@@ -770,7 +880,34 @@ function IndividualDropup({
       )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.eliminar.ticket) && (
+        permissions.find()?.editar.mensaje) && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("SEND");
+              close();
+            }}
+            className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+          >
+            Enviar mensaje
+          </div>
+        </li>
+      )}
+      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+        permissions.find()?.eliminar.mensaje) && (
         <li>
           <div
             onClick={() => {
@@ -801,13 +938,19 @@ function IndividualDropup({
 
 export default function MessagesDataDisplay() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Mensaje[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("ADD");
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.crear.mensaje
+      ? "ADD"
+      : "SEARCH"
+  );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -819,6 +962,7 @@ export default function MessagesDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const resetAllSearchs = useFunctionStore((state) => state.resetAllSearchs);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -860,9 +1004,11 @@ export default function MessagesDataDisplay() {
         }
         setIsOperationCompleted(false);
       });
-    } if (wasSearch) {
+    }
+    if (wasSearch) {
       const loadingToast = toast.loading("Buscando...");
-        MessageService.getByState(Number(id), secondParam, page, 8).then((data) => {
+      MessageService.getByState(Number(id), secondParam, page, 8).then(
+        (data) => {
           if (data === false) {
             setNotFound(true);
             setMessages([]);
@@ -880,7 +1026,8 @@ export default function MessagesDataDisplay() {
           }
           toast.dismiss(loadingToast);
           setIsOperationCompleted(false);
-        });
+        }
+      );
     }
   }, [isOperationCompleted, page, searchCount]);
 
@@ -893,12 +1040,19 @@ export default function MessagesDataDisplay() {
       <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]">Tickets</span>{" "}
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            <span
+              onClick={() => {
+                navigate("/tickets"), resetAllSearchs();
+              }}
+              className="hover:text-[#2096ed] cursor-pointer"
+            >
+              Tickets
+            </span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">{id}</span>{" "}
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span onClick={resetSearchCount} className="text-[#2096ed]">Mensajes</span>
+            <span className="text-[#2096ed]">Mensajes</span>
           </div>
           <div className="flex gap-2">
             {isDropup && (
@@ -918,12 +1072,23 @@ export default function MessagesDataDisplay() {
               </button>
             ) : null}
             {action === "SEARCH" ? (
-              <button
-                onClick={() => setIsSearch(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Buscar mensaje
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setIsSearch(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Buscar mensaje
+                </button>
+              </>
             ) : null}
             <button
               id="acciones-btn"
@@ -977,7 +1142,8 @@ export default function MessagesDataDisplay() {
             </table>
           </div>
         )}
-        {(notFound === true || (messages.length === 0 && loading === false)) && (
+        {(notFound === true ||
+          (messages.length === 0 && loading === false)) && (
           <div className="grid w-full h-4/5">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
@@ -985,7 +1151,7 @@ export default function MessagesDataDisplay() {
                 Ningún mensaje encontrado
               </p>
               <p className="font-medium text text-center mt-1">
-              {searchCount === 0
+                {searchCount === 0
                   ? "Esto puede deberse a un error del servidor, o a que no hay ningún mensaje registrada."
                   : "Esto puede deberse a un error del servidor, o a que ningún mensaje concuerda con tu busqueda."}
               </p>
@@ -1040,13 +1206,13 @@ export default function MessagesDataDisplay() {
         closeModal={closeAddModal}
         setOperationAsCompleted={setAsCompleted}
       />
-            <SearchModal
+      <SearchModal
         isOpen={isSearch}
         closeModal={() => setIsSearch(false)}
         setOperationAsCompleted={function (): void {
           throw new Error("Function not implemented.");
         }}
-        />
+      />
     </>
   );
 }

@@ -14,7 +14,7 @@ export default function ServicesPage() {
     } else {
       if (
         session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-        !permissions.find()?.ver.ticket
+        !permissions.find()?.ver.servicio
       ) {
         navigate("/");
       }
@@ -26,7 +26,7 @@ export default function ServicesPage() {
   } else {
     if (
       session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-      !permissions.find()?.ver.ticket
+      !permissions.find()?.ver.servicio
     ) {
       return null;
     }

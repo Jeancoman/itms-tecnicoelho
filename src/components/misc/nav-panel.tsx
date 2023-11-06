@@ -2,7 +2,7 @@ import { ReactComponent as Users } from "/src/assets/group.svg";
 import { ReactComponent as Work } from "/src/assets/work.svg";
 import { ReactComponent as Ticket } from "/src/assets/ticket-solid.svg";
 import { ReactComponent as Article } from "/src/assets/article.svg";
-import { ReactComponent as Category } from "/src/assets/reorder.svg";
+import { ReactComponent as Category } from "/src/assets/list_alt.svg";
 import { ReactComponent as Store } from "/src/assets/store.svg";
 import { ReactComponent as Truck } from "/src/assets/local_shipping.svg";
 import { ReactComponent as Register } from "/src/assets/sale.svg";
@@ -18,6 +18,7 @@ import { ReactComponent as Library } from "/src/assets/library.svg";
 import { ReactComponent as Backup } from "/src/assets/backup.svg";
 import { ReactComponent as Check } from "/src/assets/check_circle.svg";
 import { ReactComponent as Error } from "/src/assets/error.svg";
+import { ReactComponent as Help } from "/src/assets/help.svg";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import session from "../../utils/session";
 import permissions from "../../utils/permissions";
@@ -25,6 +26,8 @@ import { useColapsableInventoryStore } from "../../store/colapsableStore";
 import {
   useCategorySearchParamStore,
   useClientSearchParamStore,
+  useElementSearchParamStore,
+  useMessageSearchParamStore,
   useOperationSearchParamStore,
   useProblemSearchParamStore,
   useProductSearchParamStore,
@@ -41,6 +44,7 @@ import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 import { ModalProps } from "../../types";
 import toast from "react-hot-toast";
+import { useFunctionStore } from "../../store/functionStore";
 
 function RestaurationModal({ isOpen, closeModal }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -287,8 +291,15 @@ export default function NavPanel() {
   const resetOperationSearchCount = useOperationSearchParamStore(
     (state) => state.resetSearchCount
   );
+  const resetElementSearchCount = useElementSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const resetMessageSearchCount = useMessageSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const setFunction = useFunctionStore((state) => state.setFunction)
 
-  const reset = () => {
+  const resetAllSearchs = () => {
     resetProductSearchCount();
     resetProblemSearchCount();
     resetServiceSearchCount();
@@ -301,7 +312,13 @@ export default function NavPanel() {
     resetProviderSearchCount();
     resetPublicationSearchCount();
     resetUserSearchCount();
+    resetMessageSearchCount();
+    resetElementSearchCount();
   };
+
+  useEffect(() => {
+    setFunction(resetAllSearchs)
+  })
 
   useEffect(() => {
     if (
@@ -315,7 +332,7 @@ export default function NavPanel() {
 
   return (
     <aside className="pt-7 h-full shadow-md bg-[#2096ed] select-none">
-      <div className="font-bold text-white text-lg pl-6 flex gap-2 items-center">
+      <div className="font-bold text-white text-lg pl-6 flex gap-2 items-center -mt-1">
         <img
           className="h-8 w-8 object-cover"
           src="/assets/logo.png"
@@ -324,12 +341,12 @@ export default function NavPanel() {
         />
         <p className="cursor-default uppercase">Tecnicoelho</p>
       </div>
-      <hr className="my-4 mx-5" />
+      <hr className="my-5 mx-5" />
       <div className="max-h-[568px] scrollbar-none overflow-auto pb-5">
         <div className="text-white font-semibold flex flex-col gap-0.5 px-5">
           <NavLink
             to="/"
-            onClick={reset}
+            onClick={resetAllSearchs}
             className={clsx({
               ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                 location.pathname !== "/",
@@ -350,7 +367,7 @@ export default function NavPanel() {
           session.find()?.usuario.rol === "SUPERADMINISTRADOR" ? (
             <NavLink
               to="/usuarios"
-              onClick={reset}
+              onClick={resetAllSearchs}
               className={clsx({
                 ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                   !location.pathname.includes("usuarios"),
@@ -379,7 +396,7 @@ export default function NavPanel() {
           permissions.find()?.ver.cliente ? (
             <NavLink
               to="/clientes"
-              onClick={reset}
+              onClick={resetAllSearchs}
               className={clsx({
                 ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                   !location.pathname.includes("clientes"),
@@ -408,7 +425,7 @@ export default function NavPanel() {
           permissions.find()?.ver.ticket ? (
             <NavLink
               to="/tickets"
-              onClick={reset}
+              onClick={resetAllSearchs}
               className={clsx({
                 ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                   !location.pathname.includes("tickets"),
@@ -437,7 +454,7 @@ export default function NavPanel() {
           permissions.find()?.ver.producto ? (
             <NavLink
               to="/productos"
-              onClick={reset}
+              onClick={resetAllSearchs}
               className={clsx({
                 ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                   !location.pathname.includes("productos"),
@@ -466,7 +483,7 @@ export default function NavPanel() {
           permissions.find()?.ver.proveedor ? (
             <NavLink
               to="/proveedores"
-              onClick={reset}
+              onClick={resetAllSearchs}
               className={clsx({
                 ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                   !location.pathname.includes("proveedores"),
@@ -483,6 +500,35 @@ export default function NavPanel() {
                 })}
               />
               <p>Proveedores</p>
+            </NavLink>
+          ) : (
+            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+              <Tag className="h-6 w-6 fill-white " />
+              <p>No permitido</p>
+            </div>
+          )}
+          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
+          permissions.find()?.ver.imagen ? (
+            <NavLink
+              to="/galeria"
+              onClick={resetAllSearchs}
+              className={clsx({
+                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                  !location.pathname.includes("galeria"),
+                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                  location.pathname.includes("galeria"),
+              })}
+            >
+              <Library
+                className={clsx({
+                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    !location.pathname.includes("galeria"),
+                  ["h-6 w-6 fill-[#2096ed]"]:
+                    location.pathname.includes("galeria"),
+                })}
+              />
+              <p>Galería</p>
             </NavLink>
           ) : (
             <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
@@ -519,7 +565,7 @@ export default function NavPanel() {
               permissions.find()?.ver.venta ? (
                 <NavLink
                   to="/ventas"
-                  onClick={reset}
+                  onClick={resetAllSearchs}
                   className={clsx({
                     ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg mb-0.5"]:
                       !location.pathname.includes("ventas"),
@@ -548,7 +594,7 @@ export default function NavPanel() {
               permissions.find()?.ver.compra ? (
                 <NavLink
                   to="/compras"
-                  onClick={reset}
+                  onClick={resetAllSearchs}
                   className={clsx({
                     ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                       !location.pathname.includes("compras"),
@@ -579,7 +625,7 @@ export default function NavPanel() {
           permissions.find()?.ver.publicación ? (
             <NavLink
               to="/publicaciones"
-              onClick={reset}
+              onClick={resetAllSearchs}
               className={clsx({
                 ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                   !location.pathname.includes("publicaciones"),
@@ -605,39 +651,10 @@ export default function NavPanel() {
           )}
           {session.find()?.usuario.rol === "ADMINISTRADOR" ||
           session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.imagen ? (
-            <NavLink
-              to="/galeria"
-              onClick={reset}
-              className={clsx({
-                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                  !location.pathname.includes("galeria"),
-                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                  location.pathname.includes("galeria"),
-              })}
-            >
-              <Library
-                className={clsx({
-                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
-                    !location.pathname.includes("galeria"),
-                  ["h-6 w-6 fill-[#2096ed]"]:
-                    location.pathname.includes("galeria"),
-                })}
-              />
-              <p>Galería</p>
-            </NavLink>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
-            </div>
-          )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
           permissions.find()?.ver.categoría ? (
             <NavLink
               to="/categorias"
-              onClick={reset}
+              onClick={resetAllSearchs}
               className={clsx({
                 ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                   !location.pathname.includes("categorias"),
@@ -666,7 +683,7 @@ export default function NavPanel() {
             permissions.find()?.ver.mensajería) && (
             <NavLink
               to="/mensajeria"
-              onClick={reset}
+              onClick={resetAllSearchs}
               className={clsx({
                 ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                   !location.pathname.includes("mensajeria"),
@@ -700,6 +717,15 @@ export default function NavPanel() {
               <p>No permitido</p>
             </div>
           )}
+          <div
+            onClick={() =>
+              window.open(`${window.location.origin}/manual_de_usuario.pdf`)
+            }
+            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+          >
+            <Help className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+            <p>Ayuda</p>
+          </div>
           <div
             onClick={() => {
               session.revoke();

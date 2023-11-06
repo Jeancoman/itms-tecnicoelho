@@ -24,7 +24,6 @@ import MessagingOptionsService from "../../services/messaging-options-service";
 import options from "../../utils/options";
 import session from "../../utils/session";
 import permissions from "../../utils/permissions";
-import { Toaster } from "react-hot-toast";
 
 export default function HomeDataDisplay() {
   const [clientes, setClientes] = useState(0);
@@ -114,7 +113,7 @@ export default function HomeDataDisplay() {
       <div className="absolute h-full w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
-            Menu <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">Inicio</span>
           </div>
           <div className="h-9"></div>
@@ -441,7 +440,6 @@ export default function HomeDataDisplay() {
           )}
         </div>
       </div>
-     <Toaster position="bottom-right" reverseOrder={false} />
     </>
   );
 }

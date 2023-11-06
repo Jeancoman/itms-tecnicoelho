@@ -131,9 +131,17 @@ export type Selected = {
 
 export type LogicalOperator = "Y" | "O";
 
-export type ComparisonOperator = "ES IGUAL QUE" | "NO ES IGUAL QUE";
+export type ComparisonOperator =
+  | "ES IGUAL QUE"
+  | "NO ES IGUAL QUE"
+  | "HA CAMBIADO A"
+  | "HA CAMBIADO ES"
+  | "ESTA EN BLANCO ES"
+  | "CONTIENE"
+  | "EMPIEZA CON"
+  | "TERMINA CON";
 
-export type TypeOperator = "SI" | "SINO" | "SINO PERO" | "DEFAULT" | "FIN";
+export type TypeOperator = "SI" | "SINO" | "SINO PERO" | "BASE" | "FIN";
 
 export type Operation = {
   leftSideValue: string | number | undefined;
@@ -172,6 +180,8 @@ export interface Options {
   servicio?: Servicio;
   operación?: Operación;
   previamente?: Previamente;
+  categoría_de_elemento?: Categoría;
+  categoría_de_servicio?: Categoría;
 }
 
 export type Action =
@@ -200,7 +210,8 @@ export type Action =
   | "SEARCH"
   | "REPORT"
   | "OPTIONS"
-  | "MESSAGING";
+  | "MESSAGING"
+  | "SEND";
 
 export type UsuarioRol = "EMPLEADO" | "ADMINISTRADOR" | "SUPERADMINISTRADOR";
 
@@ -312,7 +323,10 @@ export interface Elemento {
 export interface Ticket {
   id?: number;
   estado: TicketEstado;
+  notas_de_apertura?: string;
+  notas_de_cierre?: string;
   readonly creado?: Date;
+  readonly cerrado?: Date;
   elemento_id?: number;
   elemento?: Elemento;
 }
@@ -323,6 +337,9 @@ export interface Servicio {
   descripción?: string;
   tipo: ServicioTipo;
   estado: ServicioEstado;
+  resultado?: string;
+  notas?: string;
+  necesidades?: string;
   readonly añadido?: Date;
   iniciado?: Date;
   completado?: Date;
@@ -358,6 +375,7 @@ export interface Operación {
   nombre: string;
   descripción?: string;
   resultado?: string;
+  notas?: string;
   estado: OperaciónEstado;
   necesidades?: string;
   readonly añadida?: Date;
@@ -385,7 +403,7 @@ export interface Producto {
   esPúblico: boolean;
   categoría_id?: number;
   categoría?: Categoría;
-  imagens?: Imagen[]
+  imagens?: Imagen[];
 }
 
 export interface Publicación {
@@ -399,6 +417,7 @@ export interface Publicación {
   imagen?: Imagen;
   imagen_id?: number;
   usuario_id?: number;
+  usuario?: Usuario;
 }
 
 export interface OperaciónProducto {
