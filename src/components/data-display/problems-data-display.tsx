@@ -1001,7 +1001,7 @@ function DataRow({ setOperationAsCompleted, problema }: DataRowProps) {
             right={
               ref?.current?.getBoundingClientRect().left! +
               window.scrollX -
-              1085
+              1055
             }
           />
         )}
