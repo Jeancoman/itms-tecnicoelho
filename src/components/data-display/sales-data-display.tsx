@@ -2397,7 +2397,7 @@ function Dropup({
               cursor-pointer
             "
           >
-            Registrar venta
+            Añadir venta
           </div>
         </li>
       )}

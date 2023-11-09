@@ -1187,10 +1187,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               }}
               checked={tempIsPrecise}
               id="checkbox"
-              disabled={
-                selectedSearchType.value === "CATEGORÍA" ||
-                selectedSearchType.value === ""
-              }
+              disabled={selectedSearchType.value === "CATEGORÍA"}
             />
             <label
               className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"

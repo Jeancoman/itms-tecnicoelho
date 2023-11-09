@@ -121,7 +121,7 @@ function EditModal({
         <div>
           <textarea
             rows={3}
-            placeholder="Descripción de portada"
+            placeholder="Descripción"
             onChange={(e) => {
               setFormData({
                 ...formData,
@@ -292,7 +292,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         <div>
           <textarea
             rows={3}
-            placeholder="Descripción de portada"
+            placeholder="Descripción"
             onChange={(e) => {
               setFormData({
                 ...formData,
