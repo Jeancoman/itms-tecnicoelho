@@ -33,7 +33,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const [formData, setFormData] = useState<Cliente>({
     nombre: "",
     apellido: "",
-    documento: undefined,
+    documento: "",
     email: "",
     telefono: "",
     dirección: "",
@@ -46,7 +46,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     setFormData({
       nombre: "",
       apellido: "",
-      documento: undefined,
+      documento: "",
       email: "",
       telefono: "",
       dirección: "",
@@ -203,10 +203,16 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 }}
                 value={formData.documento}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                pattern="^.{7,}$"
+                pattern={
+                  documentType.value === "RIF"
+                    ? "^[A-Za-z]-?\\d{1,9}-?\\d?$"
+                    : "^\\d{1,3}\\.\\d{3}\\.\\d{3}$"
+                }
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Minimo 7 caracteres
+                {documentType.value === "RIF"
+                  ? "Formato: J-30684267-5"
+                  : "Formato: 29.946.012"}
               </span>
             </div>
           </div>
@@ -281,8 +287,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             value={formData.contraseña}
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             name="password"
-            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$¡!%*¿?&#^_+\-=<>\\./,\[\]{}\(\):;|~])[A-Za-z\d@$¡!%*¿?&#^_+\-=<>\\./,\[\]{}\(\):;|~]{8,}$"
             autoComplete="new-password"
+            required
           />
           <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
             Contraseña debe tener minimo 8 caracteres, contener una letra
@@ -291,12 +298,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           {visible ? (
             <On
               onClick={() => setVisible(false)}
-              className="absolute top-2 right-4 fill-[#2096ed] peer-[&:not(:placeholder-shown):invalid]:fill-red-500"
+              className="absolute top-2 right-4 fill-[#2096ed]"
             />
           ) : (
             <Off
               onClick={() => setVisible(true)}
-              className="absolute top-2 right-4 fill-[#2096ed] peer-[&:not(:placeholder-shown):invalid]:fill-red-500"
+              className="absolute top-2 right-4 fill-[#2096ed]"
             />
           )}
         </div>
@@ -514,10 +521,16 @@ function EditModal({
                 }}
                 value={formData.documento}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                pattern="^.{7,}$"
+                pattern={
+                  documentType.value === "RIF"
+                    ? "^[A-Za-z]-?\\d{1,9}-?\\d?$"
+                    : "^\\d{1,3}\\.\\d{3}\\.\\d{3}$"
+                }
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Minimo 7 caracteres
+                {documentType.value === "RIF"
+                  ? "Formato: J-30684267-5"
+                  : "Formato: 29.946.012"}
               </span>
             </div>
           </div>
@@ -592,7 +605,7 @@ function EditModal({
             value={formData.contraseña}
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             name="password"
-            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$¡!%*¿?&#^_+\-=<>\\./,\[\]{}\(\):;|~])[A-Za-z\d@$¡!%*¿?&#^_+\-=<>\\./,\[\]{}\(\):;|~]{8,}$"
             autoComplete="new-password"
           />
           <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
@@ -602,12 +615,12 @@ function EditModal({
           {visible ? (
             <On
               onClick={() => setVisible(false)}
-              className="absolute top-2 right-4 fill-[#2096ed] peer-[&:not(:placeholder-shown):invalid]:fill-red-500"
+              className="absolute top-2 right-4 fill-[#2096ed]"
             />
           ) : (
             <Off
               onClick={() => setVisible(true)}
-              className="absolute top-2 right-4 fill-[#2096ed] peer-[&:not(:placeholder-shown):invalid]:fill-red-500"
+              className="absolute top-2 right-4 fill-[#2096ed]"
             />
           )}
         </div>

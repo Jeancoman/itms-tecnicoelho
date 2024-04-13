@@ -1,4 +1,5 @@
 import { Operación, Response } from "../types";
+import session from "../utils/session";
 
 export default class OperationService {
   static async getAll(
@@ -11,7 +12,15 @@ export default class OperationService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/servicios/${service_id}/operaciones?=page=${page}&size=${size}`
+        }/api/tickets/${ticket_id}/servicios/${service_id}/operaciones?=page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -35,7 +44,15 @@ export default class OperationService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/servicios/${service_id}/operaciones/${id}`
+        }/api/tickets/${ticket_id}/servicios/${service_id}/operaciones/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -60,7 +77,15 @@ export default class OperationService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/servicios/${servicio_id}/operaciones?page=${page}&size=${size}&añadida_inicial=${añadido_inicial}&añadida_final=${añadido_final}`
+        }/api/tickets/${ticket_id}/busqueda/servicios/${servicio_id}/operaciones?page=${page}&size=${size}&añadida_inicial=${añadido_inicial}&añadida_final=${añadido_final}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -91,7 +116,15 @@ export default class OperationService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/servicios/${servicio_id}/operaciones?page=${page}&size=${size}&iniciada_inicial=${añadido_inicial}&iniciada_final=${añadido_final}`
+        }/api/tickets/${ticket_id}/busqueda/servicios/${servicio_id}/operaciones?page=${page}&size=${size}&iniciada_inicial=${añadido_inicial}&iniciada_final=${añadido_final}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -122,7 +155,15 @@ export default class OperationService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/servicios/${servicio_id}/operaciones?page=${page}&size=${size}&completada_inicial=${añadido_inicial}&completada_final=${añadido_final}`
+        }/api/tickets/${ticket_id}/busqueda/servicios/${servicio_id}/operaciones?page=${page}&size=${size}&completada_inicial=${añadido_inicial}&completada_final=${añadido_final}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -152,7 +193,15 @@ export default class OperationService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/servicios/${servicio_id}/operaciones?page=${page}&size=${size}&estado=${state}`
+        }/api/tickets/${ticket_id}/busqueda/servicios/${servicio_id}/operaciones?page=${page}&size=${size}&estado=${state}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -186,6 +235,7 @@ export default class OperationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(operation),
         }
@@ -217,6 +267,7 @@ export default class OperationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(operation),
         }
@@ -243,6 +294,7 @@ export default class OperationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );

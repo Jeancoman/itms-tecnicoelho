@@ -1,4 +1,5 @@
 import { Categoría, Response } from "../types";
+import session from "../utils/session";
 
 export default class CategoryService {
   static async getAll(page: number, size: number) {
@@ -6,7 +7,15 @@ export default class CategoryService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/categorias?page=${page}&size=${size}`
+        }/api/categorias?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -28,7 +37,15 @@ export default class CategoryService {
   static async getById(id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/categorias/${id}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/categorias/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -47,7 +64,15 @@ export default class CategoryService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/categorias/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`
+        }/api/categorias/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -71,7 +96,15 @@ export default class CategoryService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/categorias/busqueda?tipo=EXACTA&nombre=${nombre}&page=${page}&size=${size}`
+        }/api/categorias/busqueda?tipo=EXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -95,7 +128,15 @@ export default class CategoryService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/categorias/busqueda?tipo=${tipo}&page=${page}&size=${size}`
+        }/api/categorias/busqueda?tipo=${tipo}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -123,6 +164,7 @@ export default class CategoryService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(categorie),
         }
@@ -147,6 +189,7 @@ export default class CategoryService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(categorie),
         }
@@ -171,6 +214,7 @@ export default class CategoryService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );

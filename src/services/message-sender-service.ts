@@ -1,4 +1,5 @@
 import HmacSHA256 from "crypto-js/hmac-sha256";
+import session from "../utils/session";
 
 export default class MessageSenderService {
   static async send(to: string, content: string) {
@@ -7,12 +8,12 @@ export default class MessageSenderService {
         telefono: to,
         contenido: content,
       };
-  
+
       const hash = HmacSHA256(
         JSON.stringify(datos),
         `${import.meta.env.VITE_HMAC_KEY}`
       ).toString();
-      
+
       const response = await fetch(
         `${import.meta.env.VITE_MENSAJERO_URL}/enviar`,
         {
@@ -20,6 +21,7 @@ export default class MessageSenderService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify({ datos: datos, hash: hash }),
         }
@@ -44,6 +46,7 @@ export default class MessageSenderService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );
@@ -62,16 +65,14 @@ export default class MessageSenderService {
 
   static async qr() {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_MENSAJERO_URL}/qr`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${import.meta.env.VITE_MENSAJERO_URL}/qr`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: session.find()?.token!,
+        },
+      });
 
       if (response.status > 300) {
         return false;

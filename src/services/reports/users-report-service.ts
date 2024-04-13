@@ -1,10 +1,20 @@
+import session from "../../utils/session";
+
 export default class UsersReportService {
   static async getTotalAsCount() {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/usuarios/cantidad/total`
+        }/api/reportes/usuarios/cantidad/total`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {

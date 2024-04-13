@@ -1,4 +1,5 @@
 import { Mensaje, Response } from "../types";
+import session from "../utils/session";
 
 export default class MessageService {
   static async getAll(ticket_id: number, page: number, size: number) {
@@ -6,7 +7,15 @@ export default class MessageService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/mensajes?page=${page}&size=${size}`
+        }/api/tickets/${ticket_id}/mensajes?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -30,7 +39,15 @@ export default class MessageService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/mensajes/${id}`
+        }/api/tickets/${ticket_id}/mensajes/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -48,13 +65,21 @@ export default class MessageService {
     initial_date: string,
     end_date: string,
     page: number,
-    size: number,
+    size: number
   ) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/mensajes?tipo=ENTRE&creado_inicial=${initial_date}&creado_final=${end_date}&page=${page}&size=${size}`
+        }/api/tickets/${ticket_id}/busqueda/mensajes?tipo=ENTRE&creado_inicial=${initial_date}&creado_final=${end_date}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -73,17 +98,25 @@ export default class MessageService {
     }
   }
 
-    static async getByState(
+  static async getByState(
     ticket_id: number,
     state: string,
     page: number,
-    size: number,
+    size: number
   ) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/mensajes?estado=${state}&page=${page}&size=${size}`
+        }/api/tickets/${ticket_id}/busqueda/mensajes?estado=${state}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -111,6 +144,7 @@ export default class MessageService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(message),
         }
@@ -137,6 +171,7 @@ export default class MessageService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(message),
         }
@@ -163,6 +198,7 @@ export default class MessageService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );

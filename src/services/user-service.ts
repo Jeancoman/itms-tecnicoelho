@@ -12,6 +12,8 @@ export default class UserService {
           method: "GET",
           headers: {
             Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
@@ -35,7 +37,15 @@ export default class UserService {
   static async getById(id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -53,7 +63,15 @@ export default class UserService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/usuarios/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`
+        }/api/usuarios/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -77,7 +95,15 @@ export default class UserService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/usuarios/busqueda?tipo=EXACTA&nombre=${nombre}&page=${page}&size=${size}`
+        }/api/usuarios/busqueda?tipo=EXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -101,7 +127,15 @@ export default class UserService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/usuarios/busqueda?exactitud=INEXACTA&apellido=${apellido}&page=${page}&size=${size}`
+        }/api/usuarios/busqueda?exactitud=INEXACTA&apellido=${apellido}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -129,7 +163,15 @@ export default class UserService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/usuarios/busqueda?exactitud=EXACTA&apellido=${apellido}&page=${page}&size=${size}`
+        }/api/usuarios/busqueda?exactitud=EXACTA&apellido=${apellido}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -153,7 +195,15 @@ export default class UserService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/usuarios/busqueda?exactitud=INEXACTA&usuario=${usuario}&page=${page}&size=${size}`
+        }/api/usuarios/busqueda?exactitud=INEXACTA&usuario=${usuario}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -181,7 +231,15 @@ export default class UserService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/usuarios/busqueda?exactitud=EXACTA&usuario=${usuario}&page=${page}&size=${size}`
+        }/api/usuarios/busqueda?exactitud=EXACTA&usuario=${usuario}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -203,7 +261,15 @@ export default class UserService {
   static async getPermissionsById(id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}/permisos`
+        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}/permisos`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -225,6 +291,7 @@ export default class UserService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(permissions),
         }
@@ -249,6 +316,7 @@ export default class UserService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(permissions),
         }
@@ -273,6 +341,7 @@ export default class UserService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(user),
         }
@@ -297,6 +366,7 @@ export default class UserService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(user),
         }
@@ -321,6 +391,7 @@ export default class UserService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );
@@ -342,6 +413,7 @@ export default class UserService {
         {
           method: "POST",
           headers: {
+            Accept: "application/json",
             "Content-Type": "application/json",
           },
           body: JSON.stringify({

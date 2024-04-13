@@ -1,4 +1,5 @@
 import { Imagen, Producto, Response } from "../types";
+import session from "../utils/session";
 
 export default class ProductService {
   static async getAll(page: number, size: number) {
@@ -6,7 +7,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/productos?page=${page}&size=${size}`
+        }/api/productos?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -28,7 +37,15 @@ export default class ProductService {
   static async getById(id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/productos/${id}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/productos/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -46,7 +63,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/productos/busqueda?exactitud=INEXACTA&codigo=${código}&page=${page}&size=${size}`
+        }/api/productos/busqueda?exactitud=INEXACTA&codigo=${código}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -70,7 +95,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/productos/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`
+        }/api/productos/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -94,7 +127,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/productos/busqueda?exactitud=EXACTA&codigo=${código}&page=${page}&size=${size}`
+        }/api/productos/busqueda?exactitud=EXACTA&codigo=${código}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -118,7 +159,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/productos/busqueda?exactitud=EXACTA&nombre=${nombre}&page=${page}&size=${size}`
+        }/api/productos/busqueda?exactitud=EXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -142,7 +191,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/productos/cantidad/stock-bajo`
+        }/api/reportes/productos/cantidad/stock-bajo`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -166,7 +223,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/productos/stock-bajo?page=1&size=1000000`
+        }/api/reportes/productos/stock-bajo?page=1&size=1000000`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -190,7 +255,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/productos/sin-stock?page=1&size=1000000`
+        }/api/reportes/productos/sin-stock?page=1&size=1000000`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -214,7 +287,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/productos/mas-vendidos?page=1&size=1000000`
+        }/api/reportes/productos/mas-vendidos?page=1&size=1000000`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -234,7 +315,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/productos/mas-comprados?page=1&size=1000000`
+        }/api/reportes/productos/mas-comprados?page=1&size=1000000`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -254,7 +343,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/productos/vendidos-en?page=1&size=1000000&tipo=${tipo}`
+        }/api/reportes/productos/vendidos-en?page=1&size=1000000&tipo=${tipo}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -278,7 +375,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/productos/comprados-en?page=1&size=1000000&tipo=${tipo}`
+        }/api/reportes/productos/comprados-en?page=1&size=1000000&tipo=${tipo}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -302,7 +407,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/productos/vendidos-en?page=1&size=1000000&fecha_inicial=${fecha_inicial}&fecha_final=${fecha_final}`
+        }/api/reportes/productos/vendidos-en?page=1&size=1000000&fecha_inicial=${fecha_inicial}&fecha_final=${fecha_final}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -329,7 +442,15 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/productos/comprados-en?page=1&size=1000000&fecha_inicial=${fecha_inicial}&fecha_final=${fecha_final}`
+        }/api/reportes/productos/comprados-en?page=1&size=1000000&fecha_inicial=${fecha_inicial}&fecha_final=${fecha_final}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -364,6 +485,7 @@ export default class ProductService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(body),
         }
@@ -388,6 +510,7 @@ export default class ProductService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(product),
         }
@@ -412,6 +535,7 @@ export default class ProductService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(product),
         }
@@ -436,6 +560,7 @@ export default class ProductService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );

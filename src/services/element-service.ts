@@ -1,4 +1,5 @@
 import { Elemento, Response, Seguimiento } from "../types";
+import session from "../utils/session";
 
 export default class ElementService {
   static async getAll(client_id: number, page: number, size: number) {
@@ -6,7 +7,15 @@ export default class ElementService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/${client_id}/elementos?page=${page}&size=${size}`
+        }/api/clientes/${client_id}/elementos?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -30,7 +39,15 @@ export default class ElementService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/${client_id}/elementos/${id}`
+        }/api/clientes/${client_id}/elementos/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -53,7 +70,15 @@ export default class ElementService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda/${cliente_id}/elementos?page=${page}&size=${size}&nombre=${nombre}&exactitud=EXACTA`
+        }/api/clientes/busqueda/${cliente_id}/elementos?page=${page}&size=${size}&nombre=${nombre}&exactitud=EXACTA`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -82,7 +107,15 @@ export default class ElementService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda/${cliente_id}/elementos?page=${page}&size=${size}&nombre=${nombre}&exactitud=INEXACTA`
+        }/api/clientes/busqueda/${cliente_id}/elementos?page=${page}&size=${size}&nombre=${nombre}&exactitud=INEXACTA`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -112,7 +145,15 @@ export default class ElementService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda/${cliente_id}/elementos?page=${page}&size=${size}&nombre=${nombre}&categoria_id=${categoria_id}`
+        }/api/clientes/busqueda/${cliente_id}/elementos?page=${page}&size=${size}&nombre=${nombre}&categoria_id=${categoria_id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -142,6 +183,7 @@ export default class ElementService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(element),
         }
@@ -168,6 +210,7 @@ export default class ElementService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(element),
         }
@@ -194,6 +237,7 @@ export default class ElementService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );
@@ -213,7 +257,15 @@ export default class ElementService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/${client_id}/elementos/${element_id}/seguimiento?page=${page}&size=${size}`
+        }/api/clientes/${client_id}/elementos/${element_id}/seguimiento?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -243,6 +295,7 @@ export default class ElementService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(element),
         }
@@ -269,6 +322,7 @@ export default class ElementService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(element),
         }
@@ -295,6 +349,7 @@ export default class ElementService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );

@@ -1,4 +1,5 @@
 import { DetalleVenta, Venta, Response } from "../types";
+import session from "../utils/session";
 
 export default class SaleService {
   static async getAll(page: number, size: number) {
@@ -6,7 +7,15 @@ export default class SaleService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/ventas?page=${page}&size=${size}`
+        }/api/ventas?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -28,7 +37,15 @@ export default class SaleService {
   static async getById(id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/ventas/${id}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/ventas/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -46,7 +63,15 @@ export default class SaleService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/ventas/en?tipo=HOY&page=${page}&size=${size}`
+        }/api/reportes/ventas/en?tipo=HOY&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -70,7 +95,15 @@ export default class SaleService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/ventas/en?tipo=RECIENTEMENTE&page=${page}&size=${size}`
+        }/api/reportes/ventas/en?tipo=RECIENTEMENTE&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -94,7 +127,15 @@ export default class SaleService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/ventas/en?tipo=ESTA_SEMANA&page=${page}&size=${size}`
+        }/api/reportes/ventas/en?tipo=ESTA_SEMANA&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -118,7 +159,15 @@ export default class SaleService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/ventas/en?tipo=ESTE_MES&page=${page}&size=${size}`
+        }/api/reportes/ventas/en?tipo=ESTE_MES&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -142,7 +191,15 @@ export default class SaleService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/ventas/en?tipo=ESTE_AÑO&page=${page}&size=${size}`
+        }/api/reportes/ventas/en?tipo=ESTE_AÑO&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -171,7 +228,15 @@ export default class SaleService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/ventas/busqueda?page=${page}&size=${size}&fecha_inicial=${start}&fecha_final=${end}`
+        }/api/ventas/busqueda?page=${page}&size=${size}&fecha_inicial=${start}&fecha_final=${end}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -190,16 +255,20 @@ export default class SaleService {
     }
   }
 
-  static async getByClient(
-    cliente_id: number,
-    page: number,
-    size: number
-  ) {
+  static async getByClient(cliente_id: number, page: number, size: number) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/ventas/busqueda?page=${page}&size=${size}&cliente_id=${cliente_id}`
+        }/api/ventas/busqueda?page=${page}&size=${size}&cliente_id=${cliente_id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -227,6 +296,7 @@ export default class SaleService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(sale),
         }
@@ -251,6 +321,7 @@ export default class SaleService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(sale),
         }
@@ -275,6 +346,7 @@ export default class SaleService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );
@@ -298,6 +370,7 @@ export default class SaleService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(details),
         }
@@ -322,6 +395,7 @@ export default class SaleService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(details),
         }
@@ -346,6 +420,7 @@ export default class SaleService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(details),
         }

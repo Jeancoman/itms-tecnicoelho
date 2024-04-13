@@ -23,8 +23,6 @@ export default class MessageRender {
       return false;
     }
 
-    console.log(ticket);
-
     const engine = new TemplatingEngine(template.contenido, {
       cliente: ticket.elemento?.cliente,
       ticket: ticket,
@@ -285,9 +283,7 @@ export default class MessageRender {
     if (operación === false) {
       return false;
     }
-
-    console.log(ticket);
-
+    
     const engine = new TemplatingEngine(template.contenido, {
       cliente: ticket.elemento?.cliente,
       ticket: ticket,

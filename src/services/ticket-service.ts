@@ -1,4 +1,5 @@
 import { Ticket, Response } from "../types";
+import session from "../utils/session";
 
 export default class TicketService {
   static async getAll(page: number, size: number) {
@@ -6,7 +7,15 @@ export default class TicketService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets?page=${page}&size=${size}`
+        }/api/tickets?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -28,7 +37,15 @@ export default class TicketService {
   static async getById(id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${id}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -46,7 +63,15 @@ export default class TicketService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/tickets/en?tipo=HOY&page=${page}&size=${size}&estado=${estado}`
+        }/api/reportes/tickets/en?tipo=HOY&page=${page}&size=${size}&estado=${estado}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -70,7 +95,15 @@ export default class TicketService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/tickets/en?tipo=RECIENTEMENTE&page=${page}&size=${size}&estado=${estado}`
+        }/api/reportes/tickets/en?tipo=RECIENTEMENTE&page=${page}&size=${size}&estado=${estado}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -94,7 +127,15 @@ export default class TicketService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/tickets/en?tipo=ESTA_SEMANA&page=${page}&size=${size}&estado=${estado}`
+        }/api/reportes/tickets/en?tipo=ESTA_SEMANA&page=${page}&size=${size}&estado=${estado}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -118,7 +159,15 @@ export default class TicketService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/tickets/en?tipo=ESTE_MES&page=${page}&size=${size}&estado=${estado}`
+        }/api/reportes/tickets/en?tipo=ESTE_MES&page=${page}&size=${size}&estado=${estado}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -142,7 +191,15 @@ export default class TicketService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/tickets/en?tipo=ESTE_AÑO&page=${page}&size=${size}&estado=${estado}`
+        }/api/reportes/tickets/en?tipo=ESTE_AÑO&page=${page}&size=${size}&estado=${estado}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -171,7 +228,15 @@ export default class TicketService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/busqueda?page=${page}&size=${size}&cerrado_inicial=${start}&cerrado_final=${end}`
+        }/api/tickets/busqueda?page=${page}&size=${size}&cerrado_inicial=${start}&cerrado_final=${end}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -200,7 +265,15 @@ export default class TicketService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/busqueda?page=${page}&size=${size}&abierto_inicial=${start}&abierto_final=${end}`
+        }/api/tickets/busqueda?page=${page}&size=${size}&abierto_inicial=${start}&abierto_final=${end}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -224,7 +297,15 @@ export default class TicketService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/busqueda?page=${page}&size=${size}&cliente_id=${cliente_id}`
+        }/api/tickets/busqueda?page=${page}&size=${size}&cliente_id=${cliente_id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -248,7 +329,15 @@ export default class TicketService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/busqueda?page=${page}&size=${size}&categoria_id=${categoria_id}`
+        }/api/tickets/busqueda?page=${page}&size=${size}&categoria_id=${categoria_id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -267,12 +356,20 @@ export default class TicketService {
     }
   }
 
-    static async getByElemento(elemento_id: number, page: number, size: number) {
+  static async getByElemento(elemento_id: number, page: number, size: number) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/busqueda?page=${page}&size=${size}&elemento_id=${elemento_id}`
+        }/api/tickets/busqueda?page=${page}&size=${size}&elemento_id=${elemento_id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -296,7 +393,15 @@ export default class TicketService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/busqueda?page=${page}&size=${size}&estado=${estado}`
+        }/api/tickets/busqueda?page=${page}&size=${size}&estado=${estado}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -324,6 +429,7 @@ export default class TicketService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(ticket),
         }
@@ -348,6 +454,7 @@ export default class TicketService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(ticket),
         }
@@ -372,6 +479,7 @@ export default class TicketService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );

@@ -1,4 +1,5 @@
 import { Publicación, Response } from "../types";
+import session from "../utils/session";
 
 export default class PublicationService {
   static async getAll(page: number, size: number) {
@@ -6,7 +7,15 @@ export default class PublicationService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/publicaciones?page=${page}&size=${size}`
+        }/api/publicaciones?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -28,7 +37,15 @@ export default class PublicationService {
   static async getById(id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/publicaciones/${id}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/publicaciones/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -46,7 +63,15 @@ export default class PublicationService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=INEXACTA&titulo=${titulo}&page=${page}&size=${size}`
+        }/api/clientes/busqueda?tipo=INEXACTA&titulo=${titulo}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -70,7 +95,15 @@ export default class PublicationService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=EXACTA&titulo=${titulo}&page=${page}&size=${size}`
+        }/api/clientes/busqueda?tipo=EXACTA&titulo=${titulo}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -98,6 +131,7 @@ export default class PublicationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(publicación),
         }
@@ -122,6 +156,7 @@ export default class PublicationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(publicación),
         }
@@ -146,6 +181,7 @@ export default class PublicationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );

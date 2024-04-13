@@ -83,7 +83,13 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
       const toastId = toast.loading("Exportando datos...");
       closeModal();
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/backup/exportar`
+        `${import.meta.env.VITE_BACKEND_URL}/api/backup/exportar`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+        }
       );
       const blob = await response.blob();
 
@@ -123,6 +129,9 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
         `${import.meta.env.VITE_BACKEND_URL}/api/backup/importar`,
         {
           method: "POST",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
           body: formData,
         }
       );
@@ -297,7 +306,7 @@ export default function NavPanel() {
   const resetMessageSearchCount = useMessageSearchParamStore(
     (state) => state.resetSearchCount
   );
-  const setFunction = useFunctionStore((state) => state.setFunction)
+  const setFunction = useFunctionStore((state) => state.setFunction);
 
   const resetAllSearchs = () => {
     resetProductSearchCount();
@@ -317,8 +326,8 @@ export default function NavPanel() {
   };
 
   useEffect(() => {
-    setFunction(resetAllSearchs)
-  })
+    setFunction(resetAllSearchs);
+  });
 
   useEffect(() => {
     if (

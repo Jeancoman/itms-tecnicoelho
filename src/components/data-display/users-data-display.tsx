@@ -441,7 +441,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 value={formData.contraseña}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 name="password"
-                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$¡!%*¿?&#^_+\-=<>\\./,\[\]{}\(\):;|~])[A-Za-z\d@$¡!%*¿?&#^_+\-=<>\\./,\[\]{}\(\):;|~]{8,}$"
                 required
                 autoComplete="new-password"
               />
@@ -745,7 +745,7 @@ function EditModal({
                 value={formData.contraseña}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 name="password"
-                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$¡!%*¿?&#^_+\-=<>\\./,\[\]{}\(\):;|~])[A-Za-z\d@$¡!%*¿?&#^_+\-=<>\\./,\[\]{}\(\):;|~]{8,}$"
                 autoComplete="new-password"
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">

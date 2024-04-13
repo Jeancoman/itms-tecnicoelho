@@ -1,8 +1,18 @@
+import session from "../../utils/session";
+
 export default class SalesReportService {
   static async getTotalAsCount() {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/reportes/ventas/cantidad/total`
+        `${import.meta.env.VITE_BACKEND_URL}/api/reportes/ventas/cantidad/total`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -19,7 +29,15 @@ export default class SalesReportService {
   static async getTodayAsCount() {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/reportes/ventas/cantidad/en?tipo=HOY`
+        `${import.meta.env.VITE_BACKEND_URL}/api/reportes/ventas/cantidad/en?tipo=HOY`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {

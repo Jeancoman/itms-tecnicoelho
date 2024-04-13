@@ -1,4 +1,5 @@
 import { Servicio, Response } from "../types";
+import session from "../utils/session";
 
 export default class ServiceService {
   static async getAll(ticket_id: number, page: number, size: number) {
@@ -6,7 +7,15 @@ export default class ServiceService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/servicios?page=${page}&size=${size}`
+        }/api/tickets/${ticket_id}/servicios?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -30,7 +39,15 @@ export default class ServiceService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/servicios/${id}`
+        }/api/tickets/${ticket_id}/servicios/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -43,12 +60,26 @@ export default class ServiceService {
     }
   }
 
-  static async getBetweenAñadido(ticket_id: number, añadido_inicial: string, añadido_final: string, page: number, size: number) {
+  static async getBetweenAñadido(
+    ticket_id: number,
+    añadido_inicial: string,
+    añadido_final: string,
+    page: number,
+    size: number
+  ) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&añadido_inicial=${añadido_inicial}&añadido_final=${añadido_final}`
+        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&añadido_inicial=${añadido_inicial}&añadido_final=${añadido_final}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -67,12 +98,26 @@ export default class ServiceService {
     }
   }
 
-    static async getBetweenIniciado(ticket_id: number, añadido_inicial: string, añadido_final: string, page: number, size: number) {
+  static async getBetweenIniciado(
+    ticket_id: number,
+    añadido_inicial: string,
+    añadido_final: string,
+    page: number,
+    size: number
+  ) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&iniciado_inicial=${añadido_inicial}&iniciado_final=${añadido_final}`
+        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&iniciado_inicial=${añadido_inicial}&iniciado_final=${añadido_final}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -91,12 +136,25 @@ export default class ServiceService {
     }
   }
 
-  static async getByState(ticket_id: number, estado: string, page: number, size: number) {
+  static async getByState(
+    ticket_id: number,
+    estado: string,
+    page: number,
+    size: number
+  ) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&estado=${estado}`
+        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&estado=${estado}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -115,12 +173,26 @@ export default class ServiceService {
     }
   }
 
-  static async getBetweenCompletado(ticket_id: number, añadido_inicial: string, añadido_final: string, page: number, size: number) {
+  static async getBetweenCompletado(
+    ticket_id: number,
+    añadido_inicial: string,
+    añadido_final: string,
+    page: number,
+    size: number
+  ) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&completado_inicial=${añadido_inicial}&completado_final=${añadido_final}`
+        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&completado_inicial=${añadido_inicial}&completado_final=${añadido_final}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -150,6 +222,7 @@ export default class ServiceService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(service),
         }
@@ -176,6 +249,7 @@ export default class ServiceService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(service),
         }
@@ -202,6 +276,7 @@ export default class ServiceService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );

@@ -1,4 +1,5 @@
 import { Response } from "../../types";
+import session from "../../utils/session";
 
 export default class ProvidersReportService {
   static async getTotalAsCount() {
@@ -6,7 +7,15 @@ export default class ProvidersReportService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/proveedores/cantidad/total`
+        }/api/reportes/proveedores/cantidad/total`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -25,7 +34,15 @@ export default class ProvidersReportService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/proveedores/cantidad/nuevos`
+        }/api/reportes/proveedores/cantidad/nuevos`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -45,7 +62,15 @@ export default class ProvidersReportService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/proveedores/nuevos?page=${page}&size=${size}`
+        }/api/reportes/proveedores/nuevos?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -69,7 +94,15 @@ export default class ProvidersReportService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/proveedores/compras?order_by=TOTAL&${page}&size=${size}`
+        }/api/reportes/proveedores/compras?order_by=TOTAL&${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -93,7 +126,15 @@ export default class ProvidersReportService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/proveedores/compras?order_by=CANTIDAD&page=${page}&size=${size}`
+        }/api/reportes/proveedores/compras?order_by=CANTIDAD&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {

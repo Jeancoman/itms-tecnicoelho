@@ -1,10 +1,20 @@
+import session from "../../utils/session";
+
 export default class PurchasesReportService {
   static async getTotalAsCount() {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/compras/cantidad/total`
+        }/api/reportes/compras/cantidad/total`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -22,7 +32,15 @@ export default class PurchasesReportService {
   static async getTodayAsCount() {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/reportes/compras/cantidad/en?tipo=HOY`
+        `${import.meta.env.VITE_BACKEND_URL}/api/reportes/compras/cantidad/en?tipo=HOY`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status > 300) {

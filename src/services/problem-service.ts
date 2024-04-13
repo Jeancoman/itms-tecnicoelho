@@ -1,4 +1,5 @@
 import { Problema, Response } from "../types";
+import session from "../utils/session";
 
 export default class ProblemService {
   static async getAll(ticket_id: number, page: number, size: number) {
@@ -6,7 +7,15 @@ export default class ProblemService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/problemas?page=${page}&size=${size}`
+        }/api/tickets/${ticket_id}/problemas?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -30,7 +39,15 @@ export default class ProblemService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/problemas/${id}`
+        }/api/tickets/${ticket_id}/problemas/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -54,7 +71,15 @@ export default class ProblemService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/problemas?page=${page}&size=${size}&detectado_inicial=${añadido_inicial}&detectado_final=${añadido_final}`
+        }/api/tickets/${ticket_id}/busqueda/problemas?page=${page}&size=${size}&detectado_inicial=${añadido_inicial}&detectado_final=${añadido_final}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -83,7 +108,15 @@ export default class ProblemService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/problemas?page=${page}&size=${size}&estado=${estado}`
+        }/api/tickets/${ticket_id}/busqueda/problemas?page=${page}&size=${size}&estado=${estado}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -113,7 +146,15 @@ export default class ProblemService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/problemas?page=${page}&size=${size}&resuelto_inicial=${añadido_inicial}&resuelto_final=${añadido_final}`
+        }/api/tickets/${ticket_id}/busqueda/problemas?page=${page}&size=${size}&resuelto_inicial=${añadido_inicial}&resuelto_final=${añadido_final}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -143,6 +184,7 @@ export default class ProblemService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(problem),
         }
@@ -169,6 +211,7 @@ export default class ProblemService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(problem),
         }
@@ -195,6 +238,7 @@ export default class ProblemService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );

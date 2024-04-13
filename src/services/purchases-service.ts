@@ -1,4 +1,5 @@
 import { DetalleCompra, Compra, Response } from "../types";
+import session from "../utils/session";
 
 export default class PurchaseService {
   static async getAll(page: number, size: number) {
@@ -6,7 +7,15 @@ export default class PurchaseService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/compras?page=${page}&size=${size}`
+        }/api/compras?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -28,7 +37,15 @@ export default class PurchaseService {
   static async getById(id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/compras/${id}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/compras/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -46,7 +63,15 @@ export default class PurchaseService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/compras/en?tipo=HOY&page=${page}&size=${size}`
+        }/api/reportes/compras/en?tipo=HOY&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -70,7 +95,15 @@ export default class PurchaseService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/compras/en?tipo=RECIENTEMENTE&page=${page}&size=${size}`
+        }/api/reportes/compras/en?tipo=RECIENTEMENTE&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -94,7 +127,15 @@ export default class PurchaseService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/compras/en?tipo=ESTA_SEMANA&page=${page}&size=${size}`
+        }/api/reportes/compras/en?tipo=ESTA_SEMANA&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -118,7 +159,15 @@ export default class PurchaseService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/compras/en?tipo=ESTE_MES&page=${page}&size=${size}`
+        }/api/reportes/compras/en?tipo=ESTE_MES&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -142,7 +191,15 @@ export default class PurchaseService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/compras/en?tipo=ESTE_AÑO&page=${page}&size=${size}`
+        }/api/reportes/compras/en?tipo=ESTE_AÑO&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -171,7 +228,15 @@ export default class PurchaseService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/compras/busqueda?page=${page}&size=${size}&fecha_inicial=${start}&fecha_final=${end}`
+        }/api/compras/busqueda?page=${page}&size=${size}&fecha_inicial=${start}&fecha_final=${end}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -190,16 +255,20 @@ export default class PurchaseService {
     }
   }
 
-  static async getByProvider(
-    proveedor_id: number,
-    page: number,
-    size: number
-  ) {
+  static async getByProvider(proveedor_id: number, page: number, size: number) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/compras/busqueda?page=${page}&size=${size}&proveedor_id=${proveedor_id}`
+        }/api/compras/busqueda?page=${page}&size=${size}&proveedor_id=${proveedor_id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -227,6 +296,7 @@ export default class PurchaseService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(purchase),
         }
@@ -251,6 +321,7 @@ export default class PurchaseService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(purchase),
         }
@@ -275,6 +346,7 @@ export default class PurchaseService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );
@@ -298,6 +370,7 @@ export default class PurchaseService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(details),
         }
@@ -322,6 +395,7 @@ export default class PurchaseService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(details),
         }
@@ -346,6 +420,7 @@ export default class PurchaseService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(details),
         }

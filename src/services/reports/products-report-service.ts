@@ -1,10 +1,20 @@
+import session from "../../utils/session";
+
 export default class ProductsReportService {
     static async getTotalAsCount() {
       try {
         const response = await fetch(
           `${
             import.meta.env.VITE_BACKEND_URL
-          }/api/reportes/productos/cantidad/total`
+          }/api/reportes/productos/cantidad/total`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: session.find()?.token!,
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+          }
         );
   
         if (response.status > 300) {
@@ -23,7 +33,15 @@ export default class ProductsReportService {
         const response = await fetch(
           `${
             import.meta.env.VITE_BACKEND_URL
-          }/api/reportes/productos/cantidad/stock-bajo`
+          }/api/reportes/productos/cantidad/stock-bajo`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: session.find()?.token!,
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+          }
         );
   
         if (response.status > 300) {
@@ -42,7 +60,15 @@ export default class ProductsReportService {
         const response = await fetch(
           `${
             import.meta.env.VITE_BACKEND_URL
-          }/api/reportes/productos/cantidad/sin-stock`
+          }/api/reportes/productos/cantidad/sin-stock`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: session.find()?.token!,
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+          }
         );
   
         if (response.status > 300) {

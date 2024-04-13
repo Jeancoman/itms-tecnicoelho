@@ -1,4 +1,5 @@
 import { Proveedor, Response } from "../types";
+import session from "../utils/session";
 
 export default class ProviderService {
   static async getAll(page: number, size: number) {
@@ -6,7 +7,15 @@ export default class ProviderService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/proveedores?page=${page}&size=${size}`
+        }/api/proveedores?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -28,7 +37,15 @@ export default class ProviderService {
   static async getById(id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/proveedores/${id}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/proveedores/${id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -46,7 +63,15 @@ export default class ProviderService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/proveedores/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`
+        }/api/proveedores/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -70,7 +95,15 @@ export default class ProviderService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/proveedores/compras?page=${page}&size=${size}&order_by=TOTAL`
+        }/api/reportes/proveedores/compras?page=${page}&size=${size}&order_by=TOTAL`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -94,7 +127,15 @@ export default class ProviderService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/proveedores/compras?page=${page}&size=${size}&order_by=CANTIDAD`
+        }/api/reportes/proveedores/compras?page=${page}&size=${size}&order_by=CANTIDAD`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -118,7 +159,15 @@ export default class ProviderService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/proveedores/busqueda?exactitud=EXACTA&nombre=${nombre}&page=${page}&size=${size}`
+        }/api/proveedores/busqueda?exactitud=EXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -142,7 +191,15 @@ export default class ProviderService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/proveedores/busqueda?exactitud=INEXACTA&documento=${documento}&page=${page}&size=${size}`
+        }/api/proveedores/busqueda?exactitud=INEXACTA&documento=${documento}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -161,12 +218,24 @@ export default class ProviderService {
     }
   }
 
-  static async getByExactDocumento(documento: string, page: number, size: number) {
+  static async getByExactDocumento(
+    documento: string,
+    page: number,
+    size: number
+  ) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/proveedores/busqueda?exactitud=EXACTA&documento=${documento}&page=${page}&size=${size}`
+        }/api/proveedores/busqueda?exactitud=EXACTA&documento=${documento}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -190,7 +259,15 @@ export default class ProviderService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=INEXACTA&telefono=${telefono}&page=${page}&size=${size}`
+        }/api/clientes/busqueda?tipo=INEXACTA&telefono=${telefono}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -209,12 +286,24 @@ export default class ProviderService {
     }
   }
 
-  static async getByExactTelefono(telefono: string, page: number, size: number) {
+  static async getByExactTelefono(
+    telefono: string,
+    page: number,
+    size: number
+  ) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=EXACTA&telefono=${telefono}&page=${page}&size=${size}`
+        }/api/clientes/busqueda?tipo=EXACTA&telefono=${telefono}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
       );
 
       if (response.status > 300) {
@@ -242,6 +331,7 @@ export default class ProviderService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(provider),
         }
@@ -266,6 +356,7 @@ export default class ProviderService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
           body: JSON.stringify(provider),
         }
@@ -290,6 +381,7 @@ export default class ProviderService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
           },
         }
       );

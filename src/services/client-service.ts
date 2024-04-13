@@ -12,6 +12,8 @@ export default class ClientService {
           method: "GET",
           headers: {
             Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
@@ -40,6 +42,8 @@ export default class ClientService {
           method: "GET",
           headers: {
             Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
@@ -89,6 +93,8 @@ export default class ClientService {
           method: "GET",
           headers: {
             Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
@@ -119,6 +125,8 @@ export default class ClientService {
           method: "GET",
           headers: {
             Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
@@ -149,6 +157,8 @@ export default class ClientService {
           method: "GET",
           headers: {
             Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
@@ -183,6 +193,8 @@ export default class ClientService {
           method: "GET",
           headers: {
             Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
@@ -213,6 +225,8 @@ export default class ClientService {
           method: "GET",
           headers: {
             Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
@@ -247,6 +261,8 @@ export default class ClientService {
           method: "GET",
           headers: {
             Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
@@ -277,6 +293,8 @@ export default class ClientService {
           method: "GET",
           headers: {
             Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
@@ -311,6 +329,8 @@ export default class ClientService {
           method: "GET",
           headers: {
             Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
