@@ -15,6 +15,7 @@ import {
   Categoría,
   Selected,
   Imagen,
+  Impuesto,
 } from "../../types";
 import ProductService from "../../services/producto-service";
 import Slugifier from "../../utils/slugifier";
@@ -29,22 +30,29 @@ import { useSearchedStore } from "../../store/searchedStore";
 import ExportCSV from "../misc/export-to-cvs";
 import clsx from "clsx";
 import { format } from "date-fns";
+import MultiSelect from "../misc/multi-select";
+import ImpuestoService from "../../services/impuesto-service";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [loading, setLoading] = useState(true);
   const [randomString, setRandomString] = useState(Slugifier.randomString());
   const [categories, setCategories] = useState<Categoría[]>([]);
+  const [impuestos, setImpuestos] = useState<Impuesto[]>([]);
+  const [selectedImpuestos, setSelectedImpuestos] = useState<Selected[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Selected>({
     value: -1,
     label: "Seleccionar categoría",
   });
   const [formData, setFormData] = useState<Producto>({
     slug: "",
+    marca: "",
+    modelo: "",
     nombre: "",
     descripción: "",
-    precio: 0,
-    stock: 0,
+    precioCompra: 0,
+    precioVenta: 0,
+    existencias: 0,
     esPúblico: false,
     categoría_id: -1,
   });
@@ -52,10 +60,13 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const resetFormData = () => {
     setFormData({
       slug: "",
+      marca: "",
+      modelo: "",
       nombre: "",
       descripción: "",
-      precio: 0,
-      stock: 0,
+      precioCompra: 0,
+      precioVenta: 0,
+      existencias: 0,
       esPúblico: false,
     });
     setSelectedCategory({
@@ -63,7 +74,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       label: "Seleccionar categoría",
     });
     setRandomString(Slugifier.randomString());
+    setSelectedImpuestos([]);
   };
+
+  console.log(selectedImpuestos)
 
   useEffect(() => {
     if (isOpen) {
@@ -85,7 +99,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   useEffect(() => {
     if (categories.length === 0) {
       setLoading(true);
-      CategoryService.getAll(1, 10000000).then((data) => {
+      void CategoryService.getAll(1, 1000).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
@@ -94,6 +108,15 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         }
       });
     }
+
+    void ImpuestoService.getAll(1, 1000).then((data) => {
+      if (data === false) {
+        setLoading(false);
+      } else {
+        setLoading(false);
+        setImpuestos(data.rows);
+      }
+    });
   }, []);
 
   return (
@@ -111,7 +134,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit  rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit  rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir producto</h1>
@@ -123,7 +146,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Añadiendo producto...");
-          ProductService.create(formData).then((data) => {
+          void ProductService.create(formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
@@ -165,17 +188,17 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           </span>
         </div>
         <div className="flex gap-4">
-          <div className="w-2/4">
+          <div className="w-1/3">
             <input
               type="number"
-              placeholder="Stock*"
+              placeholder="Existencias*"
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  stock: Number(e.target.value),
+                  existencias: Number(e.target.value),
                 });
               }}
-              value={formData.stock === 0 ? "" : formData.stock}
+              value={formData.existencias === 0 ? "" : formData.existencias}
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               required
               min={0}
@@ -184,19 +207,45 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               Número invalido
             </span>
           </div>
-          <div className="w-2/4">
+          <div className="w-1/3">
             <input
               type="number"
-              placeholder="Precio*"
+              placeholder="Precio de compra*"
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  precio: !isNaN(Number(e.target.value))
+                  precioCompra: !isNaN(Number(e.target.value))
                     ? Number(e.target.value)
                     : 0.0,
                 });
               }}
-              value={formData.precio === 0 ? "" : String(formData.precio)}
+              value={
+                formData.precioCompra === 0 ? "" : String(formData.precioCompra)
+              }
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              min={0}
+              step="0.01"
+              required
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Formato debe ser 0,00 o 0.00
+            </span>
+          </div>
+          <div className="w-1/3">
+            <input
+              type="number"
+              placeholder="Precio de venta*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  precioVenta: !isNaN(Number(e.target.value))
+                    ? Number(e.target.value)
+                    : 0.0,
+                });
+              }}
+              value={
+                formData.precioVenta === 0 ? "" : String(formData.precioVenta)
+              }
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               min={0}
               step="0.01"
@@ -291,7 +340,19 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             Minimo 10 caracteres
           </span>
         </div>
-        <div className="flex w-full justify-between items-center">
+        <div className="relative">
+          <MultiSelect
+            //@ts-ignore
+            options={impuestos.map((impuesto) => ({
+              value: impuesto.id,
+              label: `${impuesto.codigo} - ${impuesto.porcentaje}% `,
+            }))}
+            selectedValues={selectedImpuestos}
+            label="Seleccionar impuestos"
+            onChange={(newValues) => setSelectedImpuestos(newValues)}
+          />
+        </div>
+        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
             <input
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
@@ -312,7 +373,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               ¿Público en sitio web?
             </label>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end">
             <button
               type="button"
               onClick={closeModal}
@@ -380,7 +441,7 @@ function EditModal({
   useEffect(() => {
     if (categories.length === 0) {
       setLoading(true);
-      CategoryService.getAll(1, 1000000000).then((data) => {
+      void CategoryService.getAll(1, 1000).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
@@ -406,7 +467,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded shadow scrollbar-none text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar producto</h1>
@@ -418,7 +479,7 @@ function EditModal({
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Editando producto...");
-          ProductService.update(producto?.id!, formData).then((data) => {
+          void ProductService.update(producto?.id!, formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
@@ -463,14 +524,14 @@ function EditModal({
           <div className="w-2/4">
             <input
               type="number"
-              placeholder="Stock*"
+              placeholder="Existencias*"
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  stock: Number(e.target.value),
+                  existencias: Number(e.target.value),
                 });
               }}
-              value={formData.stock === 0 ? "" : formData.stock}
+              value={formData.existencias === 0 ? "" : formData.existencias}
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               required
               min={0}
@@ -482,16 +543,42 @@ function EditModal({
           <div className="w-2/4">
             <input
               type="number"
-              placeholder="Precio*"
+              placeholder="Precio de compra*"
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  precio: !isNaN(Number(e.target.value))
+                  precioCompra: !isNaN(Number(e.target.value))
                     ? Number(e.target.value)
                     : 0.0,
                 });
               }}
-              value={formData.precio === 0 ? "" : String(formData.precio)}
+              value={
+                formData.precioCompra === 0 ? "" : String(formData.precioCompra)
+              }
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              min={0}
+              step="0.01"
+              required
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Formato debe ser 0,00 o 0.00
+            </span>
+          </div>
+          <div className="w-2/4">
+            <input
+              type="number"
+              placeholder="Precio de venta*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  precioVenta: !isNaN(Number(e.target.value))
+                    ? Number(e.target.value)
+                    : 0.0,
+                });
+              }}
+              value={
+                formData.precioVenta === 0 ? "" : String(formData.precioVenta)
+              }
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               min={0}
               step="0.01"
@@ -586,7 +673,7 @@ function EditModal({
             Minimo 10 caracteres
           </span>
         </div>
-        <div className="flex w-full justify-between items-center">
+        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
             <input
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
@@ -607,7 +694,7 @@ function EditModal({
               ¿Hacer público en sitio web?
             </label>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end">
             <button
               type="button"
               onClick={() => {
@@ -719,7 +806,7 @@ function ImagesModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded shadow scrollbar-none text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar imagenes</h1>
@@ -731,7 +818,7 @@ function ImagesModal({
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Editando imagenes...");
-          ProductService.editImages(producto?.id!, {
+          void ProductService.editImages(producto?.id!, {
             toUpdate,
             toCreate,
             toDelete,
@@ -990,7 +1077,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-1/3 h-fit rounded-md shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar producto</h1>
@@ -1055,7 +1142,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           }}
           required
         />
-        <div className="flex w-full justify-between items-center">
+        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
             <input
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
@@ -1074,7 +1161,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               ¿Busqueda exacta?
             </label>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end">
             <button
               type="button"
               onClick={() => {
@@ -1116,12 +1203,13 @@ function DataRow({ producto, setOperationAsCompleted }: DataRowProps) {
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
-  const anyAction = session.find()?.usuario.rol === "ADMINISTRADOR" ||
-  permissions.find()?.editar.producto
-  ? true
-  : permissions.find()?.eliminar.producto
-  ? true
-  : false
+  const anyAction =
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+    permissions.find()?.editar.producto
+      ? true
+      : permissions.find()?.eliminar.producto
+      ? true
+      : false;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -1162,9 +1250,14 @@ function DataRow({ producto, setOperationAsCompleted }: DataRowProps) {
         {producto?.categoría?.nombre}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {formatter.format(producto?.precio || 0)}
+        {formatter.format(producto?.precioCompra || 0)}
       </td>
-      <td className="px-6 py-4 border border-slate-300">{producto?.stock}</td>
+      <td className="px-6 py-4 border border-slate-300">
+        {formatter.format(producto?.precioVenta || 0)}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">
+        {producto?.existencias}
+      </td>
       <td
         ref={ref}
         className="px-6 py-3 border border-slate-300 w-[200px] relative"
@@ -1228,18 +1321,18 @@ function DataRow({ producto, setOperationAsCompleted }: DataRowProps) {
           <IndividualDropup
             close={() => setIsDropup(false)}
             selectAction={selectAction}
-            openAddModal={() => {}}
+            openAddModal={() => null}
             id={producto?.id}
             top={
-              ref?.current?.getBoundingClientRect().top! +
-              window.scrollY +
-              ref?.current?.getBoundingClientRect().height! -
-              15
+              (ref?.current?.getBoundingClientRect().top ?? 0) +
+              (window.scrollY ?? 0) +
+              (ref?.current?.getBoundingClientRect().height ?? 0) -
+              10
             }
-            right={
-              ref?.current?.getBoundingClientRect().left! +
-              window.scrollX -
-              1085
+            left={
+              (ref?.current?.getBoundingClientRect().left ?? 0) +
+              window.scrollX +
+              25
             }
           />
         )}
@@ -1321,7 +1414,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-1/3 min-h-[200px] h-fit rounded-md shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Generar reporte</h1>
@@ -1335,30 +1428,31 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
             if (param === "VENDIDO_EN") {
               const loadingToast = toast.loading("Generando reporte...");
               if (secondParam !== "ENTRE") {
-                ProductService.getBySoldOn(secondParam).then((data) => {
+                void ProductService.getBySoldOn(secondParam).then((data) => {
                   if (data === false) {
                     toast.dismiss(loadingToast);
                     toast.error("Error obteniendo datos.");
                   } else {
                     ExportCSV.handleDownload(
                       data.rows
-                        .filter((venta) => venta.venta_cantidad > 0)
-                        .map((venta) => {
+                        .filter((producto) => producto.venta_cantidad > 0)
+                        .map((producto) => {
                           return {
                             Fecha: format(
-                              new Date(venta?.venta_fecha),
+                              new Date(producto?.venta_fecha),
                               "dd/MM/yyyy"
                             ),
-                            Código: venta?.código,
-                            Nombre: venta?.nombre,
-                            Precio: venta?.precio,
-                            Cantidad: venta?.venta_cantidad,
-                            Total: venta?.venta_total,
+                            Código: producto?.código,
+                            Nombre: producto?.nombre,
+                            "Precio de venta": producto?.precio,
+                            Cantidad: producto?.venta_cantidad,
+                            Total: producto?.venta_total,
                             "Nombre del cliente":
-                              venta?.cliente_nombre +
+                              producto?.cliente_nombre +
                               " " +
-                              venta?.cliente_apellido,
-                            "Documento del cliente": venta?.cliente_documento,
+                              producto?.cliente_apellido,
+                            "Documento del cliente":
+                              producto?.cliente_documento,
                           };
                         }),
                       "reporte-de-productos-vendidos-" +
@@ -1369,7 +1463,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                   closeModal();
                 });
               } else {
-                ProductService.getBySoldBetween(
+                void ProductService.getBySoldBetween(
                   new Date(input).toISOString().split("T")[0],
                   new Date(secondInput).toISOString().split("T")[0]
                 ).then((data) => {
@@ -1379,23 +1473,24 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                   } else {
                     ExportCSV.handleDownload(
                       data.rows
-                        .filter((venta) => venta.venta_cantidad > 0)
-                        .map((venta) => {
+                        .filter((producto) => producto.venta_cantidad > 0)
+                        .map((producto) => {
                           return {
                             Fecha: format(
-                              new Date(venta?.venta_fecha),
+                              new Date(producto?.venta_fecha),
                               "dd/MM/yyyy"
                             ),
-                            Código: venta?.código,
-                            Nombre: venta?.nombre,
-                            Precio: venta?.precio,
-                            Cantidad: venta?.venta_cantidad,
-                            Total: venta?.venta_total,
+                            Código: producto?.código,
+                            Nombre: producto?.nombre,
+                            "Precio de venta": producto?.precio,
+                            Cantidad: producto?.venta_cantidad,
+                            Total: producto?.venta_total,
                             "Nombre del cliente":
-                              venta?.cliente_nombre +
+                              producto?.cliente_nombre +
                               " " +
-                              venta?.cliente_apellido,
-                            "Documento del cliente": venta?.cliente_documento,
+                              producto?.cliente_apellido,
+                            "Documento del cliente":
+                              producto?.cliente_documento,
                           };
                         }),
                       "reporte-de-productos-vendidos-" +
@@ -1409,39 +1504,42 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
             } else if (param === "COMPRADO_EN") {
               const loadingToast = toast.loading("Generando reporte...");
               if (secondParam !== "ENTRE") {
-                ProductService.getByPurchasedOn(secondParam).then((data) => {
-                  if (data === false) {
-                    toast.dismiss(loadingToast);
-                    toast.error("Error obteniendo datos.");
-                  } else {
-                    ExportCSV.handleDownload(
-                      data.rows
-                        .filter((venta) => venta.compra_cantidad > 0)
-                        .map((venta) => {
-                          return {
-                            Fecha: format(
-                              new Date(venta?.compra_fecha),
-                              "dd/MM/yyyy"
-                            ),
-                            Código: venta?.código,
-                            Nombre: venta?.nombre,
-                            Precio: venta?.precio,
-                            Cantidad: venta?.compra_cantidad,
-                            Total: venta?.compra_total,
-                            "Nombre del proveedor": venta?.proveedor_nombre,
-                            "Documento del proveedor":
-                              venta?.proveedor_documento,
-                          };
-                        }),
-                      "reporte-de-productos-comprados-" +
-                        new Date().toISOString()
-                    );
-                    toast.dismiss(loadingToast);
+                void ProductService.getByPurchasedOn(secondParam).then(
+                  (data) => {
+                    if (data === false) {
+                      toast.dismiss(loadingToast);
+                      toast.error("Error obteniendo datos.");
+                    } else {
+                      ExportCSV.handleDownload(
+                        data.rows
+                          .filter((producto) => producto.compra_cantidad > 0)
+                          .map((producto) => {
+                            return {
+                              Fecha: format(
+                                new Date(producto?.compra_fecha),
+                                "dd/MM/yyyy"
+                              ),
+                              Código: producto?.código,
+                              Nombre: producto?.nombre,
+                              "Precio de compra": producto?.precio,
+                              Cantidad: producto?.compra_cantidad,
+                              Total: producto?.compra_total,
+                              "Nombre del proveedor":
+                                producto?.proveedor_nombre,
+                              "Documento del proveedor":
+                                producto?.proveedor_documento,
+                            };
+                          }),
+                        "reporte-de-productos-comprados-" +
+                          new Date().toISOString()
+                      );
+                      toast.dismiss(loadingToast);
+                    }
+                    closeModal();
                   }
-                  closeModal();
-                });
+                );
               } else {
-                ProductService.getByPurchasedBetween(
+                void ProductService.getByPurchasedBetween(
                   new Date(input).toISOString().split("T")[0],
                   new Date(secondInput).toISOString().split("T")[0]
                 ).then((data) => {
@@ -1451,21 +1549,21 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
                   } else {
                     ExportCSV.handleDownload(
                       data.rows
-                        .filter((venta) => venta.compra_cantidad > 0)
-                        .map((venta) => {
+                        .filter((producto) => producto.compra_cantidad > 0)
+                        .map((producto) => {
                           return {
                             Fecha: format(
-                              new Date(venta?.compra_fecha),
+                              new Date(producto?.compra_fecha),
                               "dd/MM/yyyy"
                             ),
-                            Código: venta?.código,
-                            Nombre: venta?.nombre,
-                            Precio: venta?.precio,
-                            Cantidad: venta?.compra_cantidad,
-                            Total: venta?.compra_total,
-                            "Nombre del proveedor": venta?.proveedor_nombre,
+                            Código: producto?.código,
+                            Nombre: producto?.nombre,
+                            "Precio de compra": producto?.precio,
+                            Cantidad: producto?.compra_cantidad,
+                            Total: producto?.compra_total,
+                            "Nombre del proveedor": producto?.proveedor_nombre,
                             "Documento del proveedor":
-                              venta?.proveedor_documento,
+                              producto?.proveedor_documento,
                           };
                         }),
                       "reporte-de-productos-comprados-" +
@@ -1478,18 +1576,18 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               }
             } else if (param === "MAS_VENDIDO") {
               const loadingToast = toast.loading("Generando reporte...");
-              ProductService.getMoreSold().then((data) => {
+              void ProductService.getMoreSold().then((data) => {
                 if (data === false) {
                   toast.dismiss(loadingToast);
                   toast.error("Error obteniendo datos.");
                 } else {
                   ExportCSV.handleDownload(
-                    data.map((venta: any) => {
+                    data.map((producto: any) => {
                       return {
-                        Código: venta?.código,
-                        Nombre: venta?.nombre,
-                        Precio: venta?.precio,
-                        Total: venta?.total_vendido,
+                        Código: producto?.código,
+                        Nombre: producto?.nombre,
+                        "Precio de venta": producto?.precio,
+                        Total: producto?.total_vendido,
                       };
                     }),
                     "reporte-de-productos-mas-vendidos-" +
@@ -1501,18 +1599,18 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               });
             } else if (param === "MAS_COMPRADO") {
               const loadingToast = toast.loading("Generando reporte...");
-              ProductService.getMoreSold().then((data) => {
+              void ProductService.getMoreSold().then((data) => {
                 if (data === false) {
                   toast.dismiss(loadingToast);
                   toast.error("Error obteniendo datos.");
                 } else {
                   ExportCSV.handleDownload(
-                    data.map((venta: any) => {
+                    data.map((producto: any) => {
                       return {
-                        Código: venta?.código,
-                        Nombre: venta?.nombre,
-                        Precio: venta?.precio,
-                        Total: venta?.total_comprado,
+                        Código: producto?.código,
+                        Nombre: producto?.nombre,
+                        "Precio de compra": producto?.precio,
+                        Total: producto?.total_comprado,
                       };
                     }),
                     "reporte-de-productos-mas-comprados-" +
@@ -1524,21 +1622,22 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               });
             } else if (param === "STOCK_BAJO") {
               const loadingToast = toast.loading("Generando reporte...");
-              ProductService.getLowStock().then((data) => {
+              void ProductService.getLowStock().then((data) => {
                 if (data === false) {
                   toast.dismiss(loadingToast);
                   toast.error("Error obteniendo datos.");
                 } else {
                   ExportCSV.handleDownload(
-                    data.rows.map((venta: any) => {
+                    data.rows.map((producto: any) => {
                       return {
-                        Código: venta?.código,
-                        Nombre: venta?.nombre,
-                        Precio: venta?.precio,
-                        Stock: venta?.stock,
+                        Código: producto?.código,
+                        Nombre: producto?.nombre,
+                        "Precio de compra": producto?.precio_compra,
+                        "Precio de venta": producto?.precio_venta,
+                        Existencias: producto?.existencias,
                       };
                     }),
-                    "reporte-de-productos-stock-bajo-" +
+                    "reporte-de-productos-existencias-bajo-" +
                       new Date().toISOString()
                   );
                   toast.dismiss(loadingToast);
@@ -1547,21 +1646,22 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               });
             } else if (param === "SIN_STOCK") {
               const loadingToast = toast.loading("Generando reporte...");
-              ProductService.getZeroStock().then((data) => {
+              void ProductService.getZeroStock().then((data) => {
                 if (data === false) {
                   toast.dismiss(loadingToast);
                   toast.error("Error obteniendo datos.");
                 } else {
                   ExportCSV.handleDownload(
-                    data.rows.map((venta: any) => {
+                    data.rows.map((producto: any) => {
                       return {
-                        Código: venta?.código,
-                        Nombre: venta?.nombre,
-                        Precio: venta?.precio,
-                        Stock: venta?.stock,
+                        Código: producto?.código,
+                        Nombre: producto?.nombre,
+                        "Precio de compra": producto?.precio_compra,
+                        "Precio de venta": producto?.precio_venta,
+                        Existencias: producto?.existencias,
                       };
                     }),
-                    "reporte-de-productos-cero-stock-" +
+                    "reporte-de-productos-cero-existencias-" +
                       new Date().toISOString()
                   );
                   toast.dismiss(loadingToast);
@@ -1631,7 +1731,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
               },
               {
                 value: "SIN_STOCK",
-                label: "Cero stock",
+                label: "Cero existencias",
                 onClick: (value, label) => {
                   setSelectedSearchType({
                     value,
@@ -1889,13 +1989,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({
-  id,
-  close,
-  selectAction,
-  top,
-  right,
-}: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -1933,7 +2027,7 @@ function IndividualDropup({
           bg-clip-padding
           border
         "
-      style={{ top: top, right: right }}
+      style={{ top: top }}
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         permissions.find()?.editar.producto) && (
@@ -2247,10 +2341,13 @@ export default function ProductsDataDisplay() {
                     Categoría
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Precio
+                    Precio de compra
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Stock
+                    Precio de venta
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Existencias
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción

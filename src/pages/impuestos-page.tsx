@@ -1,12 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import ProblemsDataDisplay from "../components/data-display/problems-data-display";
+import ImpuestoDataDisplay from "../components/data-display/impuestos-data-display";
 import NavPanel from "../components/misc/nav-panel";
 import session from "../utils/session";
 import permissions from "../utils/permissions";
 import { useEffect } from "react";
 
-export default function ProblemsPage() {
-
+export default function ImpuestoPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,7 +14,7 @@ export default function ProblemsPage() {
     } else {
       if (
         session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-        !permissions.find()?.ver.problema
+        !permissions.find()?.ver.impuesto
       ) {
         navigate("/");
       }
@@ -27,18 +26,18 @@ export default function ProblemsPage() {
   } else {
     if (
       session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-      !permissions.find()?.ver.problema
+      !permissions.find()?.ver.impuesto
     ) {
       return null;
     }
   }
 
   return (
-    <> 
-      <div className="h-screen bg-white grid grid-cols-[1fr_5fr]">
-        <NavPanel />
-        <main className="bg-white relative max-h-[656px]">
-          <ProblemsDataDisplay />
+    <>
+      <div className="h-screen bg-white md:grid md:grid-cols-[1fr,_5fr]">
+      <NavPanel />
+        <main className="flex-grow bg-white relative max-h-screen">
+          <ImpuestoDataDisplay />
         </main>
       </div>
     </>

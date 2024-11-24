@@ -41,67 +41,67 @@ export default function HomeDataDisplay() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    ClientsReportService.getTotalAsCount().then((data) => {
+    void ClientsReportService.getTotalAsCount().then((data) => {
       if (!isNaN(Number(data))) {
         setClientes(Number(data));
       }
     });
-    TicketsReportService.getTotalAsCount().then((data) => {
+    void TicketsReportService.getTotalAsCount().then((data) => {
       if (!isNaN(Number(data))) {
         setTickets(Number(data));
       }
     });
-    CategoriesReportService.getTotalAsCount().then((data) => {
+    void CategoriesReportService.getTotalAsCount().then((data) => {
       if (!isNaN(Number(data))) {
         setCategorias(Number(data));
       }
     });
-    PublicationsReportService.getTotalAsCount().then((data) => {
+    void PublicationsReportService.getTotalAsCount().then((data) => {
       if (!isNaN(Number(data))) {
         setPublicaciones(Number(data));
       }
     });
-    ProductsReportService.getTotalAsCount().then((data) => {
+    void ProductsReportService.getTotalAsCount().then((data) => {
       if (!isNaN(Number(data))) {
         setProductos(Number(data));
       }
     });
-    SalesReportService.getTotalAsCount().then((data) => {
+    void SalesReportService.getTotalAsCount().then((data) => {
       if (!isNaN(Number(data))) {
         setVentas(Number(data));
       }
     });
-    ProvidersReportService.getTotalAsCount().then((data) => {
+    void ProvidersReportService.getTotalAsCount().then((data) => {
       if (!isNaN(Number(data))) {
         setProveedores(Number(data));
       }
     });
-    PurchasesReportService.getTotalAsCount().then((data) => {
+    void PurchasesReportService.getTotalAsCount().then((data) => {
       if (!isNaN(Number(data))) {
         setCompras(Number(data));
       }
     });
-    SalesReportService.getTodayAsCount().then((data) => {
+    void SalesReportService.getTodayAsCount().then((data) => {
       if (!isNaN(Number(data))) {
         setVentasHoy(Number(data));
       }
     });
-    PurchasesReportService.getTodayAsCount().then((data) => {
+    void PurchasesReportService.getTodayAsCount().then((data) => {
       if (!isNaN(Number(data))) {
         setComprasHoy(Number(data));
       }
     });
-    ProductsReportService.getLowStockAsCount().then((data) => {
+    void ProductsReportService.getLowStockAsCount().then((data) => {
       if (!isNaN(Number(data))) {
         setStockBajo(Number(data));
       }
     });
-    ProductsReportService.getZeroStockAsCount().then((data) => {
+    void ProductsReportService.getZeroStockAsCount().then((data) => {
       if (!isNaN(Number(data))) {
         setSinStock(Number(data));
       }
     });
-    MessagingOptionsService.get().then((data) => {
+    void MessagingOptionsService.get().then((data) => {
       if (data) {
         options.set(data.opciones);
       }
@@ -110,7 +110,7 @@ export default function HomeDataDisplay() {
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-5">
+      <div className="absolute container mx-auto h-full overflow-y-auto w-full px-8 py-5">
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
@@ -120,23 +120,19 @@ export default function HomeDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         <div className="mb-10 text-xl font-medium text-slate-600 text-end">
-          Bienvenido al sistema,{" "}
+          Sesión activa como: {" "}
           <span className="text-[#2096ed]">
             {session.find()?.usuario.rol.toLocaleLowerCase()}
           </span>{" "}
-          {session.find()?.usuario.nombre +
+          {(session.find()?.usuario.nombre ?? "") +
             " " +
-            session.find()?.usuario.apellido}
-          !
+            (session.find()?.usuario.apellido ?? "")}
         </div>
-        <div className="grid lg:grid-cols-4 grid-cols-3 gap-10 max-w-fit mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-10">
           {session.find()?.usuario.rol === "ADMINISTRADOR" ||
           session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
           permissions.find()?.ver.venta ? (
-            <div
-              onClick={() => {}}
-              className="bg-green-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-green-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <div>
                 <p className="text-white text-lg font-medium">{ventasHoy}</p>
                 <p className="text-white text-lg font-medium">Ventas hoy</p>
@@ -144,10 +140,7 @@ export default function HomeDataDisplay() {
               <Today className="h-10 w-10 fill-white" />
             </div>
           ) : (
-            <div
-              onClick={() => {}}
-              className="bg-gray-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-gray-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <Tag className="h-10 w-10 fill-white" />
               <div>
                 <p className="text-white text-lg font-medium">No permitido</p>
@@ -157,21 +150,15 @@ export default function HomeDataDisplay() {
           {session.find()?.usuario.rol === "ADMINISTRADOR" ||
           session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
           permissions.find()?.ver.compra ? (
-            <div
-              onClick={() => {}}
-              className="bg-violet-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-violet-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <div>
                 <p className="text-white text-lg font-medium">{comprasHoy}</p>
-                <p className="text-white text-lg font-medium">Compras hoy </p>
+                <p className="text-white text-lg font-medium">Compras hoy</p>
               </div>
               <Today className="h-10 w-10 fill-white" />
             </div>
           ) : (
-            <div
-              onClick={() => {}}
-              className="bg-gray-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-gray-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <Tag className="h-10 w-10 fill-white" />
               <div>
                 <p className="text-white text-lg font-medium">No permitido</p>
@@ -181,10 +168,7 @@ export default function HomeDataDisplay() {
           {session.find()?.usuario.rol === "ADMINISTRADOR" ||
           session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
           permissions.find()?.ver.producto ? (
-            <div
-              onClick={() => {}}
-              className="bg-orange-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-orange-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <div>
                 <p className="text-white text-lg font-medium">{stockBajo}</p>
                 <p className="text-white text-lg font-medium">Stock bajo</p>
@@ -192,10 +176,7 @@ export default function HomeDataDisplay() {
               <Warning className="h-10 w-10 fill-white" />
             </div>
           ) : (
-            <div
-              onClick={() => {}}
-              className="bg-gray-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-gray-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <Tag className="h-10 w-10 fill-white" />
               <div>
                 <p className="text-white text-lg font-medium">No permitido</p>
@@ -205,10 +186,7 @@ export default function HomeDataDisplay() {
           {session.find()?.usuario.rol === "ADMINISTRADOR" ||
           session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
           permissions.find()?.ver.producto ? (
-            <div
-              onClick={() => {}}
-              className="bg-red-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-red-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <div>
                 <p className="text-white text-lg font-medium">{sinStock}</p>
                 <p className="text-white text-lg font-medium">Cero stock</p>
@@ -216,10 +194,7 @@ export default function HomeDataDisplay() {
               <Warning className="h-10 w-10 fill-white" />
             </div>
           ) : (
-            <div
-              onClick={() => {}}
-              className="bg-gray-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-gray-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <Tag className="h-10 w-10 fill-white" />
               <div>
                 <p className="text-white text-lg font-medium">No permitido</p>
@@ -227,7 +202,7 @@ export default function HomeDataDisplay() {
             </div>
           )}
         </div>
-        <div className="grid lg:grid-cols-4 grid-cols-3 gap-10 max-w-fit">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {session.find()?.usuario.rol === "ADMINISTRADOR" ||
           session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
           permissions.find()?.ver.cliente ? (
@@ -235,7 +210,7 @@ export default function HomeDataDisplay() {
               onClick={() => {
                 navigate("/clientes");
               }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
+              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer rounded flex justify-between p-5 items-center shadow transition duration-300"
             >
               <div>
                 <p className="text-white text-lg font-medium">{clientes}</p>
@@ -244,10 +219,7 @@ export default function HomeDataDisplay() {
               <Work className="h-10 w-10 fill-white" />
             </div>
           ) : (
-            <div
-              onClick={() => {}}
-              className="bg-gray-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-gray-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <Tag className="h-10 w-10 fill-white" />
               <div>
                 <p className="text-white text-lg font-medium">No permitido</p>
@@ -261,7 +233,7 @@ export default function HomeDataDisplay() {
               onClick={() => {
                 navigate("/tickets");
               }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
+              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer rounded flex justify-between p-5 items-center shadow transition duration-300"
             >
               <div>
                 <p className="text-white text-lg font-medium">{tickets}</p>
@@ -270,10 +242,7 @@ export default function HomeDataDisplay() {
               <Ticket className="h-10 w-10 fill-white" />
             </div>
           ) : (
-            <div
-              onClick={() => {}}
-              className="bg-gray-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-gray-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <Tag className="h-10 w-10 fill-white" />
               <div>
                 <p className="text-white text-lg font-medium">No permitido</p>
@@ -287,7 +256,7 @@ export default function HomeDataDisplay() {
               onClick={() => {
                 navigate("/categorias");
               }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
+              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer rounded flex justify-between p-5 items-center shadow transition duration-300"
             >
               <div>
                 <p className="text-white text-lg font-medium">{categorias}</p>
@@ -296,10 +265,7 @@ export default function HomeDataDisplay() {
               <Category className="h-10 w-10 fill-white" />
             </div>
           ) : (
-            <div
-              onClick={() => {}}
-              className="bg-gray-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-gray-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <Tag className="h-10 w-10 fill-white" />
               <div>
                 <p className="text-white text-lg font-medium">No permitido</p>
@@ -313,7 +279,7 @@ export default function HomeDataDisplay() {
               onClick={() => {
                 navigate("/publicaciones");
               }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
+              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer rounded flex justify-between p-5 items-center shadow transition duration-300"
             >
               <div>
                 <p className="text-white text-lg font-medium">
@@ -324,10 +290,7 @@ export default function HomeDataDisplay() {
               <Article className="h-10 w-10 fill-white" />
             </div>
           ) : (
-            <div
-              onClick={() => {}}
-              className="bg-gray-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-gray-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <Tag className="h-10 w-10 fill-white" />
               <div>
                 <p className="text-white text-lg font-medium">No permitido</p>
@@ -341,7 +304,7 @@ export default function HomeDataDisplay() {
               onClick={() => {
                 navigate("/productos");
               }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
+              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer rounded flex justify-between p-5 items-center shadow transition duration-300"
             >
               <div>
                 <p className="text-white text-lg font-medium">{productos}</p>
@@ -350,10 +313,7 @@ export default function HomeDataDisplay() {
               <Store className="h-10 w-10 fill-white" />
             </div>
           ) : (
-            <div
-              onClick={() => {}}
-              className="bg-gray-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-gray-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <Tag className="h-10 w-10 fill-white" />
               <div>
                 <p className="text-white text-lg font-medium">No permitido</p>
@@ -367,7 +327,7 @@ export default function HomeDataDisplay() {
               onClick={() => {
                 navigate("/proveedores");
               }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
+              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer rounded flex justify-between p-5 items-center shadow transition duration-300"
             >
               <div>
                 <p className="text-white text-lg font-medium">{proveedores}</p>
@@ -376,10 +336,7 @@ export default function HomeDataDisplay() {
               <Truck className="h-10 w-10 fill-white" />
             </div>
           ) : (
-            <div
-              onClick={() => {}}
-              className="bg-gray-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-gray-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <Tag className="h-10 w-10 fill-white" />
               <div>
                 <p className="text-white text-lg font-medium">No permitido</p>
@@ -393,7 +350,7 @@ export default function HomeDataDisplay() {
               onClick={() => {
                 navigate("/ventas");
               }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
+              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer rounded flex justify-between p-5 items-center shadow transition duration-300"
             >
               <div>
                 <p className="text-white text-lg font-medium">{ventas}</p>
@@ -402,10 +359,7 @@ export default function HomeDataDisplay() {
               <Register className="h-10 w-10 fill-white" />
             </div>
           ) : (
-            <div
-              onClick={() => {}}
-              className="bg-gray-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-gray-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <Tag className="h-10 w-10 fill-white" />
               <div>
                 <p className="text-white text-lg font-medium">No permitido</p>
@@ -419,7 +373,7 @@ export default function HomeDataDisplay() {
               onClick={() => {
                 navigate("/compras");
               }}
-              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
+              className="bg-[#2096ed] hover:bg-[#1182d5] cursor-pointer rounded flex justify-between p-5 items-center shadow transition duration-300"
             >
               <div>
                 <p className="text-white text-lg font-medium">{compras}</p>
@@ -428,10 +382,7 @@ export default function HomeDataDisplay() {
               <Cart className="h-10 w-10 fill-white" />
             </div>
           ) : (
-            <div
-              onClick={() => {}}
-              className="bg-gray-400 h-28 w-60 rounded flex justify-between py-5 px-6 items-center shadow transition ease-in-out delay-100 duration-300"
-            >
+            <div className="bg-gray-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <Tag className="h-10 w-10 fill-white" />
               <div>
                 <p className="text-white text-lg font-medium">No permitido</p>

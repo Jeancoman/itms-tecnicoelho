@@ -19,9 +19,9 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="min-h-screen bg-white grid grid-cols-[1fr,_5fr] scrollbar-none overflow-hidden">
+      <div className="min-h-screen bg-white flex flex-col md:grid md:grid-cols-[1fr,_5fr] scrollbar-none overflow-hidden">
         <NavPanel />
-        <main className="bg-white relative max-h-[656px] flex justify-center flex-col">
+        <main className="flex-grow bg-white relative max-h-screen flex justify-center flex-col">
           <HomeDataDisplay />
         </main>
       </div>

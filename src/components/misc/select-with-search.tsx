@@ -52,7 +52,7 @@ function OptionGroup({
   }, []);
 
   useEffect(() => {
-    const handleEscape = (e: any) => {
+    const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         close();
         ref.current?.close();
@@ -75,12 +75,12 @@ function OptionGroup({
   return (
     <dialog
       ref={ref}
-      className="backdrop:bg-transparent max-h-48 overflow-auto scrollbar-none bg-white text-base z-[3000] py-1 list-none text-left rounded mt-1 shadow m-0 bg-clip-padding border border-slate-300"
+      className="backdrop:bg-transparent max-h-48 overflow-auto scrollbar-none bg-white text-base z-[3000] py-1 list-none text-left rounded mt-1 shadow m-0 bg-clip-padding border border-slate-300 w-full sm:w-auto"
       style={{
         position: "absolute",
         top: top,
         left: left,
-        width: width,
+        maxWidth: width,
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -96,19 +96,17 @@ function OptionGroup({
         }
       }}
     >
-      <div>
-        <div className="py-2 px-2 block w-full whitespace-nowrap bg-transparent text-slate-600 relative">
-          <input
-            type="text"
-            placeholder="Filtrar..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-            }}
-            className="border p-2 h-2/4 border-slate-300 rounded outline-none w-full"
-          />
-          <Search className="absolute top-4 right-5 fill-slate-400" />
-        </div>
+      <div className="py-2 px-2 block w-full whitespace-nowrap bg-transparent text-slate-600 relative">
+        <input
+          type="text"
+          placeholder="Filtrar..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+          }}
+          className="border p-2 h-2/4 border-slate-300 rounded outline-none w-full"
+        />
+        <Search className="absolute top-4 right-5 fill-slate-400" />
       </div>
       {search !== ""
         ? options
@@ -156,30 +154,39 @@ export default function SelectWithSearch({
     <>
       <div
         ref={divRef}
-        className={clsx({
-          ["border border-slate-300 relative p-2 rounded-md cursor-default select-none overflow-hidden font-base"]:
-            !drop && !selected.label?.startsWith("Seleccionar"),
-          ["border border-blue-300 text-blue-400 relative p-2 rounded-md cursor-default select-none overflow-hidden font-base"]:
-            drop && selected.label?.startsWith("Seleccionar"),
-          ["border border-blue-300 relative p-2 rounded-md cursor-default select-none overflow-hidden font-base"]:
-            drop && !selected.label?.startsWith("Seleccionar"),
-          ["border border-slate-300 text-slate-400 relative p-2 rounded-md cursor-default select-none overflow-hidden font-base"]:
-            !drop && selected.label?.startsWith("Seleccionar"),
-        })}
+        className={clsx(
+          "border relative p-2 rounded-md cursor-default select-none overflow-hidden font-base",
+          {
+            "border-slate-300": !drop,
+            "border-blue-300": drop,
+            "text-slate-400": !drop && selected.label?.startsWith("Selecciona"),
+            "text-blue-400": drop && selected.label?.startsWith("Selecciona"),
+          }
+        )}
         onClick={() => {
           setDrop(!drop);
         }}
         id="custom-select"
       >
-        <input type="text" readOnly={true} pattern="^(?!Seleccionar)" id="custom-select-inside" className="truncate cursor-none pointer-events-none w-full outline-none caret-transparent" value={selected.label} />
+        <input
+          type="text"
+          readOnly={true}
+          pattern="^(?!Seleccionar)"
+          id="custom-select-inside"
+          className="truncate cursor-none pointer-events-none w-full outline-none caret-transparent"
+          value={selected.label}
+        />
         <Down
           id="custom-select-button"
-          className={clsx({
-            ["absolute h-4 w-4 top-3 right-5 fill-blue-600"]: drop && !small,
-            ["absolute h-4 w-4 top-3 right-5 fill-slate-300"]: !drop && !small,
-            ["absolute h-4 w-4 top-3 right-2 fill-blue-600"]: drop && small,
-            ["absolute h-4 w-4 top-3 right-2 fill-slate-300"]: !drop && small,
-          })}
+          className={clsx(
+            "absolute h-4 w-4 top-3 fill-current",
+            {
+              "right-5": !small,
+              "right-2": small,
+              "text-blue-600": drop,
+              "text-slate-300": !drop,
+            }
+          )}
         />
       </div>
       {drop ? (
@@ -193,12 +200,22 @@ export default function SelectWithSearch({
           options={options}
           drop={drop}
           top={
-            divRef?.current?.getBoundingClientRect().top! +
-            window.scrollY +
-            divRef?.current?.getBoundingClientRect().height!
+            divRef.current
+              ? divRef.current.getBoundingClientRect().top +
+                window.scrollY +
+                divRef.current.getBoundingClientRect().height
+              : 0
           }
-          left={divRef?.current?.getBoundingClientRect().left! + window.scrollX}
-          width={`${divRef?.current?.getBoundingClientRect().width}px`}
+          left={
+            divRef.current
+              ? divRef.current.getBoundingClientRect().left + window.scrollX
+              : 0
+          }
+          width={
+            divRef.current
+              ? `${divRef.current.getBoundingClientRect().width}px`
+              : '100%'
+          }
         />
       ) : null}
     </>

@@ -74,7 +74,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir mensaje</h1>
@@ -86,7 +86,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Añadiendo mensaje...");
-          MessageService.create(Number(id), formData).then((data) => {
+          void MessageService.create(Number(id), formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
@@ -185,7 +185,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar mensaje</h1>
@@ -402,18 +402,18 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
   };
 
   const send = () => {
-    TicketService.getById(mensaje?.ticket_id!).then((resTicket) => {
+    void TicketService.getById(mensaje?.ticket_id!).then((resTicket) => {
       if (resTicket) {
-        if (resTicket.elemento?.cliente?.enviarMensajes) {
+        if (resTicket.cliente?.enviarMensajes) {
           const sendingToast = toast.loading("Enviando mensaje...");
-          MessageSenderService.send(
-            resTicket.elemento?.cliente.telefono || "",
+          void MessageSenderService.send(
+            resTicket.cliente.telefono || "",
             mensaje?.contenido || ""
           ).then((res) => {
             if (res) {
               toast.dismiss(sendingToast);
               toast.success("Mensaje enviado exitosamente.");
-              MessageService.update(
+              void MessageService.update(
                 mensaje?.ticket_id!,
                 mensaje?.id!,
                 //@ts-ignore
@@ -520,19 +520,19 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
           <IndividualDropup
             close={() => setIsDropup(false)}
             selectAction={selectAction}
-            openAddModal={() => {}}
-            openSearchModal={() => {}}
+            openAddModal={() => null}
+            openSearchModal={() => null}
             id={mensaje?.id}
             top={
-              ref?.current?.getBoundingClientRect().top! +
-              window.scrollY +
-              ref?.current?.getBoundingClientRect().height! -
-              15
+              (ref?.current?.getBoundingClientRect().top ?? 0) +
+              (window.scrollY ?? 0) +
+              (ref?.current?.getBoundingClientRect().height ?? 0) -
+              10
             }
-            right={
-              ref?.current?.getBoundingClientRect().left! +
-              window.scrollX -
-              1085
+            left={
+              (ref?.current?.getBoundingClientRect().left ?? 0) +
+              window.scrollX +
+              25
             }
           />
         )}
@@ -613,7 +613,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-1/3 h-fit rounded-md shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar Messagen</h1>
@@ -810,7 +810,6 @@ function IndividualDropup({
   close,
   selectAction,
   top,
-  right,
 }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
@@ -849,7 +848,7 @@ function IndividualDropup({
           bg-clip-padding
           border
         "
-      style={{ top: top, right: right }}
+      style={{ top: top }}
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||

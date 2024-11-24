@@ -32,12 +32,7 @@ function EditModal({
   const ref = useRef<HTMLDialogElement>(null);
   const [formData, setFormData] = useState<Categoría>(categoría!);
   const [selectedType] = useState<Selected>({
-    label:
-      categoría?.tipo === "PRODUCTO"
-        ? "Producto"
-        : categoría?.tipo === "ELEMENTO"
-        ? "Elemento"
-        : "Servicio",
+    label: categoría?.tipo === "PRODUCTO" ? "Producto" : "Servicio",
     value: categoría?.tipo,
   });
 
@@ -58,24 +53,25 @@ function EditModal({
       closeModal();
       ref.current?.close();
     }
-  }, [isOpen]);
+  }, [closeModal, isOpen]);
 
   return (
     <dialog
       ref={ref}
-      onClick={(e: any) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect();
         if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
+          dialogDimensions && // Check if dialogDimensions is defined
+          (e.clientX < dialogDimensions.left ||
+            e.clientX > dialogDimensions.right ||
+            e.clientY < dialogDimensions.top ||
+            e.clientY > dialogDimensions.bottom)
         ) {
           closeModal();
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md scrollbar-none text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar categoría</h1>
@@ -87,7 +83,7 @@ function EditModal({
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Editando categoría...");
-          CategoryService.update(categoría?.id!, formData).then((data) => {
+          void CategoryService.update(categoría?.id!, formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
@@ -146,7 +142,7 @@ function EditModal({
           </select>
           <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
         </div>
-        <div className="flex w-full justify-between items-center">
+        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
             <input
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
@@ -167,7 +163,7 @@ function EditModal({
               ¿Es digital?
             </label>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end">
             <button
               type="button"
               onClick={() => {
@@ -246,7 +242,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir categoría</h1>
@@ -258,7 +254,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Añadiendo categoría...");
-          CategoryService.create(formData).then((data) => {
+          void CategoryService.create(formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
@@ -336,21 +332,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   });
                 },
               },
-              {
-                value: "ELEMENTO",
-                label: "Elemento",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
             ]}
             selected={selectedType}
           />
         </div>
-        <div className="flex w-full justify-between items-center">
+        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
             <input
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
@@ -371,7 +357,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               ¿Es digital?
             </label>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end">
             <button
               type="button"
               onClick={closeModal}
@@ -549,7 +535,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-1/3 h-fit rounded-md shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar categoría</h1>
@@ -622,16 +608,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               }}
               options={[
                 {
-                  value: "ELEMENTO",
-                  label: "Elemento",
-                  onClick: (value, label) => {
-                    setSelectedType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
                   value: "SERVICIO",
                   label: "Servicio",
                   onClick: (value, label) => {
@@ -656,7 +632,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             />
           </div>
         ) : null}
-        <div className="flex w-full justify-between items-center">
+        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
             <input
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
@@ -676,7 +652,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               ¿Busqueda exacta?
             </label>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end">
             <button
               type="button"
               onClick={() => {
@@ -720,12 +696,12 @@ function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
   const anyAction =
-  session.find()?.usuario.rol === "ADMINISTRADOR" ||
-  permissions.find()?.editar.categoría
-    ? true
-    : permissions.find()?.eliminar.categoría
-    ? true
-    : false;
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+    permissions.find()?.editar.categoría
+      ? true
+      : permissions.find()?.eliminar.categoría
+      ? true
+      : false;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -805,19 +781,19 @@ function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
           <IndividualDropup
             close={() => setIsDropup(false)}
             selectAction={selectAction}
-            openAddModal={() => {}}
-            openSearchModal={() => {}}
+            openAddModal={() => null}
+            openSearchModal={() => null}
             id={categoría?.id}
             top={
-              ref?.current?.getBoundingClientRect().top! +
-              window.scrollY +
-              ref?.current?.getBoundingClientRect().height! -
-              15
+              (ref?.current?.getBoundingClientRect().top ?? 0) +
+              (window.scrollY ?? 0) +
+              (ref?.current?.getBoundingClientRect().height ?? 0) -
+              10
             }
-            right={
-              ref?.current?.getBoundingClientRect().left! +
-              window.scrollX -
-              1085
+            left={
+              (ref?.current?.getBoundingClientRect().left ?? 0) +
+              window.scrollX +
+              25
             }
           />
         )}
@@ -934,13 +910,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({
-  id,
-  close,
-  selectAction,
-  top,
-  right,
-}: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -978,7 +948,7 @@ function IndividualDropup({
           bg-clip-padding
           border
         "
-      style={{ top: top, right: right }}
+      style={{ top: top }}
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||

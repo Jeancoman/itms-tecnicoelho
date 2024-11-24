@@ -36,28 +36,29 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const [formData, setFormData] = useState<Usuario>({
     nombre: "",
     apellido: "",
+    correo: "",
     nombreUsuario: "",
+    documento: "",
     rol: "EMPLEADO",
     contraseña: "",
     creado_por: {
       lista: [],
     },
   });
+  const [documentType, setDocumentType] = useState<Selected>({
+    value: "RIF",
+    label: "RIF",
+  });
   const [permisos, setPermisos] = useState<Permisos>();
   const [visible, setVisible] = useState(false);
   const [isTaken, setIsTaken] = useState(false);
   const [stillWriting, setStillWriting] = useState(false);
-  const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
   let iniciales: Permisos = {
     ver: {
       cliente: false,
-      ticket: false,
-      elemento: false,
-      problema: false,
       mensaje: false,
-      servicio: false,
-      operación: false,
+      ticket: false,
       categoría: false,
       imagen: false,
       venta: false,
@@ -67,15 +68,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       reporte: false,
       mensajería: false,
       producto: false,
+      impuesto: false,
     },
     crear: {
       cliente: false,
-      ticket: false,
-      elemento: false,
-      problema: false,
       mensaje: false,
-      servicio: false,
-      operación: false,
+      ticket: false,
       categoría: false,
       imagen: false,
       venta: false,
@@ -85,15 +83,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       reporte: false,
       mensajería: false,
       producto: false,
+      impuesto: false,
     },
     editar: {
       cliente: false,
-      ticket: false,
-      elemento: false,
-      problema: false,
       mensaje: false,
-      servicio: false,
-      operación: false,
+      ticket: false,
       categoría: false,
       imagen: false,
       venta: false,
@@ -103,15 +98,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       reporte: false,
       mensajería: false,
       producto: false,
+      impuesto: false,
     },
     eliminar: {
       cliente: false,
-      ticket: false,
-      elemento: false,
-      problema: false,
       mensaje: false,
-      servicio: false,
-      operación: false,
+      ticket: false,
       categoría: false,
       imagen: false,
       venta: false,
@@ -121,6 +113,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       reporte: false,
       mensajería: false,
       producto: false,
+      impuesto: false,
     },
   };
 
@@ -131,21 +124,20 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       rol: "EMPLEADO",
       nombreUsuario: "",
       contraseña: "",
+      correo: "",
+      documento: "",
     });
     setSelectedRole({
       value: "",
       label: "Seleccionar rol",
     });
+    setDocumentType({ value: "RIF", label: "RIF" });
     setLast(false);
     iniciales = {
       ver: {
         cliente: false,
-        ticket: false,
-        elemento: false,
-        problema: false,
         mensaje: false,
-        servicio: false,
-        operación: false,
+        ticket: false,
         categoría: false,
         imagen: false,
         venta: false,
@@ -155,15 +147,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         reporte: false,
         mensajería: false,
         producto: false,
+        impuesto: false,
       },
       crear: {
         cliente: false,
-        ticket: false,
-        elemento: false,
-        problema: false,
         mensaje: false,
-        servicio: false,
-        operación: false,
+        ticket: false,
         categoría: false,
         imagen: false,
         venta: false,
@@ -173,15 +162,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         reporte: false,
         mensajería: false,
         producto: false,
+        impuesto: false,
       },
       editar: {
         cliente: false,
-        ticket: false,
-        elemento: false,
-        problema: false,
         mensaje: false,
-        servicio: false,
-        operación: false,
+        ticket: false,
         categoría: false,
         imagen: false,
         venta: false,
@@ -191,15 +177,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         reporte: false,
         mensajería: false,
         producto: false,
+        impuesto: false,
       },
       eliminar: {
         cliente: false,
-        ticket: false,
-        elemento: false,
-        problema: false,
         mensaje: false,
-        servicio: false,
-        operación: false,
+        ticket: false,
         categoría: false,
         imagen: false,
         venta: false,
@@ -209,6 +192,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         reporte: false,
         mensajería: false,
         producto: false,
+        impuesto: false,
       },
     };
   };
@@ -293,9 +277,15 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             lista: lista,
           };
 
+          newFormData.documento = formData.documento
+            ? documentType.value === "V"
+              ? "V-" + formData.documento
+              : formData.documento
+            : "";
+
           const loadingToast = toast.loading("Añadiendo usuario...");
 
-          UserService.create(newFormData).then((data) => {
+          void UserService.create(newFormData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
@@ -305,7 +295,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               createPermisos.usuario_id = data.id;
               if (createPermisos) {
                 //@ts-ignore
-                UserService.postPermissionsById(data.id!, createPermisos);
+                void UserService.postPermissionsById(data.id!, createPermisos);
               }
               toast.success("Usuario añadido con exito.");
             }
@@ -357,6 +347,61 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 />
                 <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
                   Minimo 2 caracteres
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-1">
+              <div className="relative w-[20%]">
+                <Select
+                  options={[
+                    {
+                      value: "V",
+                      label: "V",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "RIF",
+                      label: "RIF",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                  ]}
+                  selected={documentType}
+                  small={true}
+                />
+              </div>
+              <div className="w-[80%]">
+                <input
+                  type="text"
+                  placeholder="Documento"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      documento: e.target.value,
+                    });
+                  }}
+                  value={formData.documento}
+                  required
+                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                  pattern={
+                    documentType.value === "RIF"
+                      ? "^[A-Za-z]-?\\d{1,9}-?\\d?$"
+                      : "^\\d{1,3}\\.\\d{3}\\.\\d{3}$"
+                  }
+                />
+                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                  {documentType.value === "RIF"
+                    ? "Formato: J-30684267-5"
+                    : "Formato: 29.946.012"}
                 </span>
               </div>
             </div>
@@ -428,6 +473,26 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 />
               </div>
             </div>
+            <div className="w-full">
+              <input
+                type="email"
+                name="email"
+                placeholder="E-mail*"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    correo: e.target.value,
+                  });
+                }}
+                value={formData.correo}
+                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+                required
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                E-mail invalido
+              </span>
+            </div>
             <div className="relative w-full">
               <input
                 type={visible ? "text" : "password"}
@@ -441,13 +506,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 value={formData.contraseña}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 name="password"
-                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$¡!%*¿?&#^_+\-=<>\\./,\[\]{}\(\):;|~])[A-Za-z\d@$¡!%*¿?&#^_+\-=<>\\./,\[\]{}\(\):;|~]{8,}$"
-                required
+                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
                 autoComplete="new-password"
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Contraseña debe tener minimo 8 caracteres, contener una letra
-                mayuscula, una letra minúscula, un número y un carácter especial
+                La contraseña debe tener mínimo 8 caracteres, contener una letra
+                mayúscula, una letra minúscula, un número y un carácter especial
               </span>
               {visible ? (
                 <On
@@ -503,8 +567,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   stillWriting ||
                   formData?.nombre.length < 2 ||
                   formData?.nombreUsuario.length < 3 ||
-                  selectedRole.label?.startsWith("Seleccionar") || 
-                  !(pattern.test(formData?.contraseña || "")),
+                  selectedRole.label?.startsWith("Selecciona")
               })}
             >
               Completar
@@ -531,10 +594,17 @@ function EditModal({
   const [formData, setFormData] = useState<Usuario>({
     ...usuario!,
     contraseña: "",
+    documento: usuario?.documento?.startsWith("V")
+      ? usuario?.documento?.slice(2)
+      : usuario?.documento || "",
   });
   const [permisos, setPermisos] = useState<Permisos | undefined>(
     usuario?.permiso!
   );
+  const [documentType, setDocumentType] = useState<Selected>({
+    value: usuario?.documento?.startsWith("V") ? "V" : "RIF",
+    label: usuario?.documento?.startsWith("V") ? "V" : "RIF",
+  });
   const [visible, setVisible] = useState(false);
   const [isTaken, setIsTaken] = useState(false);
   const [stillWriting, setStillWriting] = useState(false);
@@ -543,10 +613,17 @@ function EditModal({
     setFormData({
       ...usuario!,
       contraseña: "",
+      documento: usuario?.documento?.startsWith("V")
+        ? usuario?.documento?.slice(2)
+        : usuario?.documento || "",
     });
     setSelectedRole({
       value: usuario?.rol,
       label: usuario?.rol === "ADMINISTRADOR" ? "Administrador" : "Empleado",
+    });
+    setDocumentType({
+      value: usuario?.documento?.startsWith("V") ? "V" : "RIF",
+      label: usuario?.documento?.startsWith("V") ? "V" : "RIF",
     });
     setPermisos(usuario?.permiso!);
   };
@@ -621,13 +698,22 @@ function EditModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
+
+          const newFormData = { ...formData };
+
+          newFormData.documento = formData.documento
+            ? documentType.value === "V"
+              ? "V-" + formData.documento
+              : formData.documento
+            : "";
+
           const loadingToast = toast.loading("Editando usuario...");
-          UserService.update(usuario?.id!, formData).then((data) => {
+          void UserService.update(usuario?.id!, newFormData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data) {
               if (permisos) {
-                UserService.patchPermissionsById(formData.id!, permisos);
+                UserService.patchPermissionsById(newFormData.id!, permisos);
               }
               toast.success("Usuario editado con exito.");
             } else {
@@ -685,6 +771,61 @@ function EditModal({
                 </span>
               </div>
             </div>
+            <div className="flex gap-1">
+              <div className="relative w-[20%]">
+                <Select
+                  options={[
+                    {
+                      value: "V",
+                      label: "V",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "RIF",
+                      label: "RIF",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                  ]}
+                  selected={documentType}
+                  small={true}
+                />
+              </div>
+              <div className="w-[80%]">
+                <input
+                  type="text"
+                  placeholder="Documento"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      documento: e.target.value,
+                    });
+                  }}
+                  value={formData.documento}
+                  required
+                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                  pattern={
+                    documentType.value === "RIF"
+                      ? "^[A-Za-z]-?\\d{1,9}-?\\d?$"
+                      : "^\\d{1,3}\\.\\d{3}\\.\\d{3}$"
+                  }
+                />
+                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                  {documentType.value === "RIF"
+                    ? "Formato: J-30684267-5"
+                    : "Formato: 29.946.012"}
+                </span>
+              </div>
+            </div>
             <div className="flex gap-2">
               <div className="w-2/4">
                 <input
@@ -732,6 +873,26 @@ function EditModal({
                 <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
               </div>
             </div>
+            <div className="w-full">
+              <input
+                type="email"
+                name="email"
+                placeholder="E-mail"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    correo: e.target.value,
+                  });
+                }}
+                value={formData.correo}
+                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+                required
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                E-mail invalido
+              </span>
+            </div>
             <div className="relative w-full">
               <input
                 type={visible ? "text" : "password"}
@@ -745,12 +906,12 @@ function EditModal({
                 value={formData.contraseña}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 name="password"
-                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$¡!%*¿?&#^_+\-=<>\\./,\[\]{}\(\):;|~])[A-Za-z\d@$¡!%*¿?&#^_+\-=<>\\./,\[\]{}\(\):;|~]{8,}$"
+                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
                 autoComplete="new-password"
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Contraseña debe tener minimo 8 caracteres, contener una letra
-                mayuscula, una letra minúscula, un número y un carácter especial
+                La contraseña debe tener mínimo 8 caracteres, contener una letra
+                mayúscula, una letra minúscula, un número y un carácter especial
               </span>
               {visible ? (
                 <On
@@ -867,7 +1028,7 @@ function DeleteModal({
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Eliminando usuario...");
-          UserService.delete(usuario?.id!).then((data) => {
+          void UserService.delete(usuario?.id!).then((data) => {
             toast.dismiss(loadingToast);
             if (data) {
               toast.success("Usuario eliminado con exito.");
@@ -940,6 +1101,10 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
           {session.find()?.usuario?.id === usuario?.id ? "(Tu usuario)" : null}
         </div>
       </td>
+      <td className="px-6 py-4 border border-slate-300">
+        {usuario?.documento}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">{usuario?.correo}</td>
       <td className="px-6 py-2 border border-slate-300">
         {" "}
         {usuario?.rol === "EMPLEADO" ? (
@@ -1023,17 +1188,17 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
           <IndividualDropup
             close={() => setIsDropup(false)}
             selectAction={selectAction}
-            openAddModal={() => {}}
-            openSearchModal={() => {}}
+            openAddModal={() => null}
+            openSearchModal={() => null}
             id={usuario?.id}
             top={
-              ref?.current?.getBoundingClientRect().top! +
-              window.scrollY +
-              ref?.current?.getBoundingClientRect().height! -
-              15
+              (ref?.current?.getBoundingClientRect().top ?? 0) +
+              (window.scrollY ?? 0) +
+              (ref?.current?.getBoundingClientRect().height ?? 0) -
+              10
             }
-            right={
-              ref?.current?.getBoundingClientRect().left! + window.scrollX + 45
+            left={
+              (ref?.current?.getBoundingClientRect().left ?? 0) + window.scrollX
             }
           />
         )}
@@ -1235,13 +1400,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
-function IndividualDropup({
-  id,
-  close,
-  selectAction,
-  top,
-  right,
-}: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -1279,7 +1438,7 @@ function IndividualDropup({
           bg-clip-padding
           border
         "
-      style={{ top: top, left: right }}
+      style={{ top: top }}
     >
       <li>
         <div
@@ -1359,8 +1518,8 @@ function Dropup({ close, selectAction }: DropupProps) {
           bg-white
           text-base
           z-50
-          right-8
-          top-14
+          right-0
+          top-9
           py-2
           list-none
           text-left
@@ -1546,225 +1705,7 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
         </div>
       </div>
       <div className="ml-5 mt-2 font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
-        Elementos
-      </div>
-      <div className="ml-10 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox111"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  elemento: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.elemento}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox111"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox112"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  elemento: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  elemento: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.elemento}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox112"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox113"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  elemento: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  elemento: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.elemento}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox113"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox114"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  elemento: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  elemento: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.elemento}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox114"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
         Tickets
-      </div>
-      <div className="ml-5 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox5"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  ticket: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.ticket}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox5"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox6"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  ticket: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  ticket: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.ticket}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox6"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox7"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  ticket: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  ticket: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.ticket}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox7"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox8"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  ticket: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  ticket: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.ticket}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox8"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="ml-5 mt-2 font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
-        Servicios
       </div>
       <div className="ml-10 mt-2 flex gap-4">
         <div className="mb-[0.125rem] min-h-[1.5rem] block">
@@ -1777,11 +1718,11 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
                 ...permissions,
                 ver: {
                   ...permissions.ver,
-                  servicio: e.target.checked,
+                  ticket: e.target.checked,
                 },
               });
             }}
-            checked={permissions.ver.servicio}
+            checked={permissions.ver.ticket}
           />
           <label
             className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
@@ -1800,15 +1741,15 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
                 ...permissions,
                 ver: {
                   ...permissions.ver,
-                  servicio: true,
+                  ticket: true,
                 },
                 crear: {
                   ...permissions.crear,
-                  servicio: e.target.checked,
+                  ticket: e.target.checked,
                 },
               });
             }}
-            checked={permissions.crear.servicio}
+            checked={permissions.crear.ticket}
           />
           <label
             className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
@@ -1827,15 +1768,15 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
                 ...permissions,
                 ver: {
                   ...permissions.ver,
-                  servicio: true,
+                  ticket: true,
                 },
                 editar: {
                   ...permissions.editar,
-                  servicio: e.target.checked,
+                  ticket: e.target.checked,
                 },
               });
             }}
-            checked={permissions.editar.servicio}
+            checked={permissions.editar.ticket}
           />
           <label
             className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
@@ -1854,237 +1795,19 @@ function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
                 ...permissions,
                 ver: {
                   ...permissions.ver,
-                  servicio: true,
+                  ticket: true,
                 },
                 eliminar: {
                   ...permissions.eliminar,
-                  servicio: e.target.checked,
+                  ticket: e.target.checked,
                 },
               });
             }}
-            checked={permissions.eliminar.servicio}
+            checked={permissions.eliminar.ticket}
           />
           <label
             className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
             htmlFor="checkbox1114"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="ml-10 mt-2 font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
-        Operaciones
-      </div>
-      <div className="ml-16 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox2111"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  operación: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.operación}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox2111"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox2112"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  operación: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  operación: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.operación}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox2112"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox2113"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  operación: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  operación: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.operación}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox2113"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox2114"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  operación: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  operación: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.operación}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox2114"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="ml-5 mt-2 font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
-        Problemas
-      </div>
-      <div className="ml-10 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox3111"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  problema: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.problema}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox3111"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox3112"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  problema: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  problema: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.problema}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox3112"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox3113"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  problema: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  problema: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.problema}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox3113"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox3114"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  problema: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  problema: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.problema}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox3114"
           >
             ELIMINAR
           </label>
@@ -3011,7 +2734,7 @@ export default function UsersDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0) {
-      UserService.getAll(page, 7).then((data) => {
+      void UserService.getAll(page, 7).then((data) => {
         if (data === false) {
           setNotFound(true);
           setLoading(false);
@@ -3020,21 +2743,23 @@ export default function UsersDataDisplay() {
           resetSearchCount();
         } else {
           if (!currentUser) {
-            UserService.getById(session.find()?.usuario.id!).then((user) => {
-              if (user) {
-                setCurrentUser(user);
-                const withOutUser = data.rows.filter(
-                  (obj) => obj.id !== user.id
-                );
-                withOutUser.unshift(user), setUsers(withOutUser);
-                setPages(data.pages);
-                setCurrent(data.current);
-                setLoading(false);
-                setNotFound(false);
-                setWasSearch(false);
-                resetSearchCount();
+            void UserService.getById(session.find()?.usuario.id!).then(
+              (user) => {
+                if (user) {
+                  setCurrentUser(user);
+                  const withOutUser = data.rows.filter(
+                    (obj) => obj.id !== user.id
+                  );
+                  withOutUser.unshift(user), setUsers(withOutUser);
+                  setPages(data.pages);
+                  setCurrent(data.current);
+                  setLoading(false);
+                  setNotFound(false);
+                  setWasSearch(false);
+                  resetSearchCount();
+                }
               }
-            });
+            );
           } else {
             const withOutUser = data.rows.filter(
               (obj) => obj.id !== currentUser.id
@@ -3054,7 +2779,7 @@ export default function UsersDataDisplay() {
       if (isPrecise && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
         if (param === "NOMBRE") {
-          UserService.getByExactNombre(input, page, 7).then((data) => {
+          void UserService.getByExactNombre(input, page, 7).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -3070,7 +2795,7 @@ export default function UsersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "APELLIDO") {
-          UserService.getByExactApellido(input, page, 7).then((data) => {
+          void UserService.getByExactApellido(input, page, 7).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -3086,26 +2811,28 @@ export default function UsersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "NOMBRE_USUARIO") {
-          UserService.getByExactNombreUsuario(input, page, 7).then((data) => {
-            if (data === false) {
-              setNotFound(true);
-              setLoading(false);
-              setUsers([]);
-            } else {
-              setUsers(data.rows);
-              setPages(data.pages);
-              setCurrent(data.current);
-              setLoading(false);
-              setNotFound(false);
+          void UserService.getByExactNombreUsuario(input, page, 7).then(
+            (data) => {
+              if (data === false) {
+                setNotFound(true);
+                setLoading(false);
+                setUsers([]);
+              } else {
+                setUsers(data.rows);
+                setPages(data.pages);
+                setCurrent(data.current);
+                setLoading(false);
+                setNotFound(false);
+              }
+              toast.dismiss(loadingToast);
+              setIsOperationCompleted(false);
             }
-            toast.dismiss(loadingToast);
-            setIsOperationCompleted(false);
-          });
+          );
         }
       } else if (!isPrecise && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
         if (param === "NOMBRE") {
-          UserService.getByNombre(input, page, 7).then((data) => {
+          void UserService.getByNombre(input, page, 7).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -3121,7 +2848,7 @@ export default function UsersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "APELLIDO") {
-          UserService.getByApellido(input, page, 7).then((data) => {
+          void UserService.getByApellido(input, page, 7).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -3137,7 +2864,7 @@ export default function UsersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "NOMBRE_USUARIO") {
-          UserService.getByNombreUsuario(input, page, 7).then((data) => {
+          void UserService.getByNombreUsuario(input, page, 7).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -3164,7 +2891,7 @@ export default function UsersDataDisplay() {
   return (
     <>
       <div className="absolute h-full w-full px-8 py-5">
-        <nav className="flex justify-between items-center select-none">
+        <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span
@@ -3174,13 +2901,13 @@ export default function UsersDataDisplay() {
               Usuarios
             </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative">
             {isDropup && (
               <Dropup
                 close={closeDropup}
                 selectAction={selectAction}
-                openAddModal={() => {}}
-                openSearchModal={() => {}}
+                openAddModal={() => null}
+                openSearchModal={() => null}
               />
             )}
             {action === "ADD" ? (
@@ -3235,6 +2962,12 @@ export default function UsersDataDisplay() {
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Nombre de usuario
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Documento
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Correo
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Rol

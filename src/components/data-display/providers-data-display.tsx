@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
@@ -25,10 +25,10 @@ import { format } from "date-fns";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const [documentType, setDocumentType] = useState<Selected>({
-    value: "RIF",
-    label: "RIF",
+    value: "V",
+    label: "V",
   });
-  const ref = useRef<HTMLDialogElement>(null);
+
   const [formData, setFormData] = useState<Proveedor>({
     nombre: "",
     documento: undefined,
@@ -36,48 +36,91 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     telefono: "",
   });
 
-  const resetFormData = () => {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  const resetFormData = useCallback(() => {
     setFormData({
       nombre: "",
       documento: undefined,
       descripción: "",
       telefono: "",
     });
-  };
+  }, []);
+
+  const handleEscape = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      handleClose();
+    }
+  }, []);
+
+  const handleClose = useCallback(() => {
+    closeModal();
+    ref.current?.close();
+    resetFormData();
+  }, [closeModal, resetFormData]);
 
   useEffect(() => {
     if (isOpen) {
       ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-          resetFormData();
-        }
-      });
+      document.addEventListener("keydown", handleEscape);
     } else {
-      closeModal();
-      ref.current?.close();
-      resetFormData();
+      handleClose();
     }
-  }, [isOpen]);
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, handleEscape, handleClose]);
+
+  const handleClickOutside = (e: React.MouseEvent) => {
+    const dialogDimensions = ref.current?.getBoundingClientRect();
+    if (
+      dialogDimensions &&
+      (e.clientX < dialogDimensions.left ||
+        e.clientX > dialogDimensions.right ||
+        e.clientY < dialogDimensions.top ||
+        e.clientY > dialogDimensions.bottom)
+    ) {
+      handleClose();
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    handleClose();
+
+    let updatedFormData = { ...formData };
+    updatedFormData.documento = formData.documento
+      ? `${documentType.value}-${formData.documento}`
+      : undefined;
+
+    const loadingToast = toast.loading("Añadiendo proveedor...");
+    const data = await ProviderService.create(updatedFormData);
+
+    toast.dismiss(loadingToast);
+    setOperationAsCompleted();
+
+    if (data === false) {
+      toast.error("Proveedor no pudo ser añadido.");
+    } else {
+      toast.success("Proveedor añadido con éxito.");
+    }
+  };
+
+  const handleInputChange =
+    (field: keyof Proveedor) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: e.target.value,
+      }));
+    };
 
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-2/5 h-fit rounded-md shadow-md"
+      onClick={handleClickOutside}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir proveedor</h1>
@@ -85,37 +128,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       <form
         className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          let updatedFormData = { ...formData };
-          updatedFormData.documento = formData.documento
-            ? documentType.value === "V"
-              ? "V-" + formData.documento
-              : formData.documento
-            : undefined;
-          const loadingToast = toast.loading("Añadiendo proveedor...");
-          ProviderService.create(updatedFormData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Proveedor no pudo ser añadido.");
-            } else {
-              toast.success("Proveedor añadido con exito.");
-            }
-          });
-        }}
+        onSubmit={handleFormSubmit}
       >
         <div className="w-full">
           <input
             type="text"
-            placeholder="Nombre*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
+            id="name"
+            placeholder="Introduzca el nombre*"
+            onChange={handleInputChange("nombre")}
             value={formData.nombre}
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             required
@@ -123,7 +143,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             name="name"
           />
           <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 2 caracteres
+            Mínimo 2 caracteres
           </span>
         </div>
         <div className="flex gap-1">
@@ -133,21 +153,15 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 {
                   value: "V",
                   label: "V",
-                  onClick: (value, label) => {
-                    setDocumentType({
-                      value,
-                      label,
-                    });
+                  onClick(value, label) {
+                    setDocumentType({ value, label });
                   },
                 },
                 {
                   value: "RIF",
                   label: "RIF",
-                  onClick: (value, label) => {
-                    setDocumentType({
-                      value,
-                      label,
-                    });
+                  onClick(value, label) {
+                    setDocumentType({ value, label });
                   },
                 },
               ]}
@@ -157,63 +171,58 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           <div className="w-[80%]">
             <input
               type="text"
-              placeholder="Documento"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  documento: e.target.value,
-                });
-              }}
-              value={formData.documento}
+              id="document"
+              placeholder="Introduzca el documento"
+              onChange={handleInputChange("documento")}
+              value={formData.documento || ""}
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              pattern="^.{7,}$"
+              pattern={
+                documentType.value !== "V"
+                  ? "^([A-Za-z]-\\d{8,}|[A-Za-z]-\\d{8,}-\\d)$"
+                  : "^\\d{1,3}\\.\\d{3}\\.\\d{3}$"
+              }
+              required
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 7 caracteres
+              {documentType.value !== "V"
+                ? "Formato: J-30684267-5"
+                : "Formato: 29.946.012"}
             </span>
           </div>
         </div>
         <div className="w-full">
           <textarea
             rows={3}
-            placeholder="Descripción"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                descripción: e.target.value,
-              });
-            }}
+            id="description"
+            placeholder="Introduzca la descripción"
+            onChange={handleInputChange("descripción")}
             value={formData.descripción}
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             minLength={10}
-            name="name"
+            name="descripción"
           />
           <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
+            Mínimo 10 caracteres
           </span>
         </div>
         <div className="w-full">
           <input
             type="tel"
-            placeholder="Teléfono"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                telefono: e.target.value,
-              });
-            }}
+            id="phone"
+            placeholder="Introduzca el teléfono"
+            onChange={handleInputChange("telefono")}
             value={formData.telefono}
             className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            pattern="^\+?(\d{1,3})?[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$"
+            pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
           />
           <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Formato de teléfono invalido
+            Teléfono debe estar en formato E.164
           </span>
         </div>
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={handleClose}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
@@ -234,61 +243,115 @@ function EditModal({
   proveedor,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+
+  const extractDocumentType = (documento: string | undefined) => {
+    const prefix = documento?.substring(0, 1);
+    return ["V", "J", "G", "E", "P"].includes(prefix || "") ? prefix : "V";
+  };
+
+  const extractDocumentNumber = (documento: string | undefined) => {
+    if (documento && documento.length > 2) {
+      return documento.slice(2);
+    }
+
+    return documento;
+  };
+
   const [documentType, setDocumentType] = useState<Selected>({
-    value: proveedor?.documento?.startsWith("V") ? "V" : "RIF",
-    label: proveedor?.documento?.startsWith("V") ? "V" : "RIF",
-  });
-  const [formData, setFormData] = useState<Proveedor>({
-    ...proveedor!,
-    documento: proveedor?.documento?.startsWith("V")
-      ? proveedor?.documento?.slice(2)
-      : proveedor?.documento,
+    value: extractDocumentType(proveedor?.documento),
+    label: extractDocumentType(proveedor?.documento),
   });
 
-  const resetFormData = () => {
+  const [formData, setFormData] = useState<Proveedor>({
+    ...proveedor!,
+    documento: extractDocumentNumber(proveedor?.documento),
+  });
+
+  const resetFormData = useCallback(() => {
     setFormData({
       ...proveedor!,
-      documento: proveedor?.documento?.startsWith("V")
-        ? proveedor?.documento?.slice(2)
-        : proveedor?.documento,
+      documento: extractDocumentNumber(proveedor?.documento),
     });
     setDocumentType({
-      value: proveedor?.documento?.startsWith("V") ? "V" : "RIF",
-      label: proveedor?.documento?.startsWith("V") ? "V" : "RIF",
+      value: extractDocumentType(proveedor?.documento),
+      label: extractDocumentType(proveedor?.documento),
     });
-  };
+  }, [proveedor]);
+
+  const handleEscape = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      handleClose();
+    }
+  }, []);
+
+  const handleClose = useCallback(() => {
+    closeModal();
+    ref.current?.close();
+    resetFormData();
+  }, [closeModal, resetFormData]);
 
   useEffect(() => {
     if (isOpen) {
       ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-        }
-      });
+      document.addEventListener("keydown", handleEscape);
     } else {
-      closeModal();
-      ref.current?.close();
+      handleClose();
     }
-  }, [isOpen]);
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, handleEscape, handleClose]);
+
+  const handleClickOutside = (e: React.MouseEvent) => {
+    const dialogDimensions = ref.current?.getBoundingClientRect();
+    if (
+      dialogDimensions &&
+      (e.clientX < dialogDimensions.left ||
+        e.clientX > dialogDimensions.right ||
+        e.clientY < dialogDimensions.top ||
+        e.clientY > dialogDimensions.bottom)
+    ) {
+      handleClose();
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    handleClose();
+
+    let updatedFormData = { ...formData };
+    updatedFormData.documento = formData.documento
+      ? `${documentType.value}-${formData.documento}`
+      : undefined;
+
+    const loadingToast = toast.loading("Editando proveedor...");
+    const data = await ProviderService.update(proveedor?.id!, updatedFormData);
+
+    toast.dismiss(loadingToast);
+    setOperationAsCompleted();
+
+    if (data) {
+      toast.success("Proveedor editado con éxito.");
+    } else {
+      toast.error("Proveedor no pudo ser editado.");
+    }
+  };
+
+  const handleInputChange =
+    (field: keyof Proveedor) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: e.target.value,
+      }));
+    };
 
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-2/5 h-fit rounded-md shadow text-base font-normal"
+      onClick={handleClickOutside}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar proveedor</h1>
@@ -296,32 +359,13 @@ function EditModal({
       <form
         className="flex flex-col p-8 pt-6 gap-4"
         autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Editando proveedor...");
-          ProviderService.update(proveedor?.id!, formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data) {
-              toast.success("Proveedor editado con exito.");
-            } else {
-              toast.error("Proveedor no pudo ser editado.");
-            }
-            setOperationAsCompleted();
-          });
-        }}
+        onSubmit={handleFormSubmit}
       >
         <div className="w-full">
           <input
             type="text"
             placeholder="Nombre*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
+            onChange={handleInputChange("nombre")}
             value={formData.nombre}
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             required
@@ -339,21 +383,36 @@ function EditModal({
                 {
                   value: "V",
                   label: "V",
-                  onClick: (value, label) => {
-                    setDocumentType({
-                      value,
-                      label,
-                    });
+                  onClick(value, label) {
+                    setDocumentType({ value, label });
                   },
                 },
                 {
-                  value: "RIF",
-                  label: "RIF",
-                  onClick: (value, label) => {
-                    setDocumentType({
-                      value,
-                      label,
-                    });
+                  value: "J",
+                  label: "J",
+                  onClick(value, label) {
+                    setDocumentType({ value, label });
+                  },
+                },
+                {
+                  value: "G",
+                  label: "G",
+                  onClick(value, label) {
+                    setDocumentType({ value, label });
+                  },
+                },
+                {
+                  value: "E",
+                  label: "E",
+                  onClick(value, label) {
+                    setDocumentType({ value, label });
+                  },
+                },
+                {
+                  value: "P",
+                  label: "P",
+                  onClick(value, label) {
+                    setDocumentType({ value, label });
                   },
                 },
               ]}
@@ -364,13 +423,8 @@ function EditModal({
             <input
               type="text"
               placeholder="Documento"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  documento: e.target.value,
-                });
-              }}
-              value={formData.documento}
+              onChange={handleInputChange("documento")}
+              value={formData.documento || ""}
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               pattern="^.{7,}$"
             />
@@ -383,16 +437,11 @@ function EditModal({
           <textarea
             rows={3}
             placeholder="Descripción"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                descripción: e.target.value,
-              });
-            }}
+            onChange={handleInputChange("descripción")}
             value={formData.descripción || ""}
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             minLength={10}
-            name="name"
+            name="descripción"
           />
           <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
             Minimo 10 caracteres
@@ -402,12 +451,7 @@ function EditModal({
           <input
             type="tel"
             placeholder="Teléfono"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                telefono: e.target.value,
-              });
-            }}
+            onChange={handleInputChange("telefono")}
             value={formData.telefono}
             className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             pattern="^\+?(\d{1,3})?[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$"
@@ -419,10 +463,7 @@ function EditModal({
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            onClick={() => {
-              closeModal();
-              resetFormData();
-            }}
+            onClick={handleClose}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
@@ -588,7 +629,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-1/3 h-fit rounded-md shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar proveedor</h1>
@@ -748,7 +789,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-1/3 min-h-[200px] h-fit rounded-md shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Generar reporte</h1>
@@ -1022,19 +1063,19 @@ function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
           <IndividualDropup
             close={() => setIsDropup(false)}
             selectAction={selectAction}
-            openAddModal={() => {}}
-            openSearchModal={() => {}}
+            openAddModal={() => null}
+            openSearchModal={() => null}
             id={proveedor?.id}
             top={
-              ref?.current?.getBoundingClientRect().top! +
-              window.scrollY +
-              ref?.current?.getBoundingClientRect().height! -
-              15
+              (ref?.current?.getBoundingClientRect().top ?? 0) +
+              (window.scrollY ?? 0) +
+              (ref?.current?.getBoundingClientRect().height ?? 0) -
+              10
             }
-            right={
-              ref?.current?.getBoundingClientRect().left! +
-              window.scrollX -
-              1060
+            left={
+              (ref?.current?.getBoundingClientRect().left ?? 0) +
+              window.scrollX +
+              25
             }
           />
         )}
@@ -1173,13 +1214,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({
-  id,
-  close,
-  selectAction,
-  top,
-  right,
-}: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -1217,7 +1252,7 @@ function IndividualDropup({
           bg-clip-padding
           border
         "
-      style={{ top: top, right: right }}
+      style={{ top: top }}
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         permissions.find()?.editar.proveedor) && (

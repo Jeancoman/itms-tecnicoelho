@@ -42,7 +42,7 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
   const [isOn, setIsOn] = useState(false);
   const [status, setStatus] = useState("");
   const [QRCode, setQRCode] = useState("");
-  const [timeoutID, setTimeoutID] = useState<NodeJS.Timeout>()
+  const [timeoutID, setTimeoutID] = useState<NodeJS.Timeout>();
 
   const checkBackendStatus = async () => {
     try {
@@ -62,17 +62,17 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
         setIsOn(true);
       } else {
         const timeout = setTimeout(checkBackendStatus, 5000);
-        setTimeoutID(timeout)
+        setTimeoutID(timeout);
       }
     } catch (error) {
       const timeout = setTimeout(checkBackendStatus, 5000);
-      setTimeoutID(timeout)
+      setTimeoutID(timeout);
     }
   };
 
   useEffect(() => {
     if (status === "") {
-      MessageSenderService.status().then((data) => {
+      void MessageSenderService.status().then((data) => {
         if (data !== false) {
           setStatus(data.status);
         }
@@ -85,11 +85,11 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
   }, [status]);
 
   useEffect(() => {
-    checkBackendStatus();
-    
+    void checkBackendStatus();
+
     return () => {
-      clearTimeout(timeoutID)
-    }
+      clearTimeout(timeoutID);
+    };
   }, []);
 
   useEffect(() => {
@@ -141,7 +141,7 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-[32%] h-fit rounded shadow-md text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="flex flex-col p-8 pt-6 gap-4">
         {isOn === false ? (
@@ -265,7 +265,7 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Configurar mensajería</h1>
@@ -464,7 +464,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-3/5 h-fit rounded shadow-md text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar plantilla</h1>
@@ -705,7 +705,20 @@ export default function MessagingDataDisplay() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
-  const [options, setOptions] = useState<Mensajería>();
+  const [options, setOptions] = useState<Mensajería>({
+    opciones: {
+      creación: {
+        nunca: true,
+        siempre: false,
+        preguntar: false,
+      },
+      envio: {
+        nunca: true,
+        siempre: false,
+        preguntar: false,
+      },
+    },
+  });
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   const closeDropup = () => {
@@ -721,7 +734,7 @@ export default function MessagingDataDisplay() {
   };
 
   useEffect(() => {
-    TemplateService.getAll(page, 8).then((data) => {
+    void TemplateService.getAll(page, 8).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
@@ -736,11 +749,9 @@ export default function MessagingDataDisplay() {
       setIsOperationCompleted(false);
     });
 
-    MessagingOptionsService.get().then((data) => {
-      if (data === false) {
-      } else {
+    void MessagingOptionsService.get().then((data) => {
+      if (data) {
         setOptions(data);
-        console.log(data);
       }
     });
   }, [isOperationCompleted, page]);
@@ -758,7 +769,7 @@ export default function MessagingDataDisplay() {
               <Dropup
                 close={closeDropup}
                 selectAction={selectAction}
-                openAddModal={() => {}}
+                openAddModal={() => null}
               />
             )}
             {action === "OPTIONS" ? (
@@ -886,7 +897,7 @@ export default function MessagingDataDisplay() {
       <MessengerModal
         isOpen={isAddOpen}
         closeModal={() => setIsAddOpen(false)}
-        setOperationAsCompleted={() => {}}
+        setOperationAsCompleted={() => null}
       />
       {options ? (
         <OptionModal

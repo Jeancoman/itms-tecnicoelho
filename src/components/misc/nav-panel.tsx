@@ -17,6 +17,7 @@ import { ReactComponent as Tag } from "/src/assets/tag.svg";
 import { ReactComponent as Library } from "/src/assets/library.svg";
 import { ReactComponent as Backup } from "/src/assets/backup.svg";
 import { ReactComponent as Check } from "/src/assets/check_circle.svg";
+import { ReactComponent as Bank } from "/src/assets/bank.svg";
 import { ReactComponent as Error } from "/src/assets/error.svg";
 import { ReactComponent as Help } from "/src/assets/help.svg";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
@@ -26,16 +27,12 @@ import { useColapsableInventoryStore } from "../../store/colapsableStore";
 import {
   useCategorySearchParamStore,
   useClientSearchParamStore,
-  useElementSearchParamStore,
   useMessageSearchParamStore,
-  useOperationSearchParamStore,
-  useProblemSearchParamStore,
   useProductSearchParamStore,
   useProviderSearchParamStore,
   usePublicationSearchParamStore,
   usePurchaseSearchParamStore,
   useSaleSearchParamStore,
-  useServiceSearchParamStore,
   useTicketSearchParamStore,
   useUserSearchParamStore,
 } from "../../store/searchParamStore";
@@ -257,16 +254,18 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
 }
 
 export default function NavPanel() {
+  const [isNavOpen, setIsNavOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const navPanelRef = useRef<HTMLBaseElement>(null);
+
   const isInventoryColapsed = useColapsableInventoryStore(
     (state) => state.isColapsed
   );
   const toggleInventory = useColapsableInventoryStore((state) => state.toggle);
-  const navigate = useNavigate();
-  let location = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
-  const resetTicketSearchCount = useTicketSearchParamStore(
-    (state) => state.resetSearchCount
-  );
+
   const resetProductSearchCount = useProductSearchParamStore(
     (state) => state.resetSearchCount
   );
@@ -291,16 +290,7 @@ export default function NavPanel() {
   const resetPurchaseSearchCount = usePurchaseSearchParamStore(
     (state) => state.resetSearchCount
   );
-  const resetProblemSearchCount = useProblemSearchParamStore(
-    (state) => state.resetSearchCount
-  );
-  const resetServiceSearchCount = useServiceSearchParamStore(
-    (state) => state.resetSearchCount
-  );
-  const resetOperationSearchCount = useOperationSearchParamStore(
-    (state) => state.resetSearchCount
-  );
-  const resetElementSearchCount = useElementSearchParamStore(
+  const resetTicketSearchCount = useTicketSearchParamStore(
     (state) => state.resetSearchCount
   );
   const resetMessageSearchCount = useMessageSearchParamStore(
@@ -310,11 +300,8 @@ export default function NavPanel() {
 
   const resetAllSearchs = () => {
     resetProductSearchCount();
-    resetProblemSearchCount();
-    resetServiceSearchCount();
-    resetClientSearchCount();
     resetTicketSearchCount();
-    resetOperationSearchCount();
+    resetClientSearchCount();
     resetSaleSearchCount();
     resetPurchaseSearchCount();
     resetCategorySearchCount();
@@ -322,7 +309,6 @@ export default function NavPanel() {
     resetPublicationSearchCount();
     resetUserSearchCount();
     resetMessageSearchCount();
-    resetElementSearchCount();
   };
 
   useEffect(() => {
@@ -339,421 +325,487 @@ export default function NavPanel() {
     }
   }, [location]);
 
+  const handleTouchStart = (e: TouchEvent) => {
+    const touch = e.touches[0];
+    // Verificar si el toque inicial está en los primeros 20px del borde izquierdo
+    if (touch.clientX < 20) {
+      //@ts-ignore
+      navPanelRef.current = { startX: touch.clientX };
+    }
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    const touch = e.touches[0];
+    //@ts-ignore
+    const deltaX = touch.clientX - navPanelRef.current.startX;
+    if (deltaX > 50) {
+      setIsNavOpen(true);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    //@ts-ignore
+    navPanelRef.current = null;
+  };
+
+  useEffect(() => {
+    window.addEventListener("touchstart", handleTouchStart);
+    window.addEventListener("touchmove", handleTouchMove);
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, []);
+
   return (
-    <aside className="pt-7 h-full shadow-md bg-[#2096ed] select-none">
-      <div className="font-bold text-white text-lg pl-6 flex gap-2 items-center -mt-1">
-        <img
-          className="h-8 w-8 object-cover"
-          src="/assets/logo.png"
-          alt="Logo de TecniCoelho"
-          draggable="false"
-        />
-        <p className="cursor-default uppercase">Tecnicoelho</p>
-      </div>
-      <hr className="my-5 mx-5" />
-      <div className="max-h-[568px] scrollbar-none overflow-auto pb-5">
-        <div className="text-white font-semibold flex flex-col gap-0.5 px-5">
-          <NavLink
-            to="/"
-            onClick={resetAllSearchs}
-            className={clsx({
-              ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                location.pathname !== "/",
-              ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                location.pathname === "/",
-            })}
-          >
-            <House
-              className={clsx({
-                ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
-                  location.pathname !== "/",
-                ["h-6 w-6 fill-[#2096ed]"]: location.pathname === "/",
-              })}
-            />
-            <p>Inicio</p>
-          </NavLink>
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ? (
+    <>
+      {/* Overlay for small screens */}
+      <div
+        className={`fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity ${
+          isNavOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        } md:hidden`}
+        onClick={() => setIsNavOpen(false)}
+      ></div>
+      <aside
+        className={`pt-7 fixed top-0 left-0 h-full w-64 shadow-md bg-[#2096ed] select-none z-40 transform transition-transform ${
+          isNavOpen ? "translate-x-0" : "-translate-x-full"
+        } md:relative md:translate-x-0 md:w-64 md:h-auto md:block`}
+        ref={navPanelRef}
+      >
+        <div className="font-bold text-white text-lg pl-6 flex gap-2 items-center -mt-1">
+          <img
+            className="h-8 w-8 object-cover"
+            src="/assets/logo.png"
+            alt="Logo de TecniCoelho"
+            draggable="false"
+          />
+          <p className="cursor-default uppercase">Tecnicoelho</p>
+        </div>
+        <hr className="my-5 mx-5" />
+        <div className="max-h-screen scrollbar-none overflow-auto pb-5">
+          <div className="text-white font-semibold flex flex-col gap-0.5 px-5">
             <NavLink
-              to="/usuarios"
+              to="/"
               onClick={resetAllSearchs}
               className={clsx({
                 ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                  !location.pathname.includes("usuarios"),
+                  location.pathname !== "/",
                 ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                  location.pathname.includes("usuarios"),
+                  location.pathname === "/",
               })}
             >
-              <Users
+              <House
                 className={clsx({
                   ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                    location.pathname !== "/",
+                  ["h-6 w-6 fill-[#2096ed]"]: location.pathname === "/",
+                })}
+              />
+              <p>Inicio</p>
+            </NavLink>
+            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+            session.find()?.usuario.rol === "SUPERADMINISTRADOR" ? (
+              <NavLink
+                to="/usuarios"
+                onClick={resetAllSearchs}
+                className={clsx({
+                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                     !location.pathname.includes("usuarios"),
-                  ["h-6 w-6 fill-[#2096ed]"]:
+                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
                     location.pathname.includes("usuarios"),
                 })}
-              />
-              <p>Usuarios</p>
-            </NavLink>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
-            </div>
-          )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.cliente ? (
-            <NavLink
-              to="/clientes"
-              onClick={resetAllSearchs}
-              className={clsx({
-                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                  !location.pathname.includes("clientes"),
-                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                  location.pathname.includes("clientes"),
-              })}
-            >
-              <Work
+              >
+                <Users
+                  className={clsx({
+                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      !location.pathname.includes("usuarios"),
+                    ["h-6 w-6 fill-[#2096ed]"]:
+                      location.pathname.includes("usuarios"),
+                  })}
+                />
+                <p>Usuarios</p>
+              </NavLink>
+            ) : (
+              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                <Tag className="h-6 w-6 fill-white " />
+                <p>No permitido</p>
+              </div>
+            )}
+            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+            permissions.find()?.ver.cliente ? (
+              <NavLink
+                to="/clientes"
+                onClick={resetAllSearchs}
                 className={clsx({
-                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                     !location.pathname.includes("clientes"),
-                  ["h-6 w-6 fill-[#2096ed]"]:
+                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
                     location.pathname.includes("clientes"),
                 })}
-              />
-              <p>Clientes</p>
-            </NavLink>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
-            </div>
-          )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.ticket ? (
-            <NavLink
-              to="/tickets"
-              onClick={resetAllSearchs}
-              className={clsx({
-                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                  !location.pathname.includes("tickets"),
-                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                  location.pathname.includes("tickets"),
-              })}
-            >
-              <Ticket
+              >
+                <Work
+                  className={clsx({
+                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      !location.pathname.includes("clientes"),
+                    ["h-6 w-6 fill-[#2096ed]"]:
+                      location.pathname.includes("clientes"),
+                  })}
+                />
+                <p>Clientes</p>
+              </NavLink>
+            ) : (
+              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                <Tag className="h-6 w-6 fill-white " />
+                <p>No permitido</p>
+              </div>
+            )}
+            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+            permissions.find()?.ver.ticket ? (
+              <NavLink
+                to="/tickets"
+                onClick={resetAllSearchs}
                 className={clsx({
-                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                     !location.pathname.includes("tickets"),
-                  ["h-6 w-6 fill-[#2096ed]"]:
+                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
                     location.pathname.includes("tickets"),
                 })}
-              />
-              <p>Tickets</p>
-            </NavLink>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
-            </div>
-          )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.producto ? (
-            <NavLink
-              to="/productos"
-              onClick={resetAllSearchs}
-              className={clsx({
-                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                  !location.pathname.includes("productos"),
-                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                  location.pathname.includes("productos"),
-              })}
-            >
-              <Store
+              >
+                <Ticket
+                  className={clsx({
+                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      !location.pathname.includes("tickets"),
+                    ["h-6 w-6 fill-[#2096ed]"]:
+                      location.pathname.includes("tickets"),
+                  })}
+                />
+                <p>Tickets</p>
+              </NavLink>
+            ) : (
+              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                <Tag className="h-6 w-6 fill-white " />
+                <p>No permitido</p>
+              </div>
+            )}
+            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+            permissions.find()?.ver.producto ? (
+              <NavLink
+                to="/productos"
+                onClick={resetAllSearchs}
                 className={clsx({
-                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                     !location.pathname.includes("productos"),
-                  ["h-6 w-6 fill-[#2096ed]"]:
+                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
                     location.pathname.includes("productos"),
                 })}
-              />
-              <p>Productos</p>
-            </NavLink>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
-            </div>
-          )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.proveedor ? (
-            <NavLink
-              to="/proveedores"
-              onClick={resetAllSearchs}
-              className={clsx({
-                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                  !location.pathname.includes("proveedores"),
-                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                  location.pathname.includes("proveedores"),
-              })}
-            >
-              <Truck
+              >
+                <Store
+                  className={clsx({
+                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      !location.pathname.includes("productos"),
+                    ["h-6 w-6 fill-[#2096ed]"]:
+                      location.pathname.includes("productos"),
+                  })}
+                />
+                <p>Productos</p>
+              </NavLink>
+            ) : (
+              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                <Tag className="h-6 w-6 fill-white " />
+                <p>No permitido</p>
+              </div>
+            )}
+            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+            permissions.find()?.ver.proveedor ? (
+              <NavLink
+                to="/proveedores"
+                onClick={resetAllSearchs}
                 className={clsx({
-                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                     !location.pathname.includes("proveedores"),
-                  ["h-6 w-6 fill-[#2096ed]"]:
+                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
                     location.pathname.includes("proveedores"),
                 })}
-              />
-              <p>Proveedores</p>
-            </NavLink>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
-            </div>
-          )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.imagen ? (
-            <NavLink
-              to="/galeria"
-              onClick={resetAllSearchs}
-              className={clsx({
-                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                  !location.pathname.includes("galeria"),
-                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                  location.pathname.includes("galeria"),
-              })}
-            >
-              <Library
+              >
+                <Truck
+                  className={clsx({
+                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      !location.pathname.includes("proveedores"),
+                    ["h-6 w-6 fill-[#2096ed]"]:
+                      location.pathname.includes("proveedores"),
+                  })}
+                />
+                <p>Proveedores</p>
+              </NavLink>
+            ) : (
+              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                <Tag className="h-6 w-6 fill-white " />
+                <p>No permitido</p>
+              </div>
+            )}
+            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+            permissions.find()?.ver.imagen ? (
+              <NavLink
+                to="/galeria"
+                onClick={resetAllSearchs}
                 className={clsx({
-                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                     !location.pathname.includes("galeria"),
-                  ["h-6 w-6 fill-[#2096ed]"]:
+                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
                     location.pathname.includes("galeria"),
                 })}
-              />
-              <p>Galería</p>
-            </NavLink>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
-            </div>
-          )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.venta ||
-          permissions.find()?.ver.compra ? (
-            <div
-              onClick={toggleInventory}
-              className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
-            >
-              <Inventory className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-              <p className="mr-8">Inventario</p>
-              {isInventoryColapsed ? (
-                <Up className="h-3 w-3 fill-white group-hover/parent:fill-[#2096ed]" />
-              ) : (
-                <Down className="h-3 w-3 fill-white group-hover/parent:fill-[#2096ed]" />
-              )}
-            </div>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
-            </div>
-          )}
-          {isInventoryColapsed ? (
-            <div className="pl-3">
-              {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-              session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-              permissions.find()?.ver.venta ? (
-                <NavLink
-                  to="/ventas"
-                  onClick={resetAllSearchs}
+              >
+                <Library
                   className={clsx({
-                    ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg mb-0.5"]:
-                      !location.pathname.includes("ventas"),
-                    ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg mb-0.5"]:
-                      location.pathname.includes("ventas"),
+                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      !location.pathname.includes("galeria"),
+                    ["h-6 w-6 fill-[#2096ed]"]:
+                      location.pathname.includes("galeria"),
                   })}
-                >
-                  <Register
+                />
+                <p>Galería</p>
+              </NavLink>
+            ) : (
+              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                <Tag className="h-6 w-6 fill-white " />
+                <p>No permitido</p>
+              </div>
+            )}
+            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+            permissions.find()?.ver.venta ||
+            permissions.find()?.ver.compra ? (
+              <div
+                onClick={toggleInventory}
+                className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+              >
+                <Inventory className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+                <p className="mr-8">Inventario</p>
+                {isInventoryColapsed ? (
+                  <Up className="h-3 w-3 fill-white group-hover/parent:fill-[#2096ed]" />
+                ) : (
+                  <Down className="h-3 w-3 fill-white group-hover/parent:fill-[#2096ed]" />
+                )}
+              </div>
+            ) : (
+              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                <Tag className="h-6 w-6 fill-white " />
+                <p>No permitido</p>
+              </div>
+            )}
+            {isInventoryColapsed ? (
+              <div className="pl-3">
+                {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+                permissions.find()?.ver.venta ? (
+                  <NavLink
+                    to="/ventas"
+                    onClick={resetAllSearchs}
                     className={clsx({
-                      ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg mb-0.5"]:
                         !location.pathname.includes("ventas"),
-                      ["h-6 w-6 fill-[#2096ed]"]:
+                      ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg mb-0.5"]:
                         location.pathname.includes("ventas"),
                     })}
-                  />
-                  <p>Ventas</p>
-                </NavLink>
-              ) : (
-                <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-                  <Tag className="h-6 w-6 fill-white " />
-                  <p>No permitido</p>
-                </div>
-              )}
-              {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-              session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-              permissions.find()?.ver.compra ? (
-                <NavLink
-                  to="/compras"
-                  onClick={resetAllSearchs}
-                  className={clsx({
-                    ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                      !location.pathname.includes("compras"),
-                    ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                      location.pathname.includes("compras"),
-                  })}
-                >
-                  <Cart
+                  >
+                    <Register
+                      className={clsx({
+                        ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                          !location.pathname.includes("ventas"),
+                        ["h-6 w-6 fill-[#2096ed]"]:
+                          location.pathname.includes("ventas"),
+                      })}
+                    />
+                    <p>Ventas</p>
+                  </NavLink>
+                ) : (
+                  <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                    <Tag className="h-6 w-6 fill-white " />
+                    <p>No permitido</p>
+                  </div>
+                )}
+                {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+                permissions.find()?.ver.compra ? (
+                  <NavLink
+                    to="/compras"
+                    onClick={resetAllSearchs}
                     className={clsx({
-                      ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                         !location.pathname.includes("compras"),
-                      ["h-6 w-6 fill-[#2096ed]"]:
+                      ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
                         location.pathname.includes("compras"),
                     })}
-                  />
-                  <p>Compras</p>
-                </NavLink>
-              ) : (
-                <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-                  <Tag className="h-6 w-6 fill-white " />
-                  <p>No permitido</p>
-                </div>
-              )}
-            </div>
-          ) : null}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.publicación ? (
-            <NavLink
-              to="/publicaciones"
-              onClick={resetAllSearchs}
-              className={clsx({
-                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                  !location.pathname.includes("publicaciones"),
-                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                  location.pathname.includes("publicaciones"),
-              })}
-            >
-              <Article
+                  >
+                    <Cart
+                      className={clsx({
+                        ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                          !location.pathname.includes("compras"),
+                        ["h-6 w-6 fill-[#2096ed]"]:
+                          location.pathname.includes("compras"),
+                      })}
+                    />
+                    <p>Compras</p>
+                  </NavLink>
+                ) : (
+                  <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                    <Tag className="h-6 w-6 fill-white " />
+                    <p>No permitido</p>
+                  </div>
+                )}
+              </div>
+            ) : null}
+            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+            permissions.find()?.ver.publicación ? (
+              <NavLink
+                to="/publicaciones"
+                onClick={resetAllSearchs}
                 className={clsx({
-                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                     !location.pathname.includes("publicaciones"),
-                  ["h-6 w-6 fill-[#2096ed]"]:
+                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
                     location.pathname.includes("publicaciones"),
                 })}
-              />
-              <p>Publicaciones</p>
-            </NavLink>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
-            </div>
-          )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.categoría ? (
-            <NavLink
-              to="/categorias"
-              onClick={resetAllSearchs}
-              className={clsx({
-                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                  !location.pathname.includes("categorias"),
-                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                  location.pathname.includes("categorias"),
-              })}
-            >
-              <Category
+              >
+                <Article
+                  className={clsx({
+                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      !location.pathname.includes("publicaciones"),
+                    ["h-6 w-6 fill-[#2096ed]"]:
+                      location.pathname.includes("publicaciones"),
+                  })}
+                />
+                <p>Publicaciones</p>
+              </NavLink>
+            ) : (
+              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                <Tag className="h-6 w-6 fill-white " />
+                <p>No permitido</p>
+              </div>
+            )}
+            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+            permissions.find()?.ver.categoría ? (
+              <NavLink
+                to="/categorias"
+                onClick={resetAllSearchs}
                 className={clsx({
-                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                     !location.pathname.includes("categorias"),
-                  ["h-6 w-6 fill-[#2096ed]"]:
+                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
                     location.pathname.includes("categorias"),
                 })}
-              />
-              <p>Categorías</p>
-            </NavLink>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
-            </div>
-          )}
-          {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-            session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-            permissions.find()?.ver.mensajería) && (
-            <NavLink
-              to="/mensajeria"
-              onClick={resetAllSearchs}
-              className={clsx({
-                ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                  !location.pathname.includes("mensajeria"),
-                ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                  location.pathname.includes("mensajeria"),
-              })}
-            >
-              <Envelopes
+              >
+                <Category
+                  className={clsx({
+                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      !location.pathname.includes("categorias"),
+                    ["h-6 w-6 fill-[#2096ed]"]:
+                      location.pathname.includes("categorias"),
+                  })}
+                />
+                <p>Categorías</p>
+              </NavLink>
+            ) : (
+              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                <Tag className="h-6 w-6 fill-white " />
+                <p>No permitido</p>
+              </div>
+            )}
+            {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
+              permissions.find()?.ver.mensajería) && (
+              <NavLink
+                to="/mensajeria"
+                onClick={resetAllSearchs}
                 className={clsx({
-                  ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
                     !location.pathname.includes("mensajeria"),
-                  ["h-6 w-6 fill-[#2096ed]"]:
+                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
                     location.pathname.includes("mensajeria"),
                 })}
-              />
-              <p>Mensajería</p>
-            </NavLink>
-          )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ? (
+              >
+                <Envelopes
+                  className={clsx({
+                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      !location.pathname.includes("mensajeria"),
+                    ["h-6 w-6 fill-[#2096ed]"]:
+                      location.pathname.includes("mensajeria"),
+                  })}
+                />
+                <p>Mensajería</p>
+              </NavLink>
+            )}
+            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+            permissions.find()?.ver.impuesto ? (
+              <NavLink
+                to="/impuestos"
+                onClick={resetAllSearchs}
+                className={clsx({
+                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                    !location.pathname.includes("impuestos"),
+                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                    location.pathname.includes("impuestos"),
+                })}
+              >
+                <Bank
+                  className={clsx({
+                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      !location.pathname.includes("impuestos"),
+                    ["h-6 w-6 fill-[#2096ed]"]:
+                      location.pathname.includes("impuestos"),
+                  })}
+                />
+                <p>Impuestos</p>
+              </NavLink>
+            ) : (
+              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                <Tag className="h-6 w-6 fill-white " />
+                <p>No permitido</p>
+              </div>
+            )}
+            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
+            session.find()?.usuario.rol === "SUPERADMINISTRADOR" ? (
+              <div
+                onClick={() => setIsOpen(true)}
+                className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+              >
+                <Backup className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+                <p className="mr-8">Restauración</p>
+              </div>
+            ) : (
+              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                <Tag className="h-6 w-6 fill-white " />
+                <p>No permitido</p>
+              </div>
+            )}
             <div
-              onClick={() => setIsOpen(true)}
+              onClick={() =>
+                window.open(`${window.location.origin}/manual_de_usuario.pdf`)
+              }
               className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
             >
-              <Backup className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-              <p className="mr-8">Restauración</p>
+              <Help className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <p>Ayuda</p>
             </div>
-          ) : (
-            <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-              <Tag className="h-6 w-6 fill-white " />
-              <p>No permitido</p>
+            <div
+              onClick={() => {
+                session.revoke();
+                permissions.revoke();
+                options.revoke();
+                navigate("/entrar");
+              }}
+              className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
+            >
+              <Logout className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+              <p>Cerrar sesión</p>
             </div>
-          )}
-          <div
-            onClick={() =>
-              window.open(`${window.location.origin}/manual_de_usuario.pdf`)
-            }
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
-          >
-            <Help className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-            <p>Ayuda</p>
-          </div>
-          <div
-            onClick={() => {
-              session.revoke();
-              permissions.revoke();
-              options.revoke();
-              navigate("/entrar");
-            }}
-            className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
-          >
-            <Logout className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-            <p>Cerrar sesión</p>
           </div>
         </div>
-      </div>
-      <RestaurationModal
-        isOpen={isOpen}
-        closeModal={() => setIsOpen(false)}
-        setOperationAsCompleted={() => {}}
-      />
-    </aside>
+        <RestaurationModal
+          isOpen={isOpen}
+          closeModal={() => setIsOpen(false)}
+          setOperationAsCompleted={() => {}}
+        />
+      </aside>
+    </>
   );
 }

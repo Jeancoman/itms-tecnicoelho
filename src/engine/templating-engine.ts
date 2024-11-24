@@ -117,26 +117,14 @@ export default class TemplatingEngine {
       case "cliente":
         object = this.options.cliente;
         break;
-      case "elemento":
-        object = this.options.elemento;
-        break;
       case "ticket":
         object = this.options.ticket;
-        break;
-      case "problema":
-        object = this.options.problema;
         break;
       case "servicio":
         object = this.options.servicio;
         break;
-      case "operación":
-        object = this.options.operación;
-        break;
       case "previamente":
         object = this.options.previamente;
-        break;
-      case "categoría_de_elemento":
-        object = this.options.categoría_de_elemento;
         break;
       case "categoría_de_servicio":
         object = this.options.categoría_de_servicio;
@@ -189,19 +177,6 @@ export default class TemplatingEngine {
           };
         } else if (
           this.event === "MODIFICACIÓN" &&
-          this.entity === "PROBLEMA"
-        ) {
-          const equalNow = leftSideValue === rightSideValue;
-          const equalBefore = Object.values(
-            this.options.previamente?.problema || {}
-          ).includes(rightSideValue);
-
-          return {
-            isTrue: equalNow && !equalBefore,
-            logicalOperator: operation.logicalOperator,
-          };
-        } else if (
-          this.event === "MODIFICACIÓN" &&
           this.entity === "SERVICIO"
         ) {
           const equalNow = leftSideValue === rightSideValue;
@@ -213,22 +188,10 @@ export default class TemplatingEngine {
             isTrue: equalNow && !equalBefore,
             logicalOperator: operation.logicalOperator,
           };
-        } else if (
-          this.event === "MODIFICACIÓN" &&
-          this.entity === "OPERACIÓN"
-        ) {
-          const equalNow = leftSideValue === rightSideValue;
-          const equalBefore = Object.values(
-            this.options.previamente?.operación || {}
-          ).includes(rightSideValue);
-
-          return {
-            isTrue: equalNow && !equalBefore,
-            logicalOperator: operation.logicalOperator,
-          };
         } else {
           return {
             isTrue: false,
+            logicalOperator: operation.logicalOperator,
           };
         }
       case "HA CAMBIADO ES":
@@ -243,18 +206,6 @@ export default class TemplatingEngine {
           };
         } else if (
           this.event === "MODIFICACIÓN" &&
-          this.entity === "PROBLEMA"
-        ) {
-          const equalBefore = Object.values(
-            this.options.previamente?.problema || {}
-          ).includes(leftSideValue);
-
-          return {
-            isTrue: rightSideValue === !equalBefore,
-            logicalOperator: operation.logicalOperator,
-          };
-        } else if (
-          this.event === "MODIFICACIÓN" &&
           this.entity === "SERVICIO"
         ) {
           const equalBefore = Object.values(
@@ -265,21 +216,10 @@ export default class TemplatingEngine {
             isTrue: rightSideValue === !equalBefore,
             logicalOperator: operation.logicalOperator,
           };
-        } else if (
-          this.event === "MODIFICACIÓN" &&
-          this.entity === "OPERACIÓN"
-        ) {
-          const equalBefore = Object.values(
-            this.options.previamente?.operación || {}
-          ).includes(leftSideValue);
-
-          return {
-            isTrue: rightSideValue === !equalBefore,
-            logicalOperator: operation.logicalOperator,
-          };
         } else {
           return {
             isTrue: false,
+            logicalOperator: operation.logicalOperator,
           };
         }
       case "ESTA EN BLANCO ES":

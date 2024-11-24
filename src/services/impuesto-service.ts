@@ -1,13 +1,13 @@
-import { Servicio, Response } from "../types";
+import { Impuesto, Response } from "../types";
 import session from "../utils/session";
 
-export default class ServiceService {
-  static async getAll(ticket_id: number, page: number, size: number) {
+export default class ImpuestoService {
+  static async getAll(page: number, size: number) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/servicios?page=${page}&size=${size}`,
+        }/api/impuestos?page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -34,12 +34,10 @@ export default class ServiceService {
     }
   }
 
-  static async getById(ticket_id: number, id: number) {
+  static async getById(id: number) {
     try {
       const response = await fetch(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/servicios/${id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/impuestos/${id}`,
         {
           method: "GET",
           headers: {
@@ -54,62 +52,18 @@ export default class ServiceService {
         return false;
       }
 
-      return (await response.json()) as Servicio;
+      return (await response.json()) as Impuesto;
     } catch {
       return false;
     }
   }
 
-  static async getBetweenAñadido(
-    ticket_id: number,
-    añadido_inicial: string,
-    añadido_final: string,
-    page: number,
-    size: number
-  ) {
+  static async getByCódigo(código: string, page: number, size: number) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&añadido_inicial=${añadido_inicial}&añadido_final=${añadido_final}`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: session.find()?.token!,
-          },
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      const data = (await response.json()) as Response;
-
-      if (data.rows.length === 0) {
-        return false;
-      }
-
-      return data;
-    } catch {
-      return false;
-    }
-  }
-
-  static async getBetweenIniciado(
-    ticket_id: number,
-    añadido_inicial: string,
-    añadido_final: string,
-    page: number,
-    size: number
-  ) {
-    try {
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&iniciado_inicial=${añadido_inicial}&iniciado_final=${añadido_final}`,
+        }/api/impuestos/busqueda?exactitud=INEXACTA&codigo=${código}&page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -136,17 +90,12 @@ export default class ServiceService {
     }
   }
 
-  static async getByState(
-    ticket_id: number,
-    estado: string,
-    page: number,
-    size: number
-  ) {
+  static async getByNombre(nombre: string, page: number, size: number) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&estado=${estado}`,
+        }/api/impuestos/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -173,18 +122,12 @@ export default class ServiceService {
     }
   }
 
-  static async getBetweenCompletado(
-    ticket_id: number,
-    añadido_inicial: string,
-    añadido_final: string,
-    page: number,
-    size: number
-  ) {
+  static async getByExactCódigo(código: string, page: number, size: number) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/busqueda/servicios?page=${page}&size=${size}&completado_inicial=${añadido_inicial}&completado_final=${añadido_final}`,
+        }/api/impuestos/busqueda?exactitud=EXACTA&codigo=${código}&page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -211,12 +154,42 @@ export default class ServiceService {
     }
   }
 
-  static async create(ticket_id: number, service: Servicio) {
+  static async getByExactNombre(nombre: string, page: number, size: number) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/servicios`,
+        }/api/impuestos/busqueda?exactitud=EXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: session.find()?.token!,
+          },
+        }
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async create(product: Impuesto) {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/impuestos/`,
         {
           method: "POST",
           headers: {
@@ -224,7 +197,7 @@ export default class ServiceService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-          body: JSON.stringify(service),
+          body: JSON.stringify(product),
         }
       );
 
@@ -232,18 +205,16 @@ export default class ServiceService {
         return false;
       }
 
-      return (await response.json()) as Servicio;
+      return (await response.json()) as Impuesto;
     } catch {
       return false;
     }
   }
 
-  static async update(ticket_id: number, id: number, service: Servicio) {
+  static async update(id: number, product: Impuesto) {
     try {
       const response = await fetch(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/servicios/${id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/impuestos/${id}`,
         {
           method: "PATCH",
           headers: {
@@ -251,7 +222,7 @@ export default class ServiceService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-          body: JSON.stringify(service),
+          body: JSON.stringify(product),
         }
       );
 
@@ -265,12 +236,10 @@ export default class ServiceService {
     }
   }
 
-  static async delete(ticket_id: number, id: number) {
+  static async delete(id: number) {
     try {
       const response = await fetch(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/${ticket_id}/servicios/${id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/impuestos/${id}`,
         {
           method: "DELETE",
           headers: {

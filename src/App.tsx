@@ -7,18 +7,16 @@ import CategoriesPage from "./pages/categories-page";
 import PurchasesPage from "./pages/purchases-page";
 import SalesPage from "./pages/sales-page";
 import PublicationsPage from "./pages/publications-page";
-import ElementsPage from "./pages/elements-page";
-import ProblemsPage from "./pages/problems-page";
-import ServicesPage from "./pages/services-page";
 import UsersPage from "./pages/users-page";
 import ProductsPage from "./pages/products-page";
-import MessagesPage from "./pages/messages-page";
-import OperationsPage from "./pages/operations-page";
 import LoginPage from "./pages/login-page";
 import MessagingPage from "./pages/messaging-page";
 import SalePDFPage from "./pages/sale-pdf-page";
 import ImagesPage from "./pages/images-page";
-import SeguimientosPage from "./pages/seguimientos-page";
+import RequestPasswordResetPage from "./pages/request-password-reset-page";
+import PasswordResetPage from "./pages/password-reset";
+import MessagesPage from "./pages/messages-page";
+import ImpuestoPage from "./pages/impuestos-page";
 
 export default function App() {
   return (
@@ -26,14 +24,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/clientes" element={<ClientsPage />} />
-        <Route path="/clientes/:id/elementos" element={<ElementsPage />} />
-        <Route path="/clientes/:id/elementos/:elemento_id/seguimiento" element={<SeguimientosPage />} />
         <Route path="/usuarios" element={<UsersPage />} />
         <Route path="/tickets" element={<TicketsPage />} />
         <Route path="/tickets/:id/mensajes" element={<MessagesPage />} />
-        <Route path="/tickets/:id/problemas" element={<ProblemsPage />} />
-        <Route path="/tickets/:id/servicios" element={<ServicesPage />} />
-        <Route path="/tickets/:id/servicios/:service_id/operaciones" element={<OperationsPage />} />
         <Route path="/productos" element={<ProductsPage />} />
         <Route path="/ventas" element={<SalesPage />} />
         <Route path="/ventas/:id/factura" element={<SalePDFPage />} />
@@ -41,9 +34,15 @@ export default function App() {
         <Route path="/proveedores" element={<ProvidersPage />} />
         <Route path="/publicaciones" element={<PublicationsPage />} />
         <Route path="/categorias" element={<CategoriesPage />} />
+        <Route path="/impuestos" element={<ImpuestoPage />} />
         <Route path="/mensajeria" element={<MessagingPage />} />
         <Route path="/galeria" element={<ImagesPage />} />
         <Route path="/entrar" element={<LoginPage />} />
+        <Route
+          path="/solicitar-restablecimiento-contraseña"
+          element={<RequestPasswordResetPage />}
+        />
+        <Route path="/restablecer-contraseña" element={<PasswordResetPage />} />
       </Routes>
     </HashRouter>
   );

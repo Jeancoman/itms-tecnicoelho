@@ -1,12 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@layer base {
-  html {
-    @apply overflow-hidden;
-  }
-  /* ... */
-}
 
 .hljs-keyword {
   @apply text-[#2096ed];

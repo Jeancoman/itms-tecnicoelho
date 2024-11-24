@@ -12,16 +12,15 @@ import {
   Action,
   Ticket,
   Cliente,
-  Elemento,
   Selected,
   Mensaje,
   Categoría,
-  TicketEstado,
+  TicketPrioridad,
+  Servicio,
+  ServicioTipo,
 } from "../../types";
 import ClientService from "../../services/client-service";
 import toast, { Toaster } from "react-hot-toast";
-import ElementService from "../../services/element-service";
-import TicketService from "../../services/ticket-service";
 import { useNavigate } from "react-router-dom";
 import SelectWithSearch from "../misc/select-with-search";
 import Select from "../misc/select";
@@ -36,6 +35,9 @@ import { useSearchedStore } from "../../store/searchedStore";
 import CategoryService from "../../services/category-service";
 import MessageSenderService from "../../services/message-sender-service";
 import clsx from "clsx";
+import TicketService from "../../services/ticket-service";
+
+/*
 
 function EditModal({
   isOpen,
@@ -45,16 +47,10 @@ function EditModal({
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [formData, setFormData] = useState<Ticket>(ticket!);
-  const [selectedClient, _setSelectedClient] = useState<Selected>({
-    value: ticket?.elemento?.cliente_id,
+  const [selectedClient] = useState<Selected>({
+    value: ticket?.cliente_id,
     label:
-      ticket?.elemento?.cliente?.nombre +
-      " " +
-      ticket?.elemento?.cliente?.apellido,
-  });
-  const [selectedElement, _setSelectedElement] = useState<Selected>({
-    value: ticket?.elemento_id,
-    label: ticket?.elemento?.nombre,
+      (ticket?.cliente?.nombre ?? "") + " " + (ticket?.cliente?.apellido ?? ""), // Default to empty string if undefined
   });
   const [selectedState, setSelectedState] = useState<Selected>({
     value: ticket?.estado,
@@ -82,18 +78,19 @@ function EditModal({
       closeModal();
       ref.current?.close();
     }
-  }, [isOpen]);
+  }, [closeModal, isOpen]);
 
   return (
     <dialog
       ref={ref}
       onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        const dialogDimensions = ref.current?.getBoundingClientRect();
         if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
+          dialogDimensions && // Check if dialogDimensions is defined
+          (e.clientX < dialogDimensions.left ||
+            e.clientX > dialogDimensions.right ||
+            e.clientY < dialogDimensions.top ||
+            e.clientY > dialogDimensions.bottom)
         ) {
           closeModal();
           ref.current?.close();
@@ -111,7 +108,7 @@ function EditModal({
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Editando ticket...");
-          TicketService.update(ticket?.id!, formData).then((data) => {
+          void TicketService.update(ticket?.id ?? 0, formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
@@ -120,7 +117,7 @@ function EditModal({
               toast.success("Ticket editado con exito.");
               if (options.find()?.creación.siempre) {
                 const messageToast = toast.loading("Creando mensaje...");
-                MessageRender.renderTicketModificationTemplate(
+                void MessageRender.renderTicketModificationTemplate(
                   ticket?.id!,
                   ticket!
                 ).then((rendered) => {
@@ -137,24 +134,21 @@ function EditModal({
                       estado: "NO_ENVIADO",
                     };
 
-                    MessageService.create(ticket?.id!, message).then(
+                    void MessageService.create(ticket?.id!, message).then(
                       (mensaje) => {
                         if (mensaje) {
                           toast.dismiss(messageToast);
                           toast.success("Mensaje creado exitosamente.");
-                          TicketService.getById(ticket?.id!).then(
+                          void TicketService.getById(ticket?.id!).then(
                             (resTicket) => {
                               if (resTicket) {
-                                if (
-                                  resTicket.elemento?.cliente?.enviarMensajes
-                                ) {
+                                if (resTicket.cliente?.enviarMensajes) {
                                   if (options.find()?.envio.siempre) {
                                     const sendingToast = toast.loading(
                                       "Enviando mensaje..."
                                     );
-                                    MessageSenderService.send(
-                                      resTicket.elemento?.cliente.telefono ||
-                                        "",
+                                    void MessageSenderService.send(
+                                      resTicket.cliente.telefono || "",
                                       rendered
                                     ).then((res) => {
                                       if (res) {
@@ -162,7 +156,7 @@ function EditModal({
                                         toast.success(
                                           "Mensaje enviado exitosamente."
                                         );
-                                        MessageService.update(
+                                        void MessageService.update(
                                           ticket?.id!,
                                           mensaje.id!,
                                           //@ts-ignore
@@ -204,10 +198,6 @@ function EditModal({
                 setFormData({
                   ...formData,
                   estado: selectedState.value as TicketEstado,
-                  notas_de_cierre:
-                    selectedState.value === "ABIERTO"
-                      ? ""
-                      : formData.notas_de_cierre,
                 });
               }}
               options={[
@@ -258,51 +248,21 @@ function EditModal({
           </select>
           <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
         </div>
-        <div className="relative">
-          <select
-            className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-            value={selectedElement.value}
-            disabled={true}
-          >
-            <option value={selectedElement.value}>
-              {selectedElement.label}
-            </option>
-          </select>
-          <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-        </div>
+
         <div className="flex gap-4">
           <div className="w-full">
             <textarea
               rows={4}
-              placeholder="Notas de apertura"
+              placeholder="Asunto"
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  notas_de_apertura: e.target.value,
+                  asunto: e.target.value,
                 });
               }}
-              value={formData.notas_de_apertura}
+              value={formData.asunto}
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               minLength={10}
-            />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 10 caracteres
-            </span>
-          </div>
-          <div className="w-full">
-            <textarea
-              rows={4}
-              placeholder="Notas de cierre"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  notas_de_cierre: e.target.value,
-                });
-              }}
-              value={formData.notas_de_cierre}
-              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              minLength={10}
-              disabled={formData.estado === "ABIERTO"}
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
               Minimo 10 caracteres
@@ -329,200 +289,775 @@ function EditModal({
   );
 }
 
-function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
+*/
+
+function EditModal({
+  isOpen,
+  closeModal,
+  setOperationAsCompleted,
+  ticket,
+}: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Cliente[]>([]);
-  const [elements, setElements] = useState<Elemento[]>([]);
+  const [categories, setCategories] = useState<Categoría[]>([]);
   const [selectedClient, setSelectedClient] = useState<Selected>({
-    value: -1,
-    label: "Seleccionar cliente",
+    value: ticket?.cliente_id || -1,
+    label: `${ticket?.cliente?.nombre ?? ""} ${
+      ticket?.cliente?.apellido ?? ""
+    }${ticket?.cliente?.documento ? `, ${ticket?.cliente?.documento}` : ""}`,
   });
-  const [selectedElement, setSelectedElement] = useState<Selected>({
-    value: -1,
-    label: "Seleccionar elemento",
+  const [selectedPriority, setSelectedPriority] = useState<Selected>({
+    value: ticket?.prioridad || "BAJA",
+    label:
+      ticket?.prioridad === "ALTA"
+        ? "Alta"
+        : ticket?.prioridad === "MEDIA"
+        ? "Media"
+        : "Baja",
   });
-  const [formData, setFormData] = useState<Ticket>({
-    estado: "ABIERTO",
-    notas_de_apertura: "",
-    notas_de_cierre: "",
-    elemento_id: -1,
+  const [ticketFormData, setTicketFormData] = useState<Ticket>(ticket!);
+  const [selectedCategory, setSelectedCategory] = useState<Selected>({
+    value: ticket?.servicio?.categoría_id || -1,
+    label:
+      ticket?.servicio?.categoría?.nombre ||
+      "Selecciona la categoría del servicio",
   });
+  const [selectedType, setSelectedType] = useState<Selected>({
+    value: ticket?.servicio?.tipo || "",
+    label:
+      ticket?.servicio?.tipo === "DOMICILIO"
+        ? "Domicilio"
+        : ticket?.servicio?.tipo === "REMOTO"
+        ? "Remoto"
+        : "Tienda",
+  });
+  const [serviceFormData, setServiceFormData] = useState<Servicio>(
+    ticket?.servicio!
+  );
 
   const resetFormData = () => {
-    setFormData({
-      estado: "ABIERTO",
-      elemento_id: -1,
-      notas_de_apertura: "",
-      notas_de_cierre: "",
-    });
+    setTicketFormData(ticket!);
+    setServiceFormData(ticket?.servicio!);
     setSelectedClient({
-      value: -1,
-      label: "Seleccionar cliente",
+      value: ticket?.cliente_id || -1,
+      label: `${ticket?.cliente?.nombre ?? ""} ${
+        ticket?.cliente?.apellido ?? ""
+      }${ticket?.cliente?.documento ? `, ${ticket?.cliente?.documento}` : ""}`,
     });
-    setSelectedElement({
-      value: -1,
-      label: "Seleccionar elemento",
+    setSelectedPriority({
+      value: ticket?.prioridad || "BAJA",
+      label:
+        ticket?.prioridad === "ALTA"
+          ? "Alta"
+          : ticket?.prioridad === "MEDIA"
+          ? "Media"
+          : "Baja",
     });
-    setElements([]);
+    setSelectedCategory({
+      value: ticket?.servicio?.categoría_id || -1,
+      label:
+        ticket?.servicio?.categoría?.nombre ||
+        "Selecciona la categoría del servicio",
+    });
+    setSelectedType({
+      value: ticket?.servicio?.tipo || "",
+      label:
+        ticket?.servicio?.tipo === "DOMICILIO"
+          ? "Domicilio"
+          : ticket?.servicio?.tipo === "REMOTO"
+          ? "Remoto"
+          : "Tienda",
+    });
   };
 
   useEffect(() => {
     if (isOpen) {
       ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-          resetFormData();
-        }
-      });
+      document.addEventListener("keydown", handleKeyDown);
     } else {
-      closeModal();
-      ref.current?.close();
-      resetFormData();
+      handleClose();
     }
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
   useEffect(() => {
     if (clients.length === 0) {
       setLoading(true);
-      ClientService.getAll(1, 100).then((data) => {
-        if (data === false) {
-          setLoading(false);
-        } else {
-          setClients(data.rows);
-          setLoading(false);
-        }
-      });
-    } else {
-      setLoading(true);
-      setSelectedElement({
-        value: -1,
-        label: "Seleccionar elemento",
-      });
-      ElementService.getAll(selectedClient.value! as number, 1, 100).then(
-        (data) => {
-          if (data === false) {
-            setLoading(false);
-          } else {
-            setElements(
-              data.rows.filter((elemento) => elemento.estado === "INACTIVO")
-            );
-            setLoading(false);
-          }
-        }
-      );
+      void loadClients();
     }
-  }, [selectedClient]);
+  }, [clients.length]);
+
+  useEffect(() => {
+    if (categories.length === 0) {
+      setLoading(true);
+      void loadCategories();
+    }
+  }, [categories.length]);
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    closeModal();
+    ref.current?.close();
+  };
+
+  const handleButtonClose = () => {
+    closeModal()
+    resetFormData();
+    ref.current?.close()
+  }
+
+  const loadClients = async () => {
+    const data = await ClientService.getAll(1, 100);
+    if (data === false) {
+      setLoading(false);
+    } else {
+      setClients(data.rows);
+      setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    const data = await CategoryService.getAll(1, 100);
+    if (data === false) {
+      setLoading(false);
+    } else {
+      setCategories(data.rows);
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    closeModal();
+
+    const loadingToast = toast.loading("Editando ticket...");
+    const updatedTicket = await TicketService.update(
+      ticketFormData.id!,
+      ticketFormData,
+      serviceFormData
+    );
+    toast.dismiss(loadingToast);
+    setOperationAsCompleted();
+
+    if (updatedTicket === false) {
+      toast.error("El ticket no pudo ser editado.");
+      return;
+    }
+
+    toast.success("Ticket editado con éxito.");
+    if (options.find()?.creación.siempre) {
+      await handleCreateMessage(ticket!);
+    }
+  };
+
+  const handleCreateMessage = async (ticket: Ticket) => {
+    const messageToast = toast.loading("Creando mensaje...");
+    const rendered = await MessageRender.renderTicketModificationTemplate(
+      ticket.id!,
+      ticket
+    );
+
+    if (!rendered || rendered === "Plantilla desactivada") {
+      toast.dismiss(messageToast);
+      toast.error(
+        rendered
+          ? "La plantilla está desactivada"
+          : "El mensaje no pudo ser creado."
+      );
+      return;
+    }
+
+    const message: Mensaje = {
+      contenido: rendered,
+      ticket_id: ticket.id!,
+      estado: "NO_ENVIADO",
+    };
+
+    const mensaje = await MessageService.create(ticket.id!, message);
+    if (mensaje) {
+      toast.dismiss(messageToast);
+      toast.success("Mensaje creado exitosamente.");
+      await handleSendMessage(ticket, rendered, mensaje);
+    } else {
+      toast.dismiss(messageToast);
+      toast.error("El mensaje no pudo ser creado.");
+    }
+  };
+
+  const handleSendMessage = async (
+    ticket: Ticket,
+    rendered: string,
+    mensaje: Mensaje
+  ) => {
+    if (ticket.cliente?.enviarMensajes && options.find()?.envio.siempre) {
+      const sendingToast = toast.loading("Enviando mensaje...");
+      const res = await MessageSenderService.send(
+        ticket.cliente.telefono || "",
+        rendered
+      );
+
+      if (res) {
+        toast.dismiss(sendingToast);
+        toast.success("Mensaje enviado exitosamente.");
+        await updateMessageStatus(ticket.id!, mensaje.id!, mensaje.contenido);
+      } else {
+        toast.dismiss(sendingToast);
+        toast.error("El mensaje no pudo ser enviado.");
+      }
+    }
+  };
+
+  const updateMessageStatus = async (
+    ticketId: number,
+    messageId: number,
+    contenido: string
+  ) => {
+    await MessageService.update(ticketId, messageId, {
+      id: messageId,
+      estado: "ENVIADO",
+      contenido,
+      ticket_id: ticketId,
+    });
+  };
 
   return (
     <dialog
       ref={ref}
       onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        const dialogDimensions = ref.current?.getBoundingClientRect();
         if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
+          dialogDimensions &&
+          (e.clientX < dialogDimensions.left ||
+            e.clientX > dialogDimensions.right ||
+            e.clientY < dialogDimensions.top ||
+            e.clientY > dialogDimensions.bottom)
         ) {
-          closeModal();
-          ref.current?.close();
+          handleClose();
         }
       }}
-      className="w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none text-base"
     >
-      <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Añadir ticket</h1>
+      <div className="bg-[#2096ed] py-3 md:py-4 px-6 md:px-8">
+        <h1 className="text-lg md:text-xl font-bold text-white">
+          Editar ticket
+        </h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 group"
         autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Añadiendo ticket...");
-          TicketService.create(formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Ticket no pudo ser añadido.");
-            } else {
-              toast.success("Ticket añadido con exito.");
-              if (options.find()?.creación.siempre) {
-                const messageToast = toast.loading("Creando mensaje...");
-                MessageRender.renderTicketCreationTemplate(data.id!).then(
-                  (rendered) => {
-                    if (rendered) {
-                      if (rendered === "Plantilla desactivada") {
-                        toast.dismiss(messageToast);
-                        toast.error("La plantilla esta desactivada");
-                        return;
-                      }
-
-                      const message: Mensaje = {
-                        contenido: rendered,
-                        ticket_id: data.id!,
-                        estado: "NO_ENVIADO",
-                      };
-
-                      MessageService.create(data.id!, message).then(
-                        (mensaje) => {
-                          if (mensaje) {
-                            toast.dismiss(messageToast);
-                            toast.success("Mensaje creado exitosamente.");
-                            TicketService.getById(data.id!).then((ticket) => {
-                              if (ticket) {
-                                if (ticket.elemento?.cliente?.enviarMensajes) {
-                                  if (options.find()?.envio.siempre) {
-                                    const sendingToast = toast.loading(
-                                      "Enviando mensaje..."
-                                    );
-                                    MessageSenderService.send(
-                                      ticket.elemento?.cliente.telefono || "",
-                                      rendered
-                                    ).then((res) => {
-                                      if (res) {
-                                        toast.dismiss(sendingToast);
-                                        toast.success(
-                                          "Mensaje enviado exitosamente."
-                                        );
-                                        MessageService.update(
-                                          data.id!,
-                                          mensaje.id!,
-                                          //@ts-ignore
-                                          {
-                                            id: mensaje.id!,
-                                            estado: "ENVIADO",
-                                            ticket_id: data.id!,
-                                          }
-                                        );
-                                      } else {
-                                        toast.dismiss(sendingToast);
-                                        toast.error(
-                                          "Mensaje no pudo ser enviado."
-                                        );
-                                      }
-                                    });
-                                  }
-                                }
-                              }
-                            });
-                          }
-                        }
-                      );
-                    } else {
-                      toast.dismiss(messageToast);
-                      toast.error("Mensaje no pudo ser creado.");
-                    }
-                  }
-                );
-              }
-            }
-          });
-        }}
+        onSubmit={handleSubmit}
       >
+        <div className="w-full">
+          <input
+            type="text"
+            onChange={(e) => {
+              setTicketFormData({
+                ...ticketFormData,
+                asunto: e.target.value,
+              });
+            }}
+            value={ticketFormData.asunto}
+            placeholder="Introduce el asunto del ticket"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Mínimo 2 caracteres
+          </span>
+        </div>
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setTicketFormData({
+                ...ticketFormData,
+                prioridad: selectedPriority.value as TicketPrioridad,
+              });
+            }}
+            options={[
+              {
+                value: "BAJA",
+                label: "Baja",
+                onClick: (value, label) => {
+                  setSelectedPriority({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "MEDIA",
+                label: "Media",
+                onClick: (value, label) => {
+                  setSelectedPriority({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "ALTA",
+                label: "Alta",
+                onClick: (value, label) => {
+                  setSelectedPriority({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedPriority}
+          />
+        </div>
+        <div className="relative">
+          <select
+            className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+            value={selectedClient.value}
+            disabled={true}
+          >
+            <option value={selectedType.value}>{`${ticket?.cliente?.nombre} ${
+              ticket?.cliente?.apellido
+            }${ticket?.cliente?.documento ? "," : ""} ${
+              ticket?.cliente?.documento ? ticket?.cliente?.documento : ""
+            }`}</option>
+          </select>
+          <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+        </div>
+        <div className="flex gap-2">
+          <div className="relative w-2/4">
+            <Select
+              onChange={() => {
+                setServiceFormData({
+                  ...serviceFormData,
+                  tipo: selectedType.value as ServicioTipo,
+                });
+              }}
+              options={[
+                {
+                  value: "DOMICILIO",
+                  label: "Domicilio",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "TIENDA",
+                  label: "Tienda",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "REMOTO",
+                  label: "Remoto",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedType}
+            />
+          </div>
+          <div className="relative w-2/4">
+            {categories.length > 0 && (
+              <SelectWithSearch
+                options={categories
+                  .filter((category) => category.tipo === "SERVICIO")
+                  .map((category) => ({
+                    value: category.id,
+                    label: category.nombre,
+                    onClick: (value, label) => {
+                      setSelectedCategory({
+                        value,
+                        label,
+                      });
+                    },
+                  }))}
+                selected={selectedCategory}
+                onChange={() => {
+                  setServiceFormData({
+                    ...serviceFormData,
+                    categoría_id: selectedCategory.value! as number,
+                  });
+                }}
+              />
+            )}
+            {categories.length === 0 && loading === false && (
+              <>
+                <select
+                  className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                  value={0}
+                  disabled={true}
+                >
+                  <option value={0}>
+                    No se ha encontrado ninguna categoría
+                  </option>
+                </select>
+                <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+              </>
+            )}
+            {categories.length === 0 && loading === true && (
+              <>
+                <select
+                  className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                  value={0}
+                  disabled={true}
+                >
+                  <option value={0}>Buscando categorías...</option>
+                </select>
+                {/* Agrega tu icono de carga aquí */}
+              </>
+            )}
+          </div>
+        </div>
+        <div className="w-full">
+          <textarea
+            rows={3}
+            placeholder="Introduce la descripción del servicio"
+            onChange={(e) => {
+              setServiceFormData({
+                ...serviceFormData,
+                descripción: e.target.value,
+              });
+            }}
+            value={serviceFormData.descripción || ""}
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            minLength={10}
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Mínimo 10 caracteres
+          </span>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={handleButtonClose}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cancelar
+          </button>
+          <button
+            className={clsx({
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                !selectedClient.label?.startsWith("Seleccionar"),
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedClient.label?.startsWith("Seleccionar"),
+            })}
+          >
+            Completar
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
+function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [loading, setLoading] = useState(true);
+  const [clients, setClients] = useState<Cliente[]>([]);
+  const [categories, setCategories] = useState<Categoría[]>([]);
+  const [selectedClient, setSelectedClient] = useState<Selected>({
+    value: -1,
+    label: "Selecciona el cliente",
+  });
+  const [selectedPriority, setSelectedPriority] = useState<Selected>({
+    value: "",
+    label: "Selecciona la prioridad del ticket",
+  });
+  const [ticketFormData, setTicketFormData] = useState<Ticket>({
+    prioridad: "BAJA",
+    estado: "ABIERTO",
+    asunto: "",
+    cliente_id: -1,
+  });
+  const [selectedCategory, setSelectedCategory] = useState<Selected>({
+    value: -1,
+    label: "Selecciona la categoría del servicio",
+  });
+  const [selectedType, setSelectedType] = useState<Selected>({
+    label: "Selecciona el tipo de servicio",
+    value: "",
+  });
+  const [serviceFormData, setServiceFormData] = useState<Servicio>({
+    tipo: "TIENDA",
+    descripción: "",
+    necesidades: "",
+    categoría_id: -1,
+  });
+
+  const resetFormData = () => {
+    setTicketFormData({
+      prioridad: "BAJA",
+      estado: "ABIERTO",
+      cliente_id: -1,
+      asunto: "",
+    });
+    setServiceFormData({
+      tipo: "TIENDA",
+      descripción: "",
+      necesidades: "",
+      categoría_id: -1,
+    });
+    setSelectedClient({
+      value: -1,
+      label: "Selecciona el cliente",
+    });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", handleKeyDown);
+    } else {
+      handleClose();
+    }
+    return () => document.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (clients.length === 0) {
+      setLoading(true);
+      void loadClients();
+    }
+  }, [clients.length]);
+
+  useEffect(() => {
+    if (categories.length === 0) {
+      setLoading(true);
+      void loadCategories();
+    }
+  }, [categories.length]);
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    closeModal();
+    ref.current?.close();
+    resetFormData();
+  };
+
+  const loadClients = async () => {
+    const data = await ClientService.getAll(1, 100);
+    if (data === false) {
+      setLoading(false);
+    } else {
+      setClients(data.rows);
+      setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    const data = await CategoryService.getAll(1, 100);
+    if (data === false) {
+      setLoading(false);
+    } else {
+      setCategories(data.rows);
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    closeModal();
+
+    const loadingToast = toast.loading("Añadiendo ticket...");
+    const ticket = await TicketService.create(ticketFormData, serviceFormData);
+    toast.dismiss(loadingToast);
+    setOperationAsCompleted();
+
+    if (ticket === false) {
+      toast.error("Ticket no pudo ser añadido.");
+      return;
+    }
+
+    toast.success("Ticket añadido con éxito.");
+    if (options.find()?.creación.siempre) {
+      await handleCreateMessage(ticket);
+    }
+  };
+
+  const handleCreateMessage = async (ticket: Ticket) => {
+    const messageToast = toast.loading("Creando mensaje...");
+    const rendered = await MessageRender.renderTicketCreationTemplate(
+      ticket.id!
+    );
+
+    if (!rendered || rendered === "Plantilla desactivada") {
+      toast.dismiss(messageToast);
+      toast.error(
+        rendered
+          ? "La plantilla está desactivada"
+          : "Mensaje no pudo ser creado."
+      );
+      return;
+    }
+
+    const message: Mensaje = {
+      contenido: rendered,
+      ticket_id: ticket.id!,
+      estado: "NO_ENVIADO",
+    };
+
+    const mensaje = await MessageService.create(ticket.id!, message);
+    if (mensaje) {
+      toast.dismiss(messageToast);
+      toast.success("Mensaje creado exitosamente.");
+      await handleSendMessage(ticket, rendered, mensaje);
+    } else {
+      toast.dismiss(messageToast);
+      toast.error("Mensaje no pudo ser creado.");
+    }
+  };
+
+  const handleSendMessage = async (
+    ticket: Ticket,
+    rendered: string,
+    mensaje: Mensaje
+  ) => {
+    if (ticket.cliente?.enviarMensajes && options.find()?.envio.siempre) {
+      const sendingToast = toast.loading("Enviando mensaje...");
+      const res = await MessageSenderService.send(
+        ticket.cliente.telefono || "",
+        rendered
+      );
+
+      if (res) {
+        toast.dismiss(sendingToast);
+        toast.success("Mensaje enviado exitosamente.");
+        await updateMessageStatus(ticket.id!, mensaje.id!, mensaje.contenido);
+      } else {
+        toast.dismiss(sendingToast);
+        toast.error("Mensaje no pudo ser enviado.");
+      }
+    }
+  };
+
+  const updateMessageStatus = async (
+    ticketId: number,
+    messageId: number,
+    contenido: string
+  ) => {
+    await MessageService.update(ticketId, messageId, {
+      id: messageId,
+      estado: "ENVIADO",
+      contenido,
+      ticket_id: ticketId,
+    });
+  };
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect();
+        if (
+          dialogDimensions &&
+          (e.clientX < dialogDimensions.left ||
+            e.clientX > dialogDimensions.right ||
+            e.clientY < dialogDimensions.top ||
+            e.clientY > dialogDimensions.bottom)
+        ) {
+          handleClose();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+    >
+      <div className="bg-[#2096ed] py-3 md:py-4 px-6 md:px-8">
+        <h1 className="text-lg md:text-xl font-bold text-white">
+          Añadir ticket
+        </h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 group"
+        autoComplete="off"
+        onSubmit={handleSubmit}
+      >
+        <div className="w-full">
+          <input
+            type="text"
+            onChange={(e) => {
+              setTicketFormData({
+                ...ticketFormData,
+                asunto: e.target.value,
+              });
+            }}
+            value={ticketFormData.asunto}
+            placeholder="Asunto*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
+        <div className="relative">
+          <Select
+            onChange={() => {
+              setTicketFormData({
+                ...ticketFormData,
+                prioridad: selectedPriority.value as TicketPrioridad,
+              });
+            }}
+            options={[
+              {
+                value: "BAJA",
+                label: "Baja",
+                onClick: (value, label) => {
+                  setSelectedPriority({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "MEDIA",
+                label: "Media",
+                onClick: (value, label) => {
+                  setSelectedPriority({
+                    value,
+                    label,
+                  });
+                },
+              },
+              {
+                value: "ALTA",
+                label: "Alta",
+                onClick: (value, label) => {
+                  setSelectedPriority({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedPriority}
+          />
+        </div>
         <div className="relative">
           {clients.length > 0 && (
             <SelectWithSearch
@@ -539,6 +1074,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 },
               }))}
               selected={selectedClient}
+              onChange={() => {
+                setTicketFormData({
+                  ...ticketFormData,
+                  cliente_id: selectedClient.value! as number,
+                });
+              }}
             />
           )}
           {clients.length === 0 && loading === false && (
@@ -548,7 +1089,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 value={0}
                 disabled={true}
               >
-                <option value={0}>Seleccionar cliente</option>
+                <option value={0}>No se ha encontrado ningún cliente</option>
               </select>
               <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
             </>
@@ -582,88 +1123,130 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             </>
           )}
         </div>
-        {clients.length > 0 && elements.length > 0 && (
-          <div className="relative">
-            <SelectWithSearch
+        <div className="flex gap-2">
+          <div className="relative w-2/4">
+            <Select
               onChange={() => {
-                setFormData({
-                  ...formData,
-                  elemento_id: selectedElement.value! as number,
+                setServiceFormData({
+                  ...serviceFormData,
+                  tipo: selectedType.value as ServicioTipo,
                 });
               }}
-              options={elements.map((element) => ({
-                value: element.id,
-                label: element.nombre,
-                onClick: (value, label) => {
-                  setSelectedElement({
-                    value,
-                    label,
-                  });
+              options={[
+                {
+                  value: "DOMICILIO",
+                  label: "Domicilio",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
                 },
-              }))}
-              selected={selectedElement}
+                {
+                  value: "TIENDA",
+                  label: "Tienda",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "REMOTO",
+                  label: "Remoto",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedType}
             />
           </div>
-        )}
-        {loading === false &&
-        clients.length > 0 &&
-        elements.length === 0 &&
-        (selectedClient.value! as number) > 0 ? (
-          <div className="relative">
-            <select
-              className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-              value={0}
-              disabled={true}
-            >
-              <option value={0}>Seleccionar elemento</option>
-            </select>
-            <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-          </div>
-        ) : null}
-        {loading === true &&
-        clients.length > 0 &&
-        elements.length === 0 &&
-        (selectedClient.value! as number) > 0 ? (
-          <div className="relative">
-            <select
-              className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
-              value={0}
-              disabled={true}
-            >
-              <option value={0}>Buscando elementos...</option>
-            </select>
-            <svg
-              aria-hidden="true"
-              className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
-              viewBox="0 0 100 101"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                fill="currentColor"
+          <div className="relative w-2/4">
+            {categories.length > 0 && (
+              <SelectWithSearch
+                options={categories
+                  .filter((category) => category.tipo === "SERVICIO")
+                  .map((category) => ({
+                    value: category.id,
+                    label: category.nombre,
+                    onClick: (value, label) => {
+                      setSelectedCategory({
+                        value,
+                        label,
+                      });
+                    },
+                  }))}
+                selected={selectedCategory}
+                onChange={() => {
+                  setServiceFormData({
+                    ...serviceFormData,
+                    categoría_id: selectedCategory.value! as number,
+                  });
+                }}
               />
-              <path
-                d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                fill="currentFill"
-              />
-            </svg>
-            <span className="sr-only">Cargando...</span>
+            )}
+            {categories.length === 0 && loading === false && (
+              <>
+                <select
+                  className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                  value={0}
+                  disabled={true}
+                >
+                  <option value={0}>Seleccionar categoría</option>
+                </select>
+                <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+              </>
+            )}
+            {categories.length === 0 && loading === true && (
+              <>
+                <select
+                  className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                  value={0}
+                  disabled={true}
+                >
+                  <option value={0}>Buscando categorías...</option>
+                </select>
+                <svg
+                  aria-hidden="true"
+                  className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
+                  viewBox="0 0 100 101"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                    fill="currentColor"
+                  />
+                  <path
+                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                    fill="currentFill"
+                  />
+                </svg>
+                <span className="sr-only">Cargando...</span>
+              </>
+            )}
           </div>
-        ) : null}
+        </div>
         <div className="w-full">
           <textarea
             rows={3}
-            placeholder="Notas de apertura"
+            placeholder="Descripción del servicio"
             onChange={(e) => {
-              setFormData({
-                ...formData,
-                notas_de_apertura: e.target.value,
+              setServiceFormData({
+                ...serviceFormData,
+                descripción: e.target.value,
               });
             }}
-            value={formData.notas_de_apertura}
+            value={serviceFormData.descripción || ""}
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             minLength={10}
+            name="name"
           />
           <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
             Minimo 10 caracteres
@@ -680,9 +1263,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           <button
             className={clsx({
               ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                !selectedElement.label?.startsWith("Seleccionar"),
+                !selectedClient.label?.startsWith("Seleccionar"),
               ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                selectedElement.label?.startsWith("Seleccionar"),
+                selectedClient.label?.startsWith("Seleccionar"),
             })}
           >
             Completar
@@ -757,13 +1340,13 @@ function DeleteModal({
                       toast.dismiss(messageToast);
                       toast.success("Mensaje creado exitosamente.");
 
-                      if (ticket?.elemento?.cliente?.enviarMensajes) {
+                      if (ticket?.cliente?.enviarMensajes) {
                         if (options.find()?.envio.siempre) {
                           const sendingToast = toast.loading(
                             "Enviando mensaje..."
                           );
                           MessageSenderService.send(
-                            ticket?.elemento?.cliente.telefono || "",
+                            ticket?.cliente.telefono || "",
                             rendered
                           ).then((res) => {
                             if (res) {
@@ -826,10 +1409,6 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
       ? "EDIT"
       : permissions.find()?.eliminar.ticket
       ? "DELETE"
-      : permissions.find()?.ver.servicio
-      ? "VIEW_SERVICES"
-      : permissions.find()?.ver.problema
-      ? "VIEW_PROBLEMS"
       : permissions.find()?.ver.mensaje
       ? "VIEW_MESSAGES"
       : "NONE"
@@ -842,9 +1421,7 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
       ? true
       : permissions.find()?.eliminar.ticket
       ? true
-      : permissions.find()?.ver.servicio
-      ? true
-      : permissions.find()?.ver.problema
+      : permissions.find()?.ver.ticket
       ? true
       : permissions.find()?.ver.mensaje
       ? true
@@ -881,13 +1458,25 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
           </div>
         )}
       </td>
-      <td className="px-6 py-3 border border-slate-300">
-        {ticket?.elemento?.cliente?.nombre}{" "}
-        {ticket?.elemento?.cliente?.apellido}
+      <td className="px-6 py-2 border border-slate-300">
+        {ticket?.prioridad === "BAJA" ? (
+          <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
+            Baja
+          </div>
+        ) : ticket?.prioridad === "MEDIA" ? (
+          <div className="bg-yellow-200 text-center text-yellow-600 text-xs py-2 font-bold rounded-lg capitalize">
+            Media
+          </div>
+        ) : (
+          <div className="bg-red-200 text-center text-red-600 text-xs py-2 font-bold rounded-lg capitalize">
+            Alta
+          </div>
+        )}
       </td>
       <td className="px-6 py-3 border border-slate-300">
-        {ticket?.elemento?.nombre}
+        {ticket?.cliente?.nombre} {ticket?.cliente?.apellido}
       </td>
+      <td className="px-6 py-3 border border-slate-300">{ticket?.asunto}</td>
       <td className="px-6 py-3 border border-slate-300">
         {format(new Date(ticket?.creado!), "dd/MM/yyyy")}
       </td>
@@ -936,26 +1525,6 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
             />
           </>
         )}
-        {action === "VIEW_SERVICES" && (
-          <button
-            onClick={() => {
-              navigate(`/tickets/${ticket?.id}/servicios`);
-            }}
-            className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-          >
-            Servicios
-          </button>
-        )}
-        {action === "VIEW_PROBLEMS" && (
-          <button
-            onClick={() => {
-              navigate(`/tickets/${ticket?.id}/problemas`);
-            }}
-            className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-          >
-            Problemas
-          </button>
-        )}
         {action === "VIEW_MESSAGES" && (
           <button
             onClick={() => {
@@ -974,13 +1543,15 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
             openSearchModal={() => {}}
             id={ticket?.id}
             top={
-              ref?.current?.getBoundingClientRect().top! +
-              window.scrollY +
-              ref?.current?.getBoundingClientRect().height! -
-              15
+              (ref?.current?.getBoundingClientRect().top ?? 0) +
+              (window.scrollY ?? 0) +
+              (ref?.current?.getBoundingClientRect().height ?? 0) -
+              10
             }
-            right={
-              ref?.current?.getBoundingClientRect().left! + window.scrollX + 35
+            left={
+              (ref?.current?.getBoundingClientRect().left ?? 0) +
+              window.scrollX +
+              25
             }
           />
         )}
@@ -1030,13 +1601,13 @@ function Dropup({ close, selectAction }: DropupProps) {
           bg-white
           text-base
           z-50
-          right-8
-          top-14
+          right-0
+          top-9
           py-2
           list-none
           text-left
           rounded-lg
-          shadow-lg
+          shadow-xl
           mt-2
           m-0
           bg-clip-padding
@@ -1096,13 +1667,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({
-  id,
-  close,
-  selectAction,
-  top,
-  right,
-}: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -1140,7 +1705,7 @@ function IndividualDropup({
           bg-clip-padding
           border
         "
-      style={{ top: top, left: right }}
+      style={{ top: top }}
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         permissions.find()?.editar.ticket) && (
@@ -1200,58 +1765,6 @@ function IndividualDropup({
         <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
       )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.ver.servicio) && (
-        <li>
-          <div
-            onClick={() => {
-              selectAction("VIEW_SERVICES");
-              close();
-            }}
-            className="
-                text-sm
-                py-2
-                px-4
-                font-medium
-                block
-                w-full
-                whitespace-nowrap
-                bg-transparent
-                text-slate-600
-                hover:bg-slate-100
-                cursor-pointer
-              "
-          >
-            Servicios
-          </div>
-        </li>
-      )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.ver.problema) && (
-        <li>
-          <div
-            onClick={() => {
-              selectAction("VIEW_PROBLEMS");
-              close();
-            }}
-            className="
-                text-sm
-                py-2
-                px-4
-                font-medium
-                block
-                w-full
-                whitespace-nowrap
-                bg-transparent
-                text-slate-600
-                hover:bg-slate-100
-                cursor-pointer
-              "
-          >
-            Problemas
-          </div>
-        </li>
-      )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         permissions.find()?.ver.mensaje) && (
         <li>
           <div
@@ -1306,11 +1819,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     value: "",
     label: "Seleccionar estado de ticket",
   });
-  const [selectedElement, setSelectedElement] = useState<Selected>({
-    value: -1,
-    label: "Seleccionar elemento",
-  });
-  const [elements, setElements] = useState<Elemento[]>([]);
   const tempInput = useTicketSearchParamStore((state) => state.tempInput);
   const secondTempInput = useTicketSearchParamStore(
     (state) => state.secondTempInput
@@ -1349,10 +1857,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: -1,
       label: "Seleccionar cliente",
     });
-    setSelectedElement({
-      value: -1,
-      label: "Seleccionar elemento",
-    });
     setSelectedCategory({
       value: -1,
       label: "Seleccionar categoría",
@@ -1379,10 +1883,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   }, [isOpen]);
 
   useEffect(() => {
-    if (
-      selectedSearchType.value === "CLIENTE" ||
-      selectedSearchType.value === "ELEMENTO"
-    ) {
+    if (selectedSearchType.value === "CLIENTE") {
       if (clients.length === 0) {
         setLoading(true);
         ClientService.getAll(1, 100).then((data) => {
@@ -1393,22 +1894,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             setLoading(false);
           }
         });
-      } else {
-        setLoading(true);
-        setSelectedElement({
-          value: -1,
-          label: "Seleccionar elemento",
-        });
-        ElementService.getAll(selectedClient.value! as number, 1, 100).then(
-          (data) => {
-            if (data === false) {
-              setLoading(false);
-            } else {
-              setElements(data.rows);
-              setLoading(false);
-            }
-          }
-        );
       }
     } else if (selectedSearchType.value === "CATEGORÍA") {
       if (categories.length === 0) {
@@ -1508,16 +1993,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               {
                 value: "ESTADO",
                 label: "Estado",
-                onClick: (value, label) => {
-                  setSelectedSearchType({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "ELEMENTO",
-                label: "Elemento",
                 onClick: (value, label) => {
                   setSelectedSearchType({
                     value,
@@ -1818,7 +2293,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             />
           </>
         ) : null}
-        {selectedSearchType.value === "ELEMENTO" ? (
+        {selectedSearchType.value === "CLIENTE" ? (
           <>
             <div className="relative">
               {clients.length > 0 && (
@@ -1879,72 +2354,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 </>
               )}
             </div>
-            {clients.length > 0 && elements.length > 0 && (
-              <div className="relative">
-                <SelectWithSearch
-                  onChange={() => {
-                    setSearchId(Number(selectedElement.value!));
-                  }}
-                  options={elements.map((element) => ({
-                    value: element.id,
-                    label: element.nombre,
-                    onClick: (value, label) => {
-                      setSelectedElement({
-                        value,
-                        label,
-                      });
-                    },
-                  }))}
-                  selected={selectedElement}
-                />
-              </div>
-            )}
-            {loading === false &&
-            clients.length > 0 &&
-            elements.length === 0 &&
-            (selectedClient.value! as number) > 0 ? (
-              <div className="relative">
-                <select
-                  className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-                  value={0}
-                  disabled={true}
-                >
-                  <option value={0}>Seleccionar elemento</option>
-                </select>
-                <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-              </div>
-            ) : null}
-            {loading === true &&
-            clients.length > 0 &&
-            elements.length === 0 &&
-            (selectedClient.value! as number) > 0 ? (
-              <div className="relative">
-                <select
-                  className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
-                  value={0}
-                  disabled={true}
-                >
-                  <option value={0}>Buscando elementos...</option>
-                </select>
-                <svg
-                  aria-hidden="true"
-                  className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
-                  viewBox="0 0 100 101"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                    fill="currentFill"
-                  />
-                </svg>
-                <span className="sr-only">Cargando...</span>
-              </div>
-            ) : null}
           </>
         ) : null}
         <div className="flex gap-2 justify-end">
@@ -1970,10 +2379,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 (selectedCategory.label?.startsWith("Seleccionar") &&
                   selectedSearchType?.value === "CATEGORÍA") ||
                 (selectedClient.label?.startsWith("Seleccionar") &&
-                  selectedSearchType?.value === "CLIENTE") ||
-                ((selectedClient.label?.startsWith("Seleccionar") ||
-                  selectedElement.label?.startsWith("Seleccionar")) &&
-                  selectedSearchType?.value === "ELEMENTO"),
+                  selectedSearchType?.value === "CLIENTE"),
               ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
                 true,
             })}
@@ -2037,7 +2443,7 @@ export default function TicketDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0) {
-      TicketService.getAll(page, 8).then((data) => {
+      void TicketService.getAll(page, 8).then((data) => {
         if (data === false) {
           setNotFound(true);
           setLoading(false);
@@ -2059,7 +2465,7 @@ export default function TicketDataDisplay() {
       if (param === "CERRADO" || (param === "ABIERTO" && wasSearch)) {
         const loadingToast = toast.loading("Buscando...");
         if (secondParam === "HOY") {
-          TicketService.getToday(param, page, 8).then((data) => {
+          void TicketService.getToday(param, page, 8).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2075,7 +2481,7 @@ export default function TicketDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "RECIENTEMENTE") {
-          TicketService.getRecent(param, page, 8).then((data) => {
+          void TicketService.getRecent(param, page, 8).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2091,7 +2497,7 @@ export default function TicketDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "ESTA_SEMANA") {
-          TicketService.getThisWeek(param, page, 8).then((data) => {
+          void TicketService.getThisWeek(param, page, 8).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2107,7 +2513,7 @@ export default function TicketDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "ESTE_MES") {
-          TicketService.getThisMonth(param, page, 8).then((data) => {
+          void TicketService.getThisMonth(param, page, 8).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2123,7 +2529,7 @@ export default function TicketDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "ESTE_AÑO") {
-          TicketService.getThisYear(param, page, 8).then((data) => {
+          void TicketService.getThisYear(param, page, 8).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2139,7 +2545,7 @@ export default function TicketDataDisplay() {
           });
         } else if (secondParam === "ENTRE") {
           if (param === "ABIERTO") {
-            TicketService.getOpenBetween(
+            void TicketService.getOpenBetween(
               new Date(input).toISOString().split("T")[0],
               new Date(secondInput).toISOString().split("T")[0],
               page,
@@ -2160,7 +2566,7 @@ export default function TicketDataDisplay() {
               setIsOperationCompleted(false);
             });
           } else {
-            TicketService.getClosedBetween(
+            void TicketService.getClosedBetween(
               new Date(input).toISOString().split("T")[0],
               new Date(secondInput).toISOString().split("T")[0],
               page,
@@ -2184,7 +2590,7 @@ export default function TicketDataDisplay() {
         }
       } else if (param === "CLIENTE" && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
-        TicketService.getByClient(searchId, page, 8).then((data) => {
+        void TicketService.getByClient(searchId, page, 8).then((data) => {
           if (data === false) {
             setNotFound(true);
             setLoading(false);
@@ -2201,7 +2607,7 @@ export default function TicketDataDisplay() {
         });
       } else if (param === "CATEGORÍA" && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
-        TicketService.getByCategory(searchId, page, 8).then((data) => {
+        void TicketService.getByCategory(searchId, page, 8).then((data) => {
           if (data === false) {
             setNotFound(true);
             setLoading(false);
@@ -2218,7 +2624,7 @@ export default function TicketDataDisplay() {
         });
       } else if (param === "ESTADO" && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
-        TicketService.getByState(input, page, 8).then((data) => {
+        void TicketService.getByState(input, page, 8).then((data) => {
           if (data === false) {
             setNotFound(true);
             setLoading(false);
@@ -2235,7 +2641,7 @@ export default function TicketDataDisplay() {
         });
       } else if (param === "ID" && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
-        TicketService.getById(searchId).then((data) => {
+        void TicketService.getById(searchId).then((data) => {
           if (data === false) {
             setNotFound(true);
             setLoading(false);
@@ -2254,25 +2660,6 @@ export default function TicketDataDisplay() {
           toast.dismiss(loadingToast);
           setIsOperationCompleted(false);
         });
-      } else if (param === "ELEMENTO" && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
-        TicketService.getByElemento(searchId, page, 8).then((data) => {
-          if (data === false) {
-            setNotFound(true);
-            setLoading(false);
-            setTickets([]);
-            resetSearchCount();
-            setWasSearch(false);
-          } else {
-            setTickets(data.rows);
-            setPages(data.pages);
-            setCurrent(data.current);
-            setLoading(false);
-            setNotFound(false);
-          }
-          toast.dismiss(loadingToast);
-          setIsOperationCompleted(false);
-        });
       }
     }
   }, [isOperationCompleted, searchCount, page]);
@@ -2284,18 +2671,18 @@ export default function TicketDataDisplay() {
   return (
     <>
       <div className="absolute w-full h-full px-8 py-5">
-        <nav className="flex justify-between items-center select-none">
+        <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">Tickets</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative">
             {isDropup && (
               <Dropup
                 close={closeDropup}
                 selectAction={selectAction}
-                openAddModal={() => {}}
-                openSearchModal={() => {}}
+                openAddModal={() => null}
+                openSearchModal={() => null}
               />
             )}
             {action === "ADD" ? (
@@ -2352,10 +2739,13 @@ export default function TicketDataDisplay() {
                     Estado
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Prioridad
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Cliente
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Elemento
+                    Asunto
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Creado

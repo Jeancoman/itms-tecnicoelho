@@ -21,10 +21,7 @@ import { Editor } from "@tinymce/tinymce-react";
 import { format } from "date-fns";
 import permissions from "../../utils/permissions";
 import session from "../../utils/session";
-import {
-  usePublicationSearchParamStore,
-  usePurchaseSearchParamStore,
-} from "../../store/searchParamStore";
+import { usePublicationSearchParamStore } from "../../store/searchParamStore";
 import Select from "../misc/select";
 import { useSearchedStore } from "../../store/searchedStore";
 import ImageService from "../../services/image-service";
@@ -618,15 +615,15 @@ function DataRow({
             openAddModal={() => {}}
             id={publicación?.id}
             top={
-              ref?.current?.getBoundingClientRect().top! +
-              window.scrollY +
-              ref?.current?.getBoundingClientRect().height! -
-              15
+              (ref?.current?.getBoundingClientRect().top ?? 0) +
+              (window.scrollY ?? 0) +
+              (ref?.current?.getBoundingClientRect().height ?? 0) -
+              10
             }
-            right={
-              ref?.current?.getBoundingClientRect().left! +
-              window.scrollX -
-              1060
+            left={
+              (ref?.current?.getBoundingClientRect().left ?? 0) +
+              window.scrollX +
+              25
             }
           />
         )}
@@ -676,13 +673,13 @@ function Dropup({ close, selectAction }: DropupProps) {
           bg-white
           text-base
           z-50
-          right-8
-          top-14
+          right-0
+          top-9
           py-2
           list-none
           text-left
           rounded-lg
-          shadow-lg
+          shadow-xl
           mt-2
           m-0
           bg-clip-padding
@@ -742,13 +739,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({
-  id,
-  close,
-  selectAction,
-  top,
-  right,
-}: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -786,7 +777,7 @@ function IndividualDropup({
           bg-clip-padding
           border
         "
-      style={{ top: top, right: right }}
+      style={{ top: top }}
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
         permissions.find()?.editar.publicación) && (
@@ -850,7 +841,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     value: "",
     label: "Seleccionar parametro de busqueda",
   });
-  const tempInput = usePurchaseSearchParamStore((state) => state.tempInput);
+  const tempInput = usePublicationSearchParamStore((state) => state.tempInput);
   const setInput = usePublicationSearchParamStore((state) => state.setInput);
   const setTempInput = usePublicationSearchParamStore(
     (state) => state.setTempInput
@@ -862,7 +853,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.setSecondTempInput
   );
   const setParam = usePublicationSearchParamStore((state) => state.setParam);
-  const incrementSearchCount = usePurchaseSearchParamStore(
+  const incrementSearchCount = usePublicationSearchParamStore(
     (state) => state.incrementSearchCount
   );
   const setIsPrecise = usePublicationSearchParamStore(
@@ -1119,7 +1110,7 @@ export default function PublicationsDataDisplay() {
   return (
     <>
       <div className="absolute w-full h-full px-8 py-5">
-        <nav className="flex justify-between items-center select-none">
+        <nav className="flex justify-between items-center select-none max-[420px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span
@@ -1140,12 +1131,12 @@ export default function PublicationsDataDisplay() {
               </>
             ) : null}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative">
             {isDropup && (
               <Dropup
                 close={closeDropup}
                 selectAction={selectAction}
-                openAddModal={() => {}}
+                openAddModal={() => null}
               />
             )}
             {action === "ADD" ? (

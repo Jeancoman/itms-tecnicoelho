@@ -258,14 +258,14 @@ export default class UserService {
     }
   }
 
-  static async getPermissionsById(id: number) {
+  static async getPermissionsById(id: number, token: string) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}/permisos`,
         {
           method: "GET",
           headers: {
-            Authorization: session.find()?.token!,
+            Authorization: token,
             Accept: "application/json",
             "Content-Type": "application/json",
           },
@@ -423,11 +423,71 @@ export default class UserService {
         }
       );
 
+      if (response.status === 429) {
+        return "429";
+      }
+
       if (response.status > 300) {
         return false;
       }
 
       return (await response.json()).token as string;
+    } catch {
+      return false;
+    }
+  }
+
+  static async requestPasswordReset(email: string) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/usuarios/request-password-reset`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            correo: email,
+          }),
+        }
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  static async resetPassword(userId: string, token: string, password: string) {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/password-reset`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId,
+            token,
+            password,
+          }),
+        }
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      return true;
     } catch {
       return false;
     }

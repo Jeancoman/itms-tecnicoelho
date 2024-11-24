@@ -1,4 +1,4 @@
-import { Ticket, Response } from "../types";
+import { Ticket, Response, Servicio } from "../types";
 import session from "../utils/session";
 
 export default class TicketService {
@@ -356,38 +356,6 @@ export default class TicketService {
     }
   }
 
-  static async getByElemento(elemento_id: number, page: number, size: number) {
-    try {
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/tickets/busqueda?page=${page}&size=${size}&elemento_id=${elemento_id}`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: session.find()?.token!,
-          },
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      const data = (await response.json()) as Response;
-
-      if (data.rows.length === 0) {
-        return false;
-      }
-
-      return data;
-    } catch {
-      return false;
-    }
-  }
-
   static async getByState(estado: string, page: number, size: number) {
     try {
       const response = await fetch(
@@ -420,10 +388,10 @@ export default class TicketService {
     }
   }
 
-  static async create(ticket: Ticket) {
+  static async create(ticket: Ticket, servicio: Servicio) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/tickets`,
         {
           method: "POST",
           headers: {
@@ -431,7 +399,10 @@ export default class TicketService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-          body: JSON.stringify(ticket),
+          body: JSON.stringify({
+            ticket,
+            servicio,
+          }),
         }
       );
 
@@ -445,7 +416,7 @@ export default class TicketService {
     }
   }
 
-  static async update(id: number, ticket: Ticket) {
+  static async update(id: number, ticket: Ticket, servicio: Servicio) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${id}`,
@@ -456,7 +427,10 @@ export default class TicketService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-          body: JSON.stringify(ticket),
+          body: JSON.stringify({
+            ticket,
+            servicio,
+          }),
         }
       );
 

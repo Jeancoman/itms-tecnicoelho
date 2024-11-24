@@ -35,9 +35,9 @@ export default function ProvidersPage() {
 
   return (
     <> 
-      <div className="h-screen bg-white grid grid-cols-[1fr_5fr]">
+      <div className="h-screen bg-white grid md:grid-cols-[1fr,_5fr]">
         <NavPanel />
-        <main className="bg-white relative max-h-[656px]">
+        <main className="flex-grow bg-white relative max-h-screen">
           <ProvidersDataDisplay />
         </main>
       </div>

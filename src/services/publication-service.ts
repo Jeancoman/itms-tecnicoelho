@@ -63,7 +63,7 @@ export default class PublicationService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=INEXACTA&titulo=${titulo}&page=${page}&size=${size}`,
+        }/api/publicaciones/busqueda?exactitud=INEXACTA&titulo=${titulo}&page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -95,7 +95,7 @@ export default class PublicationService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/clientes/busqueda?tipo=EXACTA&titulo=${titulo}&page=${page}&size=${size}`,
+        }/api/publicaciones/busqueda?exactitud=EXACTA&titulo=${titulo}&page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {

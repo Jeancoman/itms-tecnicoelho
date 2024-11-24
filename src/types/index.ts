@@ -8,19 +8,16 @@ export type ModalProps = {
   publicación?: Publicación;
   categoría?: Categoría;
   proveedor?: Proveedor;
-  elemento?: Elemento;
-  ticket?: Ticket;
-  problema?: Problema;
   mensaje?: Mensaje;
+  ticket?: Ticket;
   servicio?: Servicio;
-  operación?: Operación;
   venta?: Venta;
   compra?: Compra;
   plantilla?: Plantilla;
   mensajería?: Mensajería;
   imagen?: Imagen;
   imagenes?: Imagen[];
-  seguimiento?: Seguimiento;
+  impuesto?: Impuesto;
 };
 
 export type SectionProps = {
@@ -70,7 +67,7 @@ export type DropupProps = {
   toAdd?: boolean;
   id?: number;
   top?: number;
-  right?: number;
+  left?: number;
 };
 
 export type DataRowProps = {
@@ -83,17 +80,14 @@ export type DataRowProps = {
   publicación?: Publicación;
   categoría?: Categoría;
   proveedor?: Proveedor;
-  elemento?: Elemento;
-  ticket?: Ticket;
-  problema?: Problema;
   mensaje?: Mensaje;
+  ticket?: Ticket;
   servicio?: Servicio;
-  operación?: Operación;
   venta?: Venta;
   compra?: Compra;
   plantilla?: Plantilla;
   imagen?: Imagen;
-  seguimiento?: Seguimiento;
+  impuesto?: Impuesto
 };
 
 export type OptionProps = {
@@ -110,6 +104,8 @@ export type OptionGroupProps = {
   options: OptionProps[];
   close: () => void;
   closeOnOptionClick: () => void;
+  selectedValues?: Selected[]; // Las opciones actualmente seleccionadas
+  toggleOption?: (value: string | number, label: string) => void; // Función para añadir o eliminar una opción seleccionada
   drop: boolean;
   top: number;
   left: number;
@@ -122,6 +118,14 @@ export type SelectProps = {
   onChange?: () => void;
   disable?: boolean;
   small?: boolean;
+};
+
+export type MultiSelectProps = {
+  selectedValues: Selected[]; // Cambiado a un array de opciones seleccionadas
+  options: OptionProps[]; // Lista de todas las opciones disponibles
+  onChange: (selectedValues: Selected[]) => void; // Función para manejar cambios en los valores seleccionados
+  disable?: boolean; // Opcional, para deshabilitar el MultiSelect
+  small?: boolean; // Opcional, para una versión más compacta del MultiSelect
 };
 
 export type Selected = {
@@ -166,21 +170,15 @@ export type CommandBlock = {
 
 export type Previamente = {
   ticket?: Ticket;
-  problema?: Problema;
   servicio?: Servicio;
-  operación?: Operación;
 };
 
 export interface Options {
   usuario?: Usuario;
   cliente?: Cliente;
-  elemento?: Elemento;
   ticket?: Ticket;
-  problema?: Problema;
   servicio?: Servicio;
-  operación?: Operación;
   previamente?: Previamente;
-  categoría_de_elemento?: Categoría;
   categoría_de_servicio?: Categoría;
 }
 
@@ -190,10 +188,7 @@ export type Action =
   | "EDIT_RECIBO"
   | "EDIT_ENTREGA"
   | "DELETE"
-  | "VIEW_ELEMENTS"
-  | "VIEW_SEGUIMIENTO"
-  | "VIEW_SERVICES"
-  | "VIEW_PROBLEMS"
+  | "VIEW_SERVICE"
   | "VIEW_MESSAGES"
   | "VIEW_PERMISSIONS"
   | "VIEW_OPERATIONS"
@@ -215,25 +210,21 @@ export type Action =
 
 export type UsuarioRol = "EMPLEADO" | "ADMINISTRADOR" | "SUPERADMINISTRADOR";
 
-export type ElementoEstado = "ACTIVO" | "INACTIVO";
-
 export type TicketEstado = "ABIERTO" | "CERRADO";
 
 export type ServicioTipo = "DOMICILIO" | "TIENDA" | "REMOTO";
 
-export type ServicioEstado = "PENDIENTE" | "INICIADO" | "COMPLETADO";
+export type ServicioProgreso = "PENDIENTE" | "INICIADO" | "COMPLETADO";
 
-export type ProblemaEstado = "PENDIENTE" | "RESUELTO";
-
-export type ProblemaPrioridad = "BAJA" | "MEDIA" | "ALTA";
+export type TicketPrioridad = "BAJA" | "MEDIA" | "ALTA";
 
 export type MensajeEstado = "NO_ENVIADO" | "ENVIADO";
 
 export type OperaciónEstado = "PENDIENTE" | "INICIADA" | "COMPLETADA";
 
-export type CategoríaTipo = "ELEMENTO" | "PRODUCTO" | "SERVICIO";
+export type CategoríaTipo = "PRODUCTO" | "SERVICIO";
 
-export type PlantillaEsDe = "TICKET" | "PROBLEMA" | "SERVICIO" | "OPERACIÓN";
+export type PlantillaEsDe = "SERVICIO" | "TICKET";
 
 export type PlantillaEvento =
   | "CREACIÓN"
@@ -258,6 +249,8 @@ export interface Usuario {
   id?: number;
   nombre: string;
   apellido: string;
+  correo: string;
+  documento: string;
   nombreUsuario: string;
   contraseña?: string;
   rol: UsuarioRol;
@@ -269,13 +262,9 @@ export interface Usuario {
 
 export type Permiso = {
   cliente: boolean;
-  ticket: boolean;
-  elemento: boolean;
   producto: boolean;
-  problema: boolean;
   mensaje: boolean;
-  servicio: boolean;
-  operación: boolean;
+  ticket: boolean;
   categoría: boolean;
   imagen: boolean;
   venta: boolean;
@@ -284,6 +273,7 @@ export type Permiso = {
   proveedor: boolean;
   reporte: boolean;
   mensajería: boolean;
+  impuesto: boolean;
 };
 
 export interface Permisos {
@@ -308,57 +298,27 @@ export interface Cliente {
   readonly registrado?: Date;
 }
 
-export interface Elemento {
-  id?: number;
-  nombre: string;
-  descripción?: string;
-  estado: ElementoEstado;
-  readonly registrado?: Date;
-  cliente_id?: number;
-  categoría_id?: number;
-  categoría?: Categoría;
-  cliente?: Cliente;
-}
-
 export interface Ticket {
   id?: number;
+  asunto: string;
+  prioridad: TicketPrioridad;
   estado: TicketEstado;
-  notas_de_apertura?: string;
-  notas_de_cierre?: string;
   readonly creado?: Date;
   readonly cerrado?: Date;
-  elemento_id?: number;
-  elemento?: Elemento;
+  cliente_id?: number;
+  cliente?: Cliente;
+  servicio?: Servicio;
 }
 
 export interface Servicio {
   id?: number;
-  nombre: string;
   descripción?: string;
-  tipo: ServicioTipo;
-  estado: ServicioEstado;
-  resultado?: string;
-  notas?: string;
   necesidades?: string;
-  readonly añadido?: Date;
-  iniciado?: Date;
-  completado?: Date;
+  tipo: ServicioTipo;
   ticket_id?: number;
+  ticket?: Ticket;
   categoría_id?: number;
   categoría?: Categoría;
-}
-
-export interface Problema {
-  id?: number;
-  nombre: string;
-  descripción?: string;
-  causa?: string;
-  solución?: string;
-  prioridad: ProblemaPrioridad;
-  estado: ProblemaEstado;
-  readonly detectado?: Date;
-  resuelto?: Date;
-  ticket_id?: number;
 }
 
 export interface Mensaje {
@@ -368,20 +328,6 @@ export interface Mensaje {
   readonly creado?: Date;
   modificado?: Date;
   ticket_id?: number;
-}
-
-export interface Operación {
-  id?: number;
-  nombre: string;
-  descripción?: string;
-  resultado?: string;
-  notas?: string;
-  estado: OperaciónEstado;
-  necesidades?: string;
-  readonly añadida?: Date;
-  iniciada?: Date;
-  completada?: Date;
-  servicio_id?: number;
 }
 
 export interface Categoría {
@@ -395,15 +341,25 @@ export interface Categoría {
 export interface Producto {
   id?: number;
   código?: string;
+  marca: string;
+  modelo: string;
   slug: string;
   nombre: string;
   descripción?: string;
-  precio: number;
-  stock: number;
+  precioCompra: number;
+  precioVenta: number;
+  existencias: number;
   esPúblico: boolean;
   categoría_id?: number;
   categoría?: Categoría;
   imagens?: Imagen[];
+}
+
+export interface Impuesto {
+  id?: number;
+  codigo?: string;
+  nombre: string;
+  porcentaje: number;
 }
 
 export interface Publicación {
@@ -418,11 +374,6 @@ export interface Publicación {
   imagen_id?: number;
   usuario_id?: number;
   usuario?: Usuario;
-}
-
-export interface OperaciónProducto {
-  operación_id?: number;
-  producto_id?: number;
 }
 
 export interface Proveedor {
@@ -440,6 +391,7 @@ export interface Venta {
   impuesto: number;
   subtotal: number;
   total: number;
+  anulada?: boolean;
   cliente_id?: number;
   cliente?: Cliente;
   detalles?: DetalleVenta[];
@@ -452,6 +404,7 @@ export interface Compra {
   impuesto: number;
   subtotal: number;
   total: number;
+  anulada?: boolean;
   proveedor_id: number;
   proveedor?: Proveedor;
   detalles?: DetalleCompra[];
@@ -490,7 +443,7 @@ export interface ImagenProducto {
 }
 
 export interface Plantilla {
-  id: number;
+  id?: number;
   contenido: string;
   esDe: PlantillaEsDe;
   evento: PlantillaEvento;
@@ -499,18 +452,8 @@ export interface Plantilla {
 }
 
 export interface Mensajería {
-  id: number;
-  opciones: Opciones;
-}
-
-export interface Seguimiento {
   id?: number;
-  recibido?: Date;
-  notas_de_recibo?: string;
-  entregable_desde?: Date;
-  entregado?: Date;
-  notas_de_entrega?: string;
-  elemento_id?: number;
+  opciones: Opciones;
 }
 
 export type Response = {
@@ -537,4 +480,9 @@ export interface JwtPayload {
 export interface Session {
   usuario: Usuario;
   token: string;
+}
+
+export interface FormErrors {
+  nombre?: string; // Using optional chaining as 'nombre' may not always be set
+  // Add other fields as needed
 }

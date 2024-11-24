@@ -9,32 +9,182 @@ import {
   DataRowProps,
   DropupProps,
   Action,
-  Imagen,
+  Impuesto,
   Selected,
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
-import ImageService from "../../services/image-service";
+import Select from "../misc/select";
 import permissions from "../../utils/permissions";
 import session from "../../utils/session";
-import { format } from "date-fns";
-import { useImageSearchParamStore } from "../../store/searchParamStore";
-import Select from "../misc/select";
+import { useImpuestoSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import clsx from "clsx";
+import ImpuestoService from "../../services/impuesto-service";
+
+function EditModal({
+  isOpen,
+  closeModal,
+  setOperationAsCompleted,
+  impuesto,
+}: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [formData, setFormData] = useState<Impuesto>(impuesto!);
+
+  const resetFormData = () => {
+    setFormData(impuesto!);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [closeModal, isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect();
+        if (
+          dialogDimensions && // Check if dialogDimensions is defined
+          (e.clientX < dialogDimensions.left ||
+            e.clientX > dialogDimensions.right ||
+            e.clientY < dialogDimensions.top ||
+            e.clientY > dialogDimensions.bottom)
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Editar categoría</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 group"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          closeModal();
+          const loadingToast = toast.loading("Editando impuesto...");
+          void ImpuestoService.update(impuesto?.id!, formData).then((data) => {
+            toast.dismiss(loadingToast);
+            setOperationAsCompleted();
+            if (data === false) {
+              toast.error("Impuesto no pudo ser editada.");
+            } else {
+              toast.success("Impuesto editada con exito.");
+            }
+          });
+        }}
+      >
+        <div>
+          <input
+            type="text"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                nombre: e.target.value,
+              });
+            }}
+            value={formData.nombre}
+            placeholder="Nombre*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^.{2,}$"
+            name="name"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Minimo 2 caracteres
+          </span>
+        </div>
+        <div>
+          <input
+            type="text"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                codigo: e.target.value.toUpperCase(),
+              });
+            }}
+            value={formData.codigo}
+            placeholder="Código*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            pattern="^[A-Z0-9]{3,10}$"
+            name="codigo"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Solo letras mayúsculas y números (3-10 caracteres)
+          </span>
+        </div>
+        <div>
+          <input
+            type="number"
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                porcentaje: parseFloat(e.target.value),
+              });
+            }}
+            value={formData.porcentaje}
+            placeholder="Porcentaje*"
+            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+            required
+            min="0"
+            max="100"
+            step="0.01"
+            name="porcentaje"
+          />
+          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+            Debe ser un número entre 0 y 100
+          </span>
+        </div>
+        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                closeModal();
+                resetFormData();
+              }}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+  );
+}
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
-  const [formData, setFormData] = useState<Imagen>({
-    url: "",
-    descripción: "",
-    esPública: true,
+  const [formData, setFormData] = useState<Impuesto>({
+    nombre: "",
+    codigo: "",
+    porcentaje: 0,
   });
 
   const resetFormData = () => {
     setFormData({
-      url: "",
-      descripción: "",
-      esPública: true,
+      nombre: "",
+      codigo: "",
+      porcentaje: 0,
     });
   };
 
@@ -58,7 +208,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
+      onClick={(e: any) => {
         const dialogDimensions = ref.current?.getBoundingClientRect()!;
         if (
           e.clientX < dialogDimensions.left ||
@@ -73,7 +223,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Añadir imagen</h1>
+        <h1 className="text-xl font-bold text-white">Añadir Impuesto</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 group"
@@ -81,186 +231,93 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Añadiendo imagen...");
-          void ImageService.create(formData).then((data) => {
+          const loadingToast = toast.loading("Añadiendo impuesto...");
+          void ImpuestoService.create(formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
-              toast.error("Imagen no pudo ser añadida.");
+              toast.error("Impuesto no pudo ser añadido.");
             } else {
-              toast.success("Imagen añadida con exito.");
+              toast.success("Impuesto añadido con éxito.");
             }
           });
         }}
       >
         <div>
           <input
-            type="url"
-            placeholder="Enlace de imagen*"
+            type="text"
             onChange={(e) => {
               setFormData({
                 ...formData,
-                url: e.target.value,
+                nombre: e.target.value,
               });
             }}
-            value={formData.url}
+            value={formData.nombre}
+            placeholder="Nombre*"
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             required
-            pattern="^(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png)$"
+            pattern="^.{2,}$"
+            name="nombre"
           />
           <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Enlace de imagen invalido
+            Mínimo 2 caracteres
           </span>
         </div>
-        <div>
-          <textarea
-            rows={6}
-            placeholder="Descripción de portada"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                descripción: e.target.value,
-              });
-            }}
-            value={formData.descripción}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
-          </span>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Cancelar
-          </button>
-          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Completar
-          </button>
-        </div>
-      </form>
-    </dialog>
-  );
-}
-
-function EditModal({
-  isOpen,
-  closeModal,
-  setOperationAsCompleted,
-  imagen,
-}: ModalProps) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const [formData, setFormData] = useState<Imagen>(imagen!);
-
-  useEffect(() => {
-    if (isOpen) {
-      ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-        }
-      });
-    } else {
-      closeModal();
-      ref.current?.close();
-    }
-  }, [isOpen]);
-
-  return (
-    <dialog
-      ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
-    >
-      <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar imagen</h1>
-      </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Editando imagen...");
-          void ImageService.update(imagen?.id!, formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data) {
-              toast.success("Imagen editada con exito.");
-            } else {
-              toast.error("Imagen no pudo ser editada.");
-            }
-            setOperationAsCompleted();
-          });
-        }}
-      >
         <div>
           <input
-            type="url"
-            placeholder="Enlace de imagen*"
+            type="text"
             onChange={(e) => {
               setFormData({
                 ...formData,
-                url: e.target.value,
+                codigo: e.target.value.toUpperCase(),
               });
             }}
-            value={formData.url}
+            value={formData.codigo}
+            placeholder="Código*"
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             required
-            pattern="^(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png)$"
+            pattern="^[A-Z0-9]{3,10}$"
+            name="codigo"
           />
           <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Enlace de imagen invalido
+            Solo letras mayúsculas y números (3-10 caracteres)
           </span>
         </div>
         <div>
-          <textarea
-            rows={3}
-            placeholder="Descripción de imagen"
+          <input
+            type="number"
             onChange={(e) => {
               setFormData({
                 ...formData,
-                descripción: e.target.value,
+                porcentaje: parseFloat(e.target.value),
               });
             }}
-            value={formData.descripción}
+            value={formData.porcentaje}
+            placeholder="Porcentaje*"
             className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
+            required
+            min="0"
+            max="100"
+            step="0.01"
+            name="porcentaje"
           />
           <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
+            Debe ser un número entre 0 y 100
           </span>
         </div>
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              closeModal();
-              setFormData(imagen!);
-            }}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Cancelar
-          </button>
-          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Completar
-          </button>
+        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
+            </button>
+          </div>
         </div>
       </form>
     </dialog>
@@ -271,7 +328,7 @@ function DeleteModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  imagen,
+  categoría,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -305,7 +362,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow text-base font-normal"
+      className="w-2/5 h-fit rounded-xl shadow text-base"
     >
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -313,13 +370,13 @@ function DeleteModal({
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
-          const loadingToast = toast.loading("Eliminando imagen...");
-          ImageService.delete(imagen?.id!).then((data) => {
+          const loadingToast = toast.loading("Eliminando impuesto...");
+          ImpuestoService.delete(categoría?.id!).then((data) => {
             toast.dismiss(loadingToast);
             if (data) {
-              toast.success("Imagen eliminada con exito.");
+              toast.success("Impuesto eliminada con exito.");
             } else {
-              toast.error("Imagen no pudo ser eliminado.");
+              toast.error("Impuesto no pudo ser eliminada.");
             }
             setOperationAsCompleted();
           });
@@ -343,138 +400,11 @@ function DeleteModal({
             Cancelar
           </button>
           <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Completar
+            Continuar
           </button>
         </div>
       </form>
     </dialog>
-  );
-}
-
-function DataRow({ imagen, setOperationAsCompleted }: DataRowProps) {
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.editar.imagen
-      ? "EDIT"
-      : permissions.find()?.eliminar.imagen
-      ? "DELETE"
-      : "NONE"
-  );
-  const [isDropup, setIsDropup] = useState(false);
-  const ref = useRef<HTMLTableCellElement>(null);
-  const anyAction =
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-    permissions.find()?.editar.imagen
-      ? true
-      : permissions.find()?.eliminar.imagen
-      ? true
-      : false;
-
-  const closeEditModal = () => {
-    setIsEditOpen(false);
-  };
-
-  const closeDeleteModal = () => {
-    setIsDeleteOpen(false);
-  };
-
-  const selectAction = (action: `${Action}`) => {
-    setAction(action);
-  };
-
-  return (
-    <tr>
-      <th
-        scope="row"
-        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
-      >
-        {imagen?.id}
-      </th>
-      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
-        {imagen?.url}
-      </td>
-      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
-        {imagen?.descripción}
-      </td>
-      <td className="px-6 py-4 border border-slate-300">
-        {format(new Date(imagen?.añadida!), "dd/MM/yyyy")}
-      </td>
-      <td
-        ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[200px] relative"
-      >
-        {action === "EDIT" && (
-          <>
-            <button
-              onClick={() => {
-                setIsEditOpen(true);
-              }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-            >
-              Editar imagen
-            </button>
-            <EditModal
-              imagen={imagen}
-              isOpen={isEditOpen}
-              closeModal={closeEditModal}
-              setOperationAsCompleted={setOperationAsCompleted}
-            />
-          </>
-        )}
-        {action === "DELETE" && (
-          <>
-            <button
-              onClick={() => {
-                setIsDeleteOpen(true);
-              }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-            >
-              Eliminar imagen
-            </button>
-            <DeleteModal
-              imagen={imagen}
-              isOpen={isDeleteOpen}
-              closeModal={closeDeleteModal}
-              setOperationAsCompleted={setOperationAsCompleted}
-            />
-          </>
-        )}
-        {isDropup && (
-          <IndividualDropup
-            close={() => setIsDropup(false)}
-            selectAction={selectAction}
-            openAddModal={() => null}
-            id={imagen?.id}
-            top={
-              (ref?.current?.getBoundingClientRect().top ?? 0) +
-              (window.scrollY ?? 0) +
-              (ref?.current?.getBoundingClientRect().height ?? 0) -
-              10
-            }
-            left={
-              (ref?.current?.getBoundingClientRect().left ?? 0) +
-              window.scrollX +
-              25
-            }
-          />
-        )}
-        {anyAction ? (
-          <button
-            id={`acciones-btn-${imagen?.id}`}
-            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-            onClick={() => setIsDropup(!isDropup)}
-          >
-            <More className="w-5 h-5 inline fill-black" />
-          </button>
-        ) : (
-          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
-            Nada permitido
-          </button>
-        )}
-      </td>
-    </tr>
   );
 }
 
@@ -484,18 +414,22 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     value: "",
     label: "Seleccionar parametro de busqueda",
   });
-  const setIsPrecise = useImageSearchParamStore((state) => state.setIsPrecise);
-  const setTempIsPrecise = useImageSearchParamStore(
+  const setIsPrecise = useImpuestoSearchParamStore(
+    (state) => state.setIsPrecise
+  );
+  const setTempIsPrecise = useImpuestoSearchParamStore(
     (state) => state.setTempIsPrecise
   );
-  const tempIsPrecise = useImageSearchParamStore(
+  const tempIsPrecise = useImpuestoSearchParamStore(
     (state) => state.tempIsPrecise
   );
-  const tempInput = useImageSearchParamStore((state) => state.tempInput);
-  const setInput = useImageSearchParamStore((state) => state.setInput);
-  const setTempInput = useImageSearchParamStore((state) => state.setTempInput);
-  const setParam = useImageSearchParamStore((state) => state.setParam);
-  const incrementSearchCount = useImageSearchParamStore(
+  const tempInput = useImpuestoSearchParamStore((state) => state.tempInput);
+  const setInput = useImpuestoSearchParamStore((state) => state.setInput);
+  const setTempInput = useImpuestoSearchParamStore(
+    (state) => state.setTempInput
+  );
+  const setParam = useImpuestoSearchParamStore((state) => state.setParam);
+  const incrementSearchCount = useImpuestoSearchParamStore(
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
@@ -545,7 +479,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Buscar imagen</h1>
+        <h1 className="text-xl font-bold text-white">Buscar producto</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center group"
@@ -567,8 +501,8 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             }}
             options={[
               {
-                value: "URL",
-                label: "URL",
+                value: "NOMBRE",
+                label: "Nombre",
                 onClick: (value, label) => {
                   setSelectedSearchType({
                     value,
@@ -577,8 +511,8 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 },
               },
               {
-                value: "DESCRIPCIÓN",
-                label: "Descripción",
+                value: "CÓDIGO",
+                label: "Código",
                 onClick: (value, label) => {
                   setSelectedSearchType({
                     value,
@@ -593,10 +527,10 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <input
           type="text"
           placeholder={
-            selectedSearchType.value === "URL"
-              ? "Introduzca url de imagen"
-              : selectedSearchType.value === "DESCRIPCIÓN"
-              ? "Introduzca descripción de imagen"
+            selectedSearchType.value === "CÓDIGO"
+              ? "Introduzca código del impuesto"
+              : selectedSearchType.value === "NOMBRE"
+              ? "Introduzca nombre del impuesto"
               : ""
           }
           value={tempInput}
@@ -654,6 +588,137 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
+function DataRow({ impuesto, setOperationAsCompleted }: DataRowProps) {
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [action, setAction] = useState<`${Action}`>(
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+      permissions.find()?.editar.impuesto
+      ? "EDIT"
+      : permissions.find()?.eliminar.impuesto
+      ? "DELETE"
+      : "NONE"
+  );
+  const [isDropup, setIsDropup] = useState(false);
+  const ref = useRef<HTMLTableCellElement>(null);
+  const anyAction =
+    session.find()?.usuario.rol === "ADMINISTRADOR" ||
+    permissions.find()?.editar.impuesto
+      ? true
+      : permissions.find()?.eliminar.impuesto
+      ? true
+      : false;
+
+  const closeEditModal = () => {
+    setIsEditOpen(false);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteOpen(false);
+  };
+
+  const selectAction = (action: `${Action}`) => {
+    setAction(action);
+  };
+
+  return (
+    <tr>
+      <th
+        scope="row"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
+      >
+        {impuesto?.id}
+      </th>
+      <td className="px-6 py-4 border border-slate-300">{impuesto?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">
+        {impuesto?.codigo}
+      </td>
+      <td className="px-6 py-4 border border-slate-300">
+        {impuesto?.porcentaje}%
+      </td>
+      <td
+        ref={ref}
+        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+      >
+        {action === "NONE" && (
+          <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
+            Ninguna seleccionada
+          </button>
+        )}
+        {action === "EDIT" && (
+          <>
+            <button
+              onClick={() => {
+                setIsEditOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Editar impuesto
+            </button>
+            <EditModal
+              impuesto={impuesto}
+              isOpen={isEditOpen}
+              closeModal={closeEditModal}
+              setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
+        )}
+        {action === "DELETE" && (
+          <>
+            <button
+              onClick={() => {
+                setIsDeleteOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Eliminar impuesto
+            </button>
+            <DeleteModal
+              impuesto={impuesto}
+              isOpen={isDeleteOpen}
+              closeModal={closeDeleteModal}
+              setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
+        )}
+        {isDropup && (
+          <IndividualDropup
+            close={() => setIsDropup(false)}
+            selectAction={selectAction}
+            openAddModal={() => null}
+            openSearchModal={() => null}
+            id={impuesto?.id}
+            top={
+              (ref?.current?.getBoundingClientRect().top ?? 0) +
+              (window.scrollY ?? 0) +
+              (ref?.current?.getBoundingClientRect().height ?? 0) -
+              10
+            }
+            left={
+              (ref?.current?.getBoundingClientRect().left ?? 0) +
+              window.scrollX +
+              25
+            }
+          />
+        )}
+        {anyAction ? (
+          <button
+            id={`acciones-btn-${impuesto?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : (
+          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
+            Nada permitido
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+}
+
 function Dropup({ close, selectAction }: DropupProps) {
   const ref = useRef<HTMLUListElement>(null);
 
@@ -696,7 +761,7 @@ function Dropup({ close, selectAction }: DropupProps) {
         "
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.imagen) && (
+        permissions.find()?.crear.impuesto) && (
         <li>
           <div
             onClick={() => {
@@ -717,7 +782,7 @@ function Dropup({ close, selectAction }: DropupProps) {
               cursor-pointer
             "
           >
-            Añadir imagen
+            Añadir impuesto
           </div>
         </li>
       )}
@@ -741,19 +806,14 @@ function Dropup({ close, selectAction }: DropupProps) {
               cursor-pointer
             "
         >
-          Buscar imagen
+          Buscar impuesto
         </div>
       </li>
     </ul>
   );
 }
 
-function IndividualDropup({
-  id,
-  close,
-  selectAction,
-  top
-}: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -794,7 +854,7 @@ function IndividualDropup({
       style={{ top: top }}
     >
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.editar.imagen) && (
+        permissions.find()?.editar.impuesto) && (
         <li>
           <div
             onClick={() => {
@@ -815,12 +875,12 @@ function IndividualDropup({
               cursor-pointer
             "
           >
-            Editar imagen
+            Editar impuesto
           </div>
         </li>
       )}
       {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.eliminar.imagen) && (
+        permissions.find()?.eliminar.impuesto) && (
         <li>
           <div
             onClick={() => {
@@ -841,7 +901,7 @@ function IndividualDropup({
               cursor-pointer
             "
           >
-            Eliminar imagen
+            Eliminar impuesto
           </div>
         </li>
       )}
@@ -849,8 +909,8 @@ function IndividualDropup({
   );
 }
 
-export default function ImagesDataDisplay() {
-  const [images, setImages] = useState<Imagen[]>([]);
+export default function ImpuestosDataDisplay() {
+  const [impuestos, setImpuestos] = useState<Impuesto[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
@@ -858,23 +918,23 @@ export default function ImagesDataDisplay() {
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
     session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.crear.imagen
+      permissions.find()?.crear.categoría
       ? "ADD"
       : "SEARCH"
   );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
-  const searchCount = useImageSearchParamStore((state) => state.searchCount);
-  const resetSearchCount = useImageSearchParamStore(
+  const searchCount = useImpuestoSearchParamStore((state) => state.searchCount);
+  const resetSearchCount = useImpuestoSearchParamStore(
     (state) => state.resetSearchCount
   );
-  const input = useImageSearchParamStore((state) => state.input);
-  const param = useImageSearchParamStore((state) => state.param);
-  const [isSearch, setIsSearch] = useState(false);
-  const isPrecise = useImageSearchParamStore((state) => state.isPrecise);
+  const input = useImpuestoSearchParamStore((state) => state.input);
+  const param = useImpuestoSearchParamStore((state) => state.param);
+  const isPrecise = useImpuestoSearchParamStore((state) => state.isPrecise);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const [isSearch, setIsSearch] = useState(false);
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -898,112 +958,94 @@ export default function ImagesDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0) {
-      ImageService.getAll(page, 8).then((data) => {
+      ImpuestoService.getAll(page, 8).then((data) => {
         if (data === false) {
           setNotFound(true);
-          setImages([]);
+          setImpuestos([]);
           setLoading(false);
           resetSearchCount();
           setWasSearch(false);
         } else {
-          setImages(data.rows);
+          setImpuestos(data.rows);
           setPages(data.pages);
           setCurrent(data.current);
           setLoading(false);
-          setNotFound(false);
           resetSearchCount();
           setWasSearch(false);
+          setNotFound(false);
         }
         setIsOperationCompleted(false);
       });
-    } else if (isPrecise && wasSearch) {
-      const loadingToast = toast.loading("Buscando...");
-      if (param === "URL") {
-        ImageService.getExactUrl(input, page, 8).then((data) => {
-          if (data === false) {
-            setNotFound(true);
-            setImages([]);
-            setLoading(false);
-            resetSearchCount();
-            setWasSearch(false);
-          } else {
-            setImages(data.rows);
-            setPages(data.pages);
-            setCurrent(data.current);
-            setLoading(false);
-            setNotFound(false);
-            resetSearchCount();
-            setWasSearch(false);
-          }
-          toast.dismiss(loadingToast);
-          setIsOperationCompleted(false);
-        });
-      } else if (param === "DESCRIPCIÓN") {
-        ImageService.getExactDescription(input, page, 8).then((data) => {
-          if (data === false) {
-            setNotFound(true);
-            setImages([]);
-            setLoading(false);
-            resetSearchCount();
-            setWasSearch(false);
-          } else {
-            setImages(data.rows);
-            setPages(data.pages);
-            setCurrent(data.current);
-            setLoading(false);
-            setNotFound(false);
-            resetSearchCount();
-            setWasSearch(false);
-          }
-          toast.dismiss(loadingToast);
-          setIsOperationCompleted(false);
-        });
-      }
-    } else if (wasSearch) {
-      const loadingToast = toast.loading("Buscando...");
-      if (param === "URL") {
-        ImageService.getByUrl(input, page, 8).then((data) => {
-          if (data === false) {
-            setNotFound(true);
-            setImages([]);
-            setLoading(false);
-            resetSearchCount();
-            setWasSearch(false);
-          } else {
-            setImages(data.rows);
-            setPages(data.pages);
-            setCurrent(data.current);
-            setLoading(false);
-            setNotFound(false);
-            resetSearchCount();
-            setWasSearch(false);
-          }
-          toast.dismiss(loadingToast);
-          setIsOperationCompleted(false);
-        });
-      } else if (param === "DESCRIPCIÓN") {
-        ImageService.getDescription(input, page, 8).then((data) => {
-          if (data === false) {
-            setNotFound(true);
-            setImages([]);
-            setLoading(false);
-            resetSearchCount();
-            setWasSearch(false);
-          } else {
-            setImages(data.rows);
-            setPages(data.pages);
-            setCurrent(data.current);
-            setLoading(false);
-            setNotFound(false);
-            resetSearchCount();
-            setWasSearch(false);
-          }
-          toast.dismiss(loadingToast);
-          setIsOperationCompleted(false);
-        });
+    } else {
+      if (isPrecise && wasSearch) {
+        const loadingToast = toast.loading("Buscando...");
+        if (param === "NOMBRE") {
+          ImpuestoService.getByExactNombre(input, page, 8).then((data) => {
+            toast.dismiss(loadingToast);
+            if (data === false) {
+              setNotFound(true);
+              setImpuestos([]);
+              setLoading(false);
+            } else {
+              setImpuestos(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+            }
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "CÓDIGO") {
+          ImpuestoService.getByExactCódigo(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setImpuestos([]);
+              setLoading(false);
+            } else {
+              setImpuestos(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        }
+      } else if (!isPrecise && wasSearch) {
+        const loadingToast = toast.loading("Buscando...");
+        if (param === "NOMBRE") {
+          ImpuestoService.getByNombre(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setImpuestos([]);
+              setLoading(false);
+            } else {
+              setImpuestos(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (param === "CÓDIGO") {
+          ImpuestoService.getByCódigo(input, page, 8).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setImpuestos([]);
+              setLoading(false);
+            } else {
+              setImpuestos(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        }
       }
     }
-  }, [isOperationCompleted, page, searchCount]);
+  }, [isOperationCompleted, searchCount, page]);
 
   useEffect(() => {
     setPage(1);
@@ -1015,12 +1057,7 @@ export default function ImagesDataDisplay() {
         <nav className="flex justify-between items-center select-none">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span
-              onClick={resetSearchCount}
-              className="text-[#2096ed] cursor-pointer"
-            >
-              Galería
-            </span>
+            <span className="text-[#2096ed]">Impuestos</span>
           </div>
           <div className="flex gap-2">
             {isDropup && (
@@ -1028,6 +1065,7 @@ export default function ImagesDataDisplay() {
                 close={closeDropup}
                 selectAction={selectAction}
                 openAddModal={() => {}}
+                openSearchModal={() => {}}
               />
             )}
             {action === "ADD" ? (
@@ -1035,7 +1073,7 @@ export default function ImagesDataDisplay() {
                 onClick={openAddModal}
                 className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
               >
-                Añadir imagen
+                Añadir impuesto
               </button>
             ) : null}
             {action === "SEARCH" ? (
@@ -1053,7 +1091,7 @@ export default function ImagesDataDisplay() {
                   onClick={() => setIsSearch(true)}
                   className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
                 >
-                  Buscar imagen
+                  Buscar impuesto
                 </button>
               </>
             ) : null}
@@ -1069,7 +1107,7 @@ export default function ImagesDataDisplay() {
           </div>
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
-        {images.length > 0 && loading == false && (
+        {impuestos.length > 0 && loading == false && (
           <div className="relative overflow-x-auto">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
@@ -1078,13 +1116,13 @@ export default function ImagesDataDisplay() {
                     #
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    URL
+                    Nombre
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Descripción
+                    Código
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Añadida
+                    Porcentaje
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
@@ -1092,13 +1130,13 @@ export default function ImagesDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {images.map((image) => {
+                {impuestos.map((impuesto) => {
                   return (
                     <DataRow
-                      action={action}
-                      imagen={image}
+                      action={""}
+                      impuesto={impuesto}
                       setOperationAsCompleted={setAsCompleted}
-                      key={image.id}
+                      key={impuesto.id}
                     />
                   );
                 })}
@@ -1106,17 +1144,18 @@ export default function ImagesDataDisplay() {
             </table>
           </div>
         )}
-        {(notFound === true || (images.length === 0 && loading === false)) && (
+        {(notFound === true ||
+          (impuestos.length === 0 && loading === false)) && (
           <div className="grid w-full h-4/5">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">
-                Ningúna imagen encontrada
+                Ningúna impuesto encontrado
               </p>
               <p className="font-medium text text-center mt-1">
                 {searchCount === 0
-                  ? "Esto puede deberse a un error del servidor, o a que no hay ningúna imagen registrada."
-                  : "Esto puede deberse a un error del servidor, o a que ningúna imagen concuerda con tu busqueda."}
+                  ? "Esto puede deberse a un error del servidor, o a que no hay ningún impuesto registrado."
+                  : "Esto puede deberse a un error del servidor, o a que ningún impuesto concuerda con tu busqueda"}
               </p>
             </div>
           </div>
@@ -1147,7 +1186,7 @@ export default function ImagesDataDisplay() {
           </div>
         )}
       </div>
-      {images.length > 0 && loading == false && (
+      {impuestos.length > 0 && loading == false && (
         <Pagination
           pages={pages}
           current={current}
