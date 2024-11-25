@@ -65,10 +65,10 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar categoría</h1>
+        <h1 className="text-xl font-bold text-white">Editar impuesto</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 group"
@@ -150,22 +150,20 @@ function EditModal({
             Debe ser un número entre 0 y 100
           </span>
         </div>
-        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                closeModal();
-                resetFormData();
-              }}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
-          </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              closeModal();
+              resetFormData();
+            }}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cancelar
+          </button>
+          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Completar
+          </button>
         </div>
       </form>
     </dialog>
@@ -305,19 +303,17 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             Debe ser un número entre 0 y 100
           </span>
         </div>
-        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
-          </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cancelar
+          </button>
+          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Completar
+          </button>
         </div>
       </form>
     </dialog>

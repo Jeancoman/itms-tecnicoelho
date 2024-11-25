@@ -1,4 +1,4 @@
-import { Imagen, Producto, Response } from "../types";
+import { Imagen, Producto, Response, Selected } from "../types";
 import session from "../utils/session";
 
 export default class ProductService {
@@ -501,7 +501,7 @@ export default class ProductService {
     }
   }
 
-  static async create(product: Producto) {
+  static async create(product: Producto, impuestos?: Selected[]) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/productos/`,
@@ -512,7 +512,10 @@ export default class ProductService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-          body: JSON.stringify(product),
+          body: JSON.stringify({
+            product,
+            impuestos,
+          }),
         }
       );
 
@@ -526,7 +529,14 @@ export default class ProductService {
     }
   }
 
-  static async update(id: number, product: Producto) {
+  static async update(
+    id: number,
+    product: Producto,
+    impuestos?: {
+      old: Selected[];
+      new: Selected[];
+    }
+  ) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/productos/${id}`,
@@ -537,7 +547,7 @@ export default class ProductService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-          body: JSON.stringify(product),
+          body: JSON.stringify({ product, impuestos }),
         }
       );
 

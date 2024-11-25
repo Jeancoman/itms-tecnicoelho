@@ -348,11 +348,13 @@ export interface Producto {
   descripción?: string;
   precioCompra: number;
   precioVenta: number;
+  exento: boolean;
   existencias: number;
   esPúblico: boolean;
   categoría_id?: number;
   categoría?: Categoría;
   imagens?: Imagen[];
+  impuestos?: Impuesto[]
 }
 
 export interface Impuesto {

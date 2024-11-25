@@ -214,7 +214,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
                 className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
                 htmlFor="checkbox"
               >
-                ¿Es pública en sitio web?
+                Publicada
               </label>
             </div>
           </div>
@@ -402,7 +402,7 @@ function EditSection({
                 className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
                 htmlFor="checkbox"
               >
-                ¿Es pública en sitio web?
+                Publicada
               </label>
             </div>
           </div>

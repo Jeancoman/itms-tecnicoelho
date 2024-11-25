@@ -55,6 +55,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     existencias: 0,
     esPúblico: false,
     categoría_id: -1,
+    exento: false,
   });
 
   const resetFormData = () => {
@@ -68,6 +69,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       precioVenta: 0,
       existencias: 0,
       esPúblico: false,
+      exento: false,
     });
     setSelectedCategory({
       value: -1,
@@ -77,7 +79,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     setSelectedImpuestos([]);
   };
 
-  console.log(selectedImpuestos)
+  console.log(selectedImpuestos);
 
   useEffect(() => {
     if (isOpen) {
@@ -109,14 +111,16 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       });
     }
 
-    void ImpuestoService.getAll(1, 1000).then((data) => {
-      if (data === false) {
-        setLoading(false);
-      } else {
-        setLoading(false);
-        setImpuestos(data.rows);
-      }
-    });
+    if (impuestos.length == 0) {
+      void ImpuestoService.getAll(1, 1000).then((data) => {
+        if (data === false) {
+          setLoading(false);
+        } else {
+          setLoading(false);
+          setImpuestos(data.rows);
+        }
+      });
+    }
   }, []);
 
   return (
@@ -134,7 +138,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit  rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow scrollbar-none"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir producto</h1>
@@ -146,15 +150,17 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Añadiendo producto...");
-          void ProductService.create(formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Producto no pudo ser añadido.");
-            } else {
-              toast.success("Producto añadido con exito.");
+          void ProductService.create(formData, selectedImpuestos).then(
+            (data) => {
+              toast.dismiss(loadingToast);
+              setOperationAsCompleted();
+              if (data === false) {
+                toast.error("Producto no pudo ser añadido.");
+              } else {
+                toast.success("Producto añadido con exito.");
+              }
             }
-          });
+          );
         }}
       >
         <input
@@ -340,18 +346,44 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             Minimo 10 caracteres
           </span>
         </div>
-        <div className="relative">
-          <MultiSelect
-            //@ts-ignore
-            options={impuestos.map((impuesto) => ({
-              value: impuesto.id,
-              label: `${impuesto.codigo} - ${impuesto.porcentaje}% `,
-            }))}
-            selectedValues={selectedImpuestos}
-            label="Seleccionar impuestos"
-            onChange={(newValues) => setSelectedImpuestos(newValues)}
-          />
+        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
+          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+            <input
+              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              type="checkbox"
+              onChange={(e) => {
+                if (selectedImpuestos.length === 0) {
+                  setFormData({
+                    ...formData,
+                    exento: e.target.checked,
+                  });
+                }
+              }}
+              checked={formData.exento}
+              id="checkbox"
+            />
+            <label
+              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+              htmlFor="checkbox"
+            >
+              Exento de impuesto
+            </label>
+          </div>
         </div>
+        {!formData.exento && (
+          <div className="relative">
+            <MultiSelect
+              //@ts-ignore
+              options={impuestos.map((impuesto) => ({
+                value: impuesto.id,
+                label: `${impuesto.codigo} - ${impuesto.porcentaje}% `,
+              }))}
+              selectedValues={selectedImpuestos}
+              label="Seleccionar impuestos"
+              onChange={(newValues) => setSelectedImpuestos(newValues)}
+            />
+          </div>
+        )}
         <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
           <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
             <input
@@ -370,7 +402,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
               htmlFor="checkbox"
             >
-              ¿Público en sitio web?
+              Publicado
             </label>
           </div>
           <div className="flex gap-2 justify-end">
@@ -409,6 +441,14 @@ function EditModal({
   const [categories, setCategories] = useState<Categoría[]>([]);
   const [formData, setFormData] = useState<Producto>(producto!);
   const [randomString, setRandomString] = useState(Slugifier.randomString());
+  const [impuestos, setImpuestos] = useState<Impuesto[]>([]);
+  const initialImpuestos =
+    producto?.impuestos?.map((impuesto) => ({
+      value: impuesto.id,
+      label: impuesto.codigo ?? "",
+    })) || []; // Default to an empty array if producto or impuestos is undefined
+  const [selectedImpuestos, setSelectedImpuestos] =
+    useState<Selected[]>(initialImpuestos);
   const [selectedCategory, setSelectedCategory] = useState<Selected>({
     value: producto?.categoría_id,
     label: producto?.categoría?.nombre,
@@ -450,6 +490,17 @@ function EditModal({
         }
       });
     }
+
+    if (impuestos.length == 0) {
+      void ImpuestoService.getAll(1, 1000).then((data) => {
+        if (data === false) {
+          setLoading(false);
+        } else {
+          setLoading(false);
+          setImpuestos(data.rows);
+        }
+      });
+    }
   }, []);
 
   return (
@@ -473,13 +524,16 @@ function EditModal({
         <h1 className="text-xl font-bold text-white">Editar producto</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
+        className="flex flex-col p-8 pt-6 gap-4 group text-base font-normal"
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Editando producto...");
-          void ProductService.update(producto?.id!, formData).then((data) => {
+          void ProductService.update(producto?.id!, formData, {
+            old: initialImpuestos,
+            new: selectedImpuestos,
+          }).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
             if (data === false) {
@@ -679,6 +733,44 @@ function EditModal({
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               type="checkbox"
               onChange={(e) => {
+                if (selectedImpuestos.length === 0) {
+                  setFormData({
+                    ...formData,
+                    exento: e.target.checked,
+                  });
+                }
+              }}
+              checked={formData.exento}
+              id="checkbox"
+            />
+            <label
+              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+              htmlFor="checkbox"
+            >
+              Exento de impuesto
+            </label>
+          </div>
+        </div>
+        {!formData.exento && (
+          <div className="relative">
+            <MultiSelect
+              //@ts-ignore
+              options={impuestos.map((impuesto) => ({
+                value: impuesto.id,
+                label: `${impuesto.codigo} - ${impuesto.porcentaje}% `,
+              }))}
+              selectedValues={selectedImpuestos}
+              label="Seleccionar impuestos"
+              onChange={(newValues) => setSelectedImpuestos(newValues)}
+            />
+          </div>
+        )}
+        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
+          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+            <input
+              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              type="checkbox"
+              onChange={(e) => {
                 setFormData({
                   ...formData,
                   esPúblico: e.target.checked,
@@ -691,7 +783,7 @@ function EditModal({
               className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
               htmlFor="checkbox"
             >
-              ¿Hacer público en sitio web?
+              Publicado
             </label>
           </div>
           <div className="flex gap-2 justify-end">
