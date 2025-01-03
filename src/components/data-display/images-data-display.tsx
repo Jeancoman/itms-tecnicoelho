@@ -15,7 +15,6 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import ImageService from "../../services/image-service";
 import permissions from "../../utils/permissions";
-import session from "../../utils/session";
 import { format } from "date-fns";
 import { useImageSearchParamStore } from "../../store/searchParamStore";
 import Select from "../misc/select";
@@ -24,6 +23,7 @@ import clsx from "clsx";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState<Imagen>({
     url: "",
     descripción: "",
@@ -36,6 +36,24 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       descripción: "",
       esPública: true,
     });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const result = await ImageService.upload(file);
+      if (result.status === "error") {
+        toast.error(result.message);
+      } else if (result.url) {
+        setFormData({ ...formData, url: result.url });
+      }
+    } catch (error) {
+      toast.error("Error al subir la imagen");
+    }
+    setIsUploading(false);
   };
 
   useEffect(() => {
@@ -70,7 +88,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir imagen</h1>
@@ -85,37 +103,84 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           void ImageService.create(formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Imagen no pudo ser añadida.");
+            if (data.status === "error") {
+              toast.error(data.message);
             } else {
-              toast.success("Imagen añadida con exito.");
+              toast.success(data.message);
             }
           });
         }}
       >
         <div>
-          <input
-            type="url"
-            placeholder="Enlace de imagen*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                url: e.target.value,
-              });
-            }}
-            value={formData.url}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png)$"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Enlace de imagen invalido
-          </span>
+          <label className="block text-gray-600 text-base font-medium mb-2">
+            Enlace*
+          </label>
+          <div className="flex gap-2">
+            <div className="w-full">
+              <input
+                type="url"
+                placeholder="Introducir enlace de la imagen"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    url: e.target.value,
+                  });
+                }}
+                value={formData.url}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                required
+                pattern="^(https?:\/\/[\w\.\-\/]+)(\.(jpg|jpeg|gif|png))?$"
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Enlace de imagen invalido
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="fileInput"
+                disabled={isUploading}
+              />
+              <label
+                htmlFor="fileInput"
+                className={`inline-flex items-center justify-center px-4 py-2 bg-[#2096ed] text-white rounded cursor-pointer hover:bg-[#1182d5] transition ${
+                  isUploading ? "pointer-events-none opacity-70" : ""
+                }`}
+              >
+                {isUploading ? (
+                  <svg
+                    aria-hidden="true"
+                    className="inline w-5 h-5 animate-spin text-blue-200 fill-[#2096ed]"
+                    viewBox="0 0 100 101"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                      fill="currentFill"
+                    />
+                  </svg>
+                ) : (
+                  "Subir"
+                )}
+              </label>
+            </div>
+          </div>
         </div>
         <div>
+          <label className="block text-gray-600 text-base font-medium mb-2">
+            Descripción
+          </label>
           <textarea
             rows={6}
-            placeholder="Descripción de portada"
+            placeholder="Introducir descripción de la imagen"
             onChange={(e) => {
               setFormData({
                 ...formData,
@@ -154,7 +219,26 @@ function EditModal({
   imagen,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState<Imagen>(imagen!);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const result = await ImageService.upload(file);
+      if (result.status === "error") {
+        toast.error(result.message);
+      } else if (result.url) {
+        setFormData({ ...formData, url: result.url });
+      }
+    } catch (error) {
+      toast.error("Error al subir la imagen");
+    }
+    setIsUploading(false);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -186,7 +270,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar imagen</h1>
@@ -201,38 +285,85 @@ function EditModal({
           void ImageService.update(imagen?.id!, formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
-            if (data) {
-              toast.success("Imagen editada con exito.");
+            if (data.status === "success") {
+              toast.success(data.message);
             } else {
-              toast.error("Imagen no pudo ser editada.");
+              toast.error(data.message);
             }
             setOperationAsCompleted();
           });
         }}
       >
         <div>
-          <input
-            type="url"
-            placeholder="Enlace de imagen*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                url: e.target.value,
-              });
-            }}
-            value={formData.url}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png)$"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Enlace de imagen invalido
-          </span>
+          <label className="block text-gray-600 text-base font-medium mb-2">
+            Enlace*
+          </label>
+          <div className="flex gap-2">
+            <div className="w-full">
+              <input
+                type="url"
+                placeholder="Introducir enlace de la imagen"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    url: e.target.value,
+                  });
+                }}
+                value={formData.url}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                required
+                pattern="^(https?:\/\/[\w\.\-\/]+)(\.(jpg|jpeg|gif|png))?$"
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Enlace de imagen invalido
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="fileInput"
+                disabled={isUploading}
+              />
+              <label
+                htmlFor="fileInput"
+                className={`inline-flex items-center justify-center px-4 py-2 bg-[#2096ed] text-white rounded cursor-pointer hover:bg-[#1182d5] transition ${
+                  isUploading ? "pointer-events-none opacity-70" : ""
+                }`}
+              >
+                {isUploading ? (
+                  <svg
+                    aria-hidden="true"
+                    className="inline w-5 h-5 animate-spin text-blue-200 fill-[#2096ed]"
+                    viewBox="0 0 100 101"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                      fill="currentFill"
+                    />
+                  </svg>
+                ) : (
+                  "Subir"
+                )}
+              </label>
+            </div>
+          </div>
         </div>
         <div>
+          <label className="block text-gray-600 text-base font-medium mb-2">
+            Descripción
+          </label>
           <textarea
-            rows={3}
-            placeholder="Descripción de imagen"
+            rows={6}
+            placeholder="Introducir descripción de la imagen"
             onChange={(e) => {
               setFormData({
                 ...formData,
@@ -305,8 +436,11 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Eliminar imagen</h1>
+      </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
         autoComplete="off"
@@ -316,10 +450,10 @@ function DeleteModal({
           const loadingToast = toast.loading("Eliminando imagen...");
           ImageService.delete(imagen?.id!).then((data) => {
             toast.dismiss(loadingToast);
-            if (data) {
-              toast.success("Imagen eliminada con exito.");
+            if (data.status === "success") {
+              toast.success(data.message);
             } else {
-              toast.error("Imagen no pudo ser eliminado.");
+              toast.error(data.message);
             }
             setOperationAsCompleted();
           });
@@ -351,26 +485,92 @@ function DeleteModal({
   );
 }
 
+function VisualizeModal({ isOpen, closeModal, imagen }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeModal();
+        ref.current?.close();
+      }
+    };
+
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", handleKeyDown);
+    } else {
+      ref.current?.close();
+    }
+
+    // Limpia el listener cuando el componente se desmonta o cambia isOpen
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, closeModal]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect();
+        if (dialogDimensions) {
+          if (
+            e.clientX < dialogDimensions.left ||
+            e.clientX > dialogDimensions.right ||
+            e.clientY < dialogDimensions.top ||
+            e.clientY > dialogDimensions.bottom
+          ) {
+            closeModal();
+            ref.current?.close();
+          }
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Visualizador de imagen</h1>
+      </div>
+      <div className="p-8 pt-6">
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          {/* Agregamos la imagen aquí */}
+          <img
+            src={imagen?.url}
+            alt="Visualización"
+            className="w-full h-auto object-contain rounded-md"
+          />
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => {
+              closeModal();
+              ref.current?.close();
+            }}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
 function DataRow({ imagen, setOperationAsCompleted }: DataRowProps) {
+  const [isVisualizerOpen, setIsVisualizerOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.editar.imagen
+    permissions.find()?.editar.imagen
       ? "EDIT"
       : permissions.find()?.eliminar.imagen
       ? "DELETE"
-      : "NONE"
+      : "VIEW"
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
   const anyAction =
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-    permissions.find()?.editar.imagen
-      ? true
-      : permissions.find()?.eliminar.imagen
-      ? true
-      : false;
+    permissions.find()?.editar.imagen || permissions.find()?.eliminar.imagen;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -378,6 +578,10 @@ function DataRow({ imagen, setOperationAsCompleted }: DataRowProps) {
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const closeVisualizerModal = () => {
+    setIsVisualizerOpen(false);
   };
 
   const selectAction = (action: `${Action}`) => {
@@ -388,12 +592,23 @@ function DataRow({ imagen, setOperationAsCompleted }: DataRowProps) {
     <tr>
       <th
         scope="row"
-        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
         {imagen?.id}
       </th>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
-        {imagen?.url}
+        <span
+          className="hover:text-[#2096ed] cursor-pointer"
+          onClick={() => setIsVisualizerOpen(true)}
+        >
+          {imagen?.url}
+        </span>
+        <VisualizeModal
+          imagen={imagen}
+          isOpen={isVisualizerOpen}
+          closeModal={closeVisualizerModal}
+          setOperationAsCompleted={() => null}
+        />
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
         {imagen?.descripción}
@@ -542,7 +757,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar imagen</h1>
@@ -682,8 +897,8 @@ function Dropup({ close, selectAction }: DropupProps) {
           bg-white
           text-base
           z-50
-          right-8
-          top-14
+          right-0
+          top-9
           py-2
           list-none
           text-left
@@ -695,8 +910,7 @@ function Dropup({ close, selectAction }: DropupProps) {
           border
         "
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.imagen) && (
+      {permissions.find()?.crear.imagen && (
         <li>
           <div
             onClick={() => {
@@ -748,12 +962,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({
-  id,
-  close,
-  selectAction,
-  top
-}: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -793,8 +1002,7 @@ function IndividualDropup({
         "
       style={{ top: top }}
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.editar.imagen) && (
+      {permissions.find()?.editar.imagen && (
         <li>
           <div
             onClick={() => {
@@ -819,8 +1027,7 @@ function IndividualDropup({
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.eliminar.imagen) && (
+      {permissions.find()?.eliminar.imagen && (
         <li>
           <div
             onClick={() => {
@@ -857,10 +1064,7 @@ export default function ImagesDataDisplay() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.crear.imagen
-      ? "ADD"
-      : "SEARCH"
+    permissions.find()?.crear.imagen ? "ADD" : "SEARCH"
   );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
@@ -875,6 +1079,7 @@ export default function ImagesDataDisplay() {
   const isPrecise = useImageSearchParamStore((state) => state.isPrecise);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const size = 8;
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -898,7 +1103,7 @@ export default function ImagesDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0) {
-      ImageService.getAll(page, 8).then((data) => {
+      ImageService.getAll(page, size).then((data) => {
         if (data === false) {
           setNotFound(true);
           setImages([]);
@@ -919,7 +1124,7 @@ export default function ImagesDataDisplay() {
     } else if (isPrecise && wasSearch) {
       const loadingToast = toast.loading("Buscando...");
       if (param === "URL") {
-        ImageService.getExactUrl(input, page, 8).then((data) => {
+        ImageService.getExactUrl(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setImages([]);
@@ -939,7 +1144,7 @@ export default function ImagesDataDisplay() {
           setIsOperationCompleted(false);
         });
       } else if (param === "DESCRIPCIÓN") {
-        ImageService.getExactDescription(input, page, 8).then((data) => {
+        ImageService.getExactDescription(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setImages([]);
@@ -962,7 +1167,7 @@ export default function ImagesDataDisplay() {
     } else if (wasSearch) {
       const loadingToast = toast.loading("Buscando...");
       if (param === "URL") {
-        ImageService.getByUrl(input, page, 8).then((data) => {
+        ImageService.getByUrl(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setImages([]);
@@ -982,7 +1187,7 @@ export default function ImagesDataDisplay() {
           setIsOperationCompleted(false);
         });
       } else if (param === "DESCRIPCIÓN") {
-        ImageService.getDescription(input, page, 8).then((data) => {
+        ImageService.getDescription(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setImages([]);
@@ -1012,7 +1217,7 @@ export default function ImagesDataDisplay() {
   return (
     <>
       <div className="absolute h-full w-full px-8 py-5">
-        <nav className="flex justify-between items-center select-none">
+        <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span
@@ -1022,7 +1227,7 @@ export default function ImagesDataDisplay() {
               Galería
             </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative">
             {isDropup && (
               <Dropup
                 close={closeDropup}

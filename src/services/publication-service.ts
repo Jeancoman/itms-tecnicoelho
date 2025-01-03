@@ -1,4 +1,4 @@
-import { Publicación, Response } from "../types";
+import { GenericResponse, Publicación, Response } from "../types";
 import session from "../utils/session";
 
 export default class PublicationService {
@@ -137,13 +137,12 @@ export default class PublicationService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Publicación;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "La publicación no pudo ser añadida.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -162,13 +161,12 @@ export default class PublicationService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "La publicación no pudo ser editada.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -186,13 +184,12 @@ export default class PublicationService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "La publicación no pudo ser eliminada.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 }

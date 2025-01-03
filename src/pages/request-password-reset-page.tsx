@@ -27,7 +27,7 @@ export default function RequestPasswordResetPage() {
   };
 
   return (
-    <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center gap-4 scrollbar-none overflow-hidden">
+    <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center gap-4 overflow-hidden">
       <img src="/assets/logo-sin-eslogan.png" className="w-96" />
       <div className="bg-white w-96 h-fit rounded-md shadow border">
         <form

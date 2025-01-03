@@ -13,7 +13,6 @@ import {
   Publicación,
   SectionProps,
   Selected,
-  Imagen,
 } from "../../types";
 import PublicationService from "../../services/publication-service";
 import toast, { Toaster } from "react-hot-toast";
@@ -24,22 +23,28 @@ import session from "../../utils/session";
 import { usePublicationSearchParamStore } from "../../store/searchParamStore";
 import Select from "../misc/select";
 import { useSearchedStore } from "../../store/searchedStore";
-import ImageService from "../../services/image-service";
 import clsx from "clsx";
+import ImageService from "../../services/image-service";
+import { useConfirmationScreenStore } from "../../store/confirmationStore";
 
 function AddSection({ close, setOperationAsCompleted }: SectionProps) {
+  const isConfirmationScreen = useConfirmationScreenStore(
+    (state) => state.isConfirmationScreen
+  );
+  const setIsConfirmationScreen = useConfirmationScreenStore(
+    (state) => state.setIsConfirmationScreen
+  );
+  const [isUploading, setIsUploading] = useState(false);
   const [randomString, setRandomString] = useState(Slugifier.randomString());
   const [formData, setFormData] = useState<Publicación>({
     slug: "",
     título: "",
     contenido: "",
     esPública: false,
-    imagen: {
-      url: "",
-      descripción: "",
-      esPública: false,
-    },
+    portada: "",
+    descripcionPortada: "",
     usuario_id: session.find()?.usuario.id,
+    autor: `${session.find()?.usuario.nombre} ${session.find()?.usuario.apellido}, ${session.find()?.usuario.documento}`
   });
 
   const resetFormData = () => {
@@ -48,194 +53,490 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
       título: "",
       contenido: "",
       esPública: false,
-      imagen: {
-        url: "",
-        descripción: "",
-        esPública: false,
-      },
+      portada: "",
+      descripcionPortada: "",
       usuario_id: session.find()?.usuario.id,
     });
     setRandomString(Slugifier.randomString());
+    setIsConfirmationScreen(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const result = await ImageService.upload(file);
+      if (result.status === "error") {
+        toast.error(result.message);
+      } else if (result.url) {
+        setFormData({ ...formData, portada: result.url });
+      }
+    } catch (error) {
+      toast.error("Error al subir la imagen");
+    }
+    setIsUploading(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = async () => {
+    close();
+    resetFormData();
+    const loadingToast = toast.loading("Añadiendo publicación...");
+    PublicationService.create(formData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data.status === "error") {
+        toast.error(data.message);
+      } else {
+        toast.success(data.message);
+      }
+    });
   };
 
   return (
-    <form
-      className="h-fit grid grid-cols-2 gap-5 py-4 group"
-      autoComplete="off"
-      onSubmit={(e) => {
-        e.preventDefault();
-        close();
-        resetFormData();
-        const loadingToast = toast.loading("Añadiendo publicación...");
-        PublicationService.create(formData).then((data) => {
-          toast.dismiss(loadingToast);
-          setOperationAsCompleted();
-          close();
-          if (data === false) {
-            toast.error("Publicación no pudo ser añadida.");
-          } else {
-            toast.success("Publicación añadida con exito.");
-          }
-        });
-      }}
-    >
-      <div className="h-full">
-        <Editor
-          tinymceScriptSrc={"/tinymce/tinymce.min.js"}
-          onEditorChange={(_evt, editor) =>
-            setFormData({
-              ...formData,
-              contenido: editor.getContent(),
-            })
-          }
-          initialValue="<p>Escriba aquí el contenido de la publicación.</p>"
-          init={{
-            menubar: true,
-            promotion: false,
-            height: 500,
-            plugins: [
-              "advlist",
-              "autolink",
-              "lists",
-              "link",
-              "image",
-              "charmap",
-              "anchor",
-              "visualblocks",
-              "code",
-              "media",
-              "help",
-              "wordcount",
-            ],
-            toolbar:
-              "undo redo | blocks | " +
-              "bold italic forecolor | alignleft aligncenter " +
-              "alignright alignjustify | bullist numlist outdent indent | removeformat",
-            content_style:
-              "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-            language: "es",
-          }}
-        />
-      </div>
-      <div className="flex flex-col gap-4">
-        <input
-          type="text"
-          placeholder="slug"
-          value={formData.slug}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          disabled
-        />
-        <div>
+    <>
+      <form
+        className="h-fit grid grid-cols-2 gap-5 py-4 group"
+        autoComplete="off"
+        onSubmit={handleSubmit}
+      >
+        <div className="h-full">
+          <Editor
+            tinymceScriptSrc={"/tinymce/tinymce.min.js"}
+            onEditorChange={(_evt, editor) =>
+              setFormData({
+                ...formData,
+                contenido: editor.getContent(),
+              })
+            }
+            initialValue="<p>Escriba aquí el contenido de la publicación.</p>"
+            init={{
+              menubar: true,
+              promotion: false,
+              height: 500,
+              plugins: [
+                "advlist",
+                "autolink",
+                "lists",
+                "link",
+                "image",
+                "charmap",
+                "anchor",
+                "visualblocks",
+                "code",
+                "media",
+                "help",
+                "wordcount",
+              ],
+              toolbar:
+                "undo redo | blocks | " +
+                "bold italic forecolor | alignleft aligncenter " +
+                "alignright alignjustify | bullist numlist outdent indent | removeformat",
+              content_style:
+                "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+              language: "es",
+            }}
+          />
+        </div>
+        <div className="flex flex-col gap-4">
+          <label className="block text-gray-600 text-base font-medium">
+            URL Slug*
+          </label>
           <input
             type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                título: e.target.value,
-                slug: `${Slugifier.slugifyWithRandomString(e.target.value)}${
-                  e.target.value === "" ? "" : "-"
-                }${e.target.value === "" ? "" : randomString}`,
-              });
-            }}
-            value={formData.título}
-            placeholder="Título*"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^.{2,}$"
-            name="name"
+            placeholder="Generado automáticamente"
+            value={formData.slug}
+            className="border p-2 rounded outline-none focus:border-[#2096ed]"
+            disabled
           />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 2 caracteres
-          </span>
-        </div>
-        <div>
-          <input
-            type="url"
-            placeholder="Enlace de portada*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                imagen: {
-                  url: e.target.value || "",
-                  descripción: formData.imagen?.descripción,
-                  esPública: false,
-                },
-              });
-            }}
-            value={formData.imagen?.url}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png)$"
-            name="url"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Enlace de imagen invalido
-          </span>
-        </div>
-        <div>
-          <textarea
-            rows={6}
-            placeholder="Descripción de portada"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                imagen: {
-                  url: formData.imagen?.url || "",
-                  descripción: e.target.value,
-                  esPública: false,
-                },
-              });
-            }}
-            value={formData.imagen?.descripción}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-            name="name"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
-          </span>
-        </div>
-        <div className="flex h-full items-end">
-          <div className="flex w-full justify-between items-center">
-            <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
-              <input
-                className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                type="checkbox"
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    esPública: e.target.checked,
-                  });
-                }}
-                checked={formData.esPública}
-                id="checkbox"
-              />
-              <label
-                className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-                htmlFor="checkbox"
-              >
-                Publicada
-              </label>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Título*
+            </label>
+            <input
+              type="text"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  título: e.target.value,
+                  slug: `${Slugifier.slugifyWithRandomString(e.target.value)}${
+                    e.target.value === "" ? "" : "-"
+                  }${e.target.value === "" ? "" : randomString}`,
+                });
+              }}
+              value={formData.título}
+              placeholder="Introducir título"
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^.{1,250}$"
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 250
+            </span>
+          </div>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Enlace de portada*
+            </label>
+            <div className="flex gap-2">
+              <div className="w-full">
+                <input
+                  type="url"
+                  placeholder="Introducir enlace de portada"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      portada: e.target.value,
+                    });
+                  }}
+                  value={formData.portada}
+                  className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                  required
+                  pattern="^(https?:\/\/[\w\.\-\/]+)(\.(jpg|jpeg|gif|png))?$"
+                  name="url"
+                />
+                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                  Enlace de portada invalido
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="fileInput"
+                  disabled={isUploading}
+                />
+                <label
+                  htmlFor="fileInput"
+                  className={`inline-flex items-center justify-center px-4 py-2 bg-[#2096ed] text-white rounded cursor-pointer hover:bg-[#1182d5] transition ${
+                    isUploading ? "pointer-events-none opacity-70" : ""
+                  }`}
+                >
+                  {isUploading ? (
+                    <svg
+                      aria-hidden="true"
+                      className="inline w-5 h-5 animate-spin text-blue-200 fill-[#2096ed]"
+                      viewBox="0 0 100 101"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                        fill="currentColor"
+                      />
+                      <path
+                        d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                        fill="currentFill"
+                      />
+                    </svg>
+                  ) : (
+                    "Subir"
+                  )}
+                </label>
+              </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                close();
-                resetFormData();
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Descripción de portada
+            </label>
+            <textarea
+              rows={6}
+              placeholder="Introducir descripción de portada"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  descripcionPortada: e.target.value,
+                });
               }}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
+              value={formData.descripcionPortada}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={1}
+              maxLength={500}
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 500
+            </span>
+          </div>
+          <div className="flex h-full items-end">
+            <div className="flex w-full justify-between items-center">
+              <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+                <input
+                  className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  type="checkbox"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      esPública: e.target.checked,
+                    });
+                  }}
+                  checked={formData.esPública}
+                  id="checkbox"
+                />
+                <label
+                  className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+                  htmlFor="checkbox"
+                >
+                  Publicada
+                </label>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  close();
+                  resetFormData();
+                }}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cancelar
+              </button>
+              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+                Completar
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </form>
+      </form>
+      <AddConfirmationModal
+        isOpen={isConfirmationScreen}
+        closeModal={() => setIsConfirmationScreen(false)}
+        handleFinalSubmit={handleFinalSubmit}
+        setOperationAsCompleted={() => null}
+        publicación={formData}
+      />
+    </>
+  );
+}
+
+function AddConfirmationModal({
+  isOpen,
+  closeModal,
+  handleFinalSubmit,
+  publicación,
+}: ModalProps & {
+  handleFinalSubmit: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [showFullDescripcionPortada, setShowFullDescripcionPortada] = useState(false);
+  const [view, setView] = useState<"confirmation" | "contenidoDetail">("confirmation");
+
+  const toggleDescripcionPortada = () => {
+    setShowFullDescripcionPortada((prev) => !prev);
+  };
+
+  const navigateToContenidoDetail = () => {
+    setView("contenidoDetail");
+  };
+
+  const navigateToConfirmation = () => {
+    setView("confirmation");
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", handleKeyDown);
+    } else {
+      handleClose();
+    }
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    closeModal();
+    ref.current?.close();
+    setView("confirmation"); // Resetear la vista al cerrar
+    setShowFullDescripcionPortada(false); // Opcional: Resetear descripción
+  };
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect();
+        if (
+          dialogDimensions &&
+          (e.clientX < dialogDimensions.left ||
+            e.clientX > dialogDimensions.right ||
+            e.clientY < dialogDimensions.top ||
+            e.clientY > dialogDimensions.bottom)
+        ) {
+          handleClose();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+    >
+      {view === "confirmation" && (
+        <>
+          <div className="bg-[#2096ed] py-4 px-8">
+            <h1 className="text-xl font-bold text-white">Confirmar publicación</h1>
+          </div>
+          <div className="p-8 pt-6">
+            <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
+              <div className="grid grid-cols-2 gap-6">
+                {/* Título */}
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Título
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {publicación?.título}
+                  </p>
+                </div>
+
+                {/* URL Slug */}
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    URL Slug
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {publicación?.slug}
+                  </p>
+                </div>
+
+                {/* Enlace de portada */}
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Enlace de portada
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {publicación?.portada}
+                  </p>
+                </div>
+
+                {/* Descripción de portada */}
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Descripción de portada
+                  </p>
+                  <div
+                    className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                      showFullDescripcionPortada
+                        ? "max-h-80 overflow-y-auto"
+                        : "max-h-40 overflow-hidden"
+                    }`}
+                  >
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: publicación?.descripcionPortada ?? "",
+                      }}
+                    />
+                  </div>
+                  {(publicación?.descripcionPortada?.length ?? 0) > 200 && (
+                    <button
+                      type="button"
+                      onClick={toggleDescripcionPortada}
+                      className="text-blue-500 mt-2"
+                    >
+                      {showFullDescripcionPortada ? "Ver menos" : "Ver más"}
+                    </button>
+                  )}
+                </div>
+
+                {/* Pública */}
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Pública
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {publicación?.esPública ? "Sí" : "No"}
+                  </p>
+                </div>
+
+                {/* Contenido */}
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Contenido
+                  </p>
+                  <div
+                    className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                      publicación?.contenido?.length && publicación.contenido.length > 200
+                        ? "max-h-40 overflow-hidden"
+                        : ""
+                    }`}
+                  >
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: publicación?.contenido ?? "",
+                      }}
+                    />
+                  </div>
+                  {(publicación?.contenido?.length ?? 0) > 200 && (
+                    <button
+                      type="button"
+                      onClick={navigateToContenidoDetail}
+                      className="text-blue-500 mt-2"
+                    >
+                      Ver más
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Volver
+              </button>
+              <button
+                onClick={handleFinalSubmit}
+                className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {view === "contenidoDetail" && (
+        <>
+          <div className="bg-[#2096ed] py-4 px-8">
+            <h1 className="text-xl font-bold text-white">Confirmar publicación</h1>
+          </div>
+          <div className="p-8 pt-6">
+            <div className="bg-white rounded-lg mb-6">
+              <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-80 overflow-y-auto">
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: publicación?.contenido ?? "",
+                  }}
+                />
+              </div>
+              {/* Botón para regresar a la confirmación */}
+              <button
+                type="button"
+                onClick={navigateToConfirmation}
+                className="text-blue-500 mt-4"
+              >
+                Ver menos
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </dialog>
   );
 }
 
@@ -244,186 +545,637 @@ function EditSection({
   setOperationAsCompleted,
   publicación,
 }: SectionProps) {
+  const isConfirmationScreen = useConfirmationScreenStore(
+    (state) => state.isConfirmationScreen
+  );
+  const setIsConfirmationScreen = useConfirmationScreenStore(
+    (state) => state.setIsConfirmationScreen
+  );
+  const [isUploading, setIsUploading] = useState(false);
   const [randomString, setRandomString] = useState(Slugifier.randomString());
   const [formData, setFormData] = useState<Publicación>(publicación!);
-  const [imageFormData, setImageFormData] = useState<Imagen>(
-    publicación?.imagen!
-  );
 
   const resetFormData = () => {
     setFormData(publicación!);
-    setImageFormData(publicación?.imagen!);
     setRandomString(Slugifier.randomString());
+    setIsConfirmationScreen(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const result = await ImageService.upload(file);
+      if (result.status === "error") {
+        toast.error(result.message);
+      } else if (result.url) {
+        setFormData({ ...formData, portada: result.url });
+      }
+    } catch (error) {
+      toast.error("Error al subir la imagen");
+    }
+    setIsUploading(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = async () => {
+    close();
+    resetFormData();
+    const loadingToast = toast.loading("Editando publicación...");
+    PublicationService.update(publicación?.id!, formData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data.status === "error") {
+        toast.error(data.message);
+      } else {
+        toast.success(data.message);
+      }
+    });
   };
 
   return (
-    <form
-      className="h-fit grid grid-cols-2 gap-5 py-4 group"
-      autoComplete="off"
-      onSubmit={(e) => {
-        e.preventDefault();
-        close();
-        const loadingToast = toast.loading("Editando publicación...");
-        ImageService.update(imageFormData?.id!, imageFormData);
-        PublicationService.update(publicación?.id!, formData).then((data) => {
-          toast.dismiss(loadingToast);
-          setOperationAsCompleted();
-          if (data === false) {
-            toast.error("Publicación no pudo ser editada.");
-          } else {
-            toast.success("Publicación editada con exito.");
-          }
-        });
-      }}
-    >
-      <div className="h-full">
-        <Editor
-          tinymceScriptSrc={"/tinymce/tinymce.min.js"}
-          onEditorChange={(_evt, editor) =>
-            setFormData({
-              ...formData,
-              contenido: editor.getContent(),
-            })
-          }
-          value={formData.contenido}
-          init={{
-            menubar: true,
-            promotion: false,
-            height: 500,
-            plugins: [
-              "advlist",
-              "autolink",
-              "lists",
-              "link",
-              "image",
-              "charmap",
-              "anchor",
-              "visualblocks",
-              "code",
-              "media",
-              "help",
-              "wordcount",
-            ],
-            toolbar:
-              "undo redo | blocks | " +
-              "bold italic forecolor | alignleft aligncenter " +
-              "alignright alignjustify | bullist numlist outdent indent | removeformat",
-            content_style:
-              "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-            language: "es",
-          }}
-        />
-      </div>
-      <div className="flex flex-col gap-4">
-        <input
-          type="text"
-          placeholder="slug"
-          value={formData.slug}
-          className="border p-2 rounded outline-none focus:border-[#2096ed]"
-          disabled
-        />
-        <div>
-          <input
-            type="text"
-            onChange={(e) => {
+    <>
+      <form
+        className="h-fit grid grid-cols-2 gap-5 py-4 group"
+        autoComplete="off"
+        onSubmit={handleSubmit}
+      >
+        <div className="h-full">
+          <Editor
+            tinymceScriptSrc={"/tinymce/tinymce.min.js"}
+            onEditorChange={(_evt, editor) =>
               setFormData({
                 ...formData,
-                título: e.target.value,
-                slug: `${Slugifier.slugifyWithRandomString(e.target.value)}${
-                  e.target.value === "" ? "" : "-"
-                }${e.target.value === "" ? "" : randomString}`,
-              });
+                contenido: editor.getContent(),
+              })
+            }
+            value={formData.contenido}
+            init={{
+              menubar: true,
+              promotion: false,
+              height: 500,
+              plugins: [
+                "advlist",
+                "autolink",
+                "lists",
+                "link",
+                "image",
+                "charmap",
+                "anchor",
+                "visualblocks",
+                "code",
+                "media",
+                "help",
+                "wordcount",
+              ],
+              toolbar:
+                "undo redo | blocks | " +
+                "bold italic forecolor | alignleft aligncenter " +
+                "alignright alignjustify | bullist numlist outdent indent | removeformat",
+              content_style:
+                "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+              language: "es",
             }}
-            value={formData.título}
-            placeholder="Título*"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^.{2,}$"
-            name="name"
           />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 2 caracteres
-          </span>
         </div>
-        <div>
+        <div className="flex flex-col gap-4">
+          <label className="block text-gray-600 text-base font-medium">
+            URL Slug*
+          </label>
           <input
-            type="url"
-            placeholder="Enlace de portada*"
-            onChange={(e) => {
-              setImageFormData({
-                ...imageFormData,
-                url: e.target.value || "",
-              });
-            }}
-            value={imageFormData.url}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png)$"
-            name="url"
+            type="text"
+            placeholder="Generado automáticamente"
+            value={formData.slug}
+            className="border p-2 rounded outline-none focus:border-[#2096ed]"
+            disabled
           />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Enlace de imagen invalido
-          </span>
-        </div>
-        <div>
-          <textarea
-            rows={6}
-            placeholder="Descripción de portada"
-            onChange={(e) => {
-              setImageFormData({
-                ...imageFormData,
-                descripción: e.target.value,
-              });
-            }}
-            value={imageFormData.descripción}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
-          </span>
-        </div>
-        <div className="flex h-full items-end">
-          <div className="flex w-full justify-between items-center">
-            <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
-              <input
-                className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                type="checkbox"
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    esPública: e.target.checked,
-                  });
-                }}
-                checked={formData.esPública}
-                id="checkbox"
-              />
-              <label
-                className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-                htmlFor="checkbox"
-              >
-                Publicada
-              </label>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Título*
+            </label>
+            <input
+              type="text"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  título: e.target.value,
+                  slug: `${Slugifier.slugifyWithRandomString(e.target.value)}${
+                    e.target.value === "" ? "" : "-"
+                  }${e.target.value === "" ? "" : randomString}`,
+                });
+              }}
+              value={formData.título}
+              placeholder="Introducir título"
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^.{1,250}$"
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 250.
+            </span>
+          </div>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Enlace de portada*
+            </label>
+            <div className="flex gap-2">
+              <div className="w-full">
+                <input
+                  type="url"
+                  placeholder="Introducir enlace de portada"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      portada: e.target.value,
+                    });
+                  }}
+                  value={formData.portada}
+                  className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                  required
+                  pattern="^(https?:\/\/[\w\.\-\/]+)(\.(jpg|jpeg|gif|png))?$"
+                  name="url"
+                />
+                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                  Enlace de portada invalido
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="fileInput"
+                  disabled={isUploading}
+                />
+                <label
+                  htmlFor="fileInput"
+                  className={`inline-flex items-center justify-center px-4 py-2 bg-[#2096ed] text-white rounded cursor-pointer hover:bg-[#1182d5] transition ${
+                    isUploading ? "pointer-events-none opacity-70" : ""
+                  }`}
+                >
+                  {isUploading ? (
+                    <svg
+                      aria-hidden="true"
+                      className="inline w-5 h-5 animate-spin text-blue-200 fill-[#2096ed]"
+                      viewBox="0 0 100 101"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                        fill="currentColor"
+                      />
+                      <path
+                        d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                        fill="currentFill"
+                      />
+                    </svg>
+                  ) : (
+                    "Subir"
+                  )}
+                </label>
+              </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                close();
-                resetFormData();
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Descripción de portada
+            </label>
+            <textarea
+              rows={6}
+              placeholder="Introducir descripción de portada"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  descripcionPortada: e.target.value,
+                });
               }}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
+              value={formData.descripcionPortada}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={1}
+              maxLength={500}
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 500
+            </span>
+          </div>
+          <div className="flex h-full items-end">
+            <div className="flex w-full justify-between items-center">
+              <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+                <input
+                  className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  type="checkbox"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      esPública: e.target.checked,
+                    });
+                  }}
+                  checked={formData.esPública}
+                  id="checkbox"
+                />
+                <label
+                  className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+                  htmlFor="checkbox"
+                >
+                  Publicada
+                </label>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  close();
+                  resetFormData();
+                }}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cancelar
+              </button>
+              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+                Completar
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </form>
+      </form>
+      <EditConfirmationModal
+        isOpen={isConfirmationScreen}
+        closeModal={() => setIsConfirmationScreen(false)}
+        handleFinalSubmit={handleFinalSubmit}
+        setOperationAsCompleted={() => null}
+        publicación={publicación}
+        formData={formData}
+      />
+    </>
+  );
+}
+
+function EditConfirmationModal({
+  isOpen,
+  closeModal,
+  handleFinalSubmit,
+  publicación,
+  formData,
+}: ModalProps & {
+  handleFinalSubmit: () => void;
+  formData: Publicación;
+}) {
+  const publication = publicación;
+  const ref = useRef<HTMLDialogElement>(null);
+  const [showFullDescripcionPortada, setShowFullDescripcionPortada] = useState(false);
+  const [view, setView] = useState<"confirmation" | "contenidoDetail" | "contenidoDetailNew">("confirmation");
+
+  const toggleDescripcionPortada = () => {
+    setShowFullDescripcionPortada((prev) => !prev);
+  };
+
+  const navigateToContenidoDetail = () => {
+    setView("contenidoDetail");
+  };
+
+  const navigateToContenidoDetailNew = () => {
+    setView("contenidoDetailNew");
+  };
+
+  const navigateToConfirmation = () => {
+    setView("confirmation");
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", handleKeyDown);
+    } else {
+      handleClose();
+    }
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    closeModal();
+    ref.current?.close();
+    setView("confirmation");
+    setShowFullDescripcionPortada(false);
+  };
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect();
+        if (
+          dialogDimensions &&
+          (e.clientX < dialogDimensions.left ||
+            e.clientX > dialogDimensions.right ||
+            e.clientY < dialogDimensions.top ||
+            e.clientY > dialogDimensions.bottom)
+        ) {
+          handleClose();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+    >
+      {view === "confirmation" && (
+        <>
+          <div className="bg-[#2096ed] py-4 px-8">
+            <h1 className="text-xl font-bold text-white">Confirmar cambios</h1>
+          </div>
+          <div className="p-8 pt-6">
+            <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+              <div className="grid grid-cols-2 gap-8">
+                {/* Datos actuales */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                    Datos actuales
+                  </h3>
+                  <div className="space-y-5">
+                    {/* Título */}
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Título
+                      </p>
+                      <p className="text-gray-900 font-medium text-base break-words">
+                        {publication?.título}
+                      </p>
+                    </div>
+
+                    {/* URL Slug */}
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        URL Slug
+                      </p>
+                      <p className="text-gray-900 font-medium text-base break-words">
+                        {publication?.slug}
+                      </p>
+                    </div>
+
+                    {/* Enlace de portada */}
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Enlace de portada
+                      </p>
+                      <p className="text-gray-900 font-medium text-base break-words">
+                        {publication?.portada}
+                      </p>
+                    </div>
+
+                    {/* Descripción de portada */}
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Descripción de portada
+                      </p>
+                      <div
+                        className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                          showFullDescripcionPortada
+                            ? "max-h-80 overflow-y-auto"
+                            : "max-h-40 overflow-hidden"
+                        }`}
+                      >
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: publication?.descripcionPortada ?? "",
+                          }}
+                        />
+                      </div>
+                      {(publication?.descripcionPortada?.length ?? 0) > 200 && (
+                        <button
+                          type="button"
+                          onClick={toggleDescripcionPortada}
+                          className="text-blue-500 mt-2"
+                        >
+                          {showFullDescripcionPortada ? "Ver Menos" : "Ver Más"}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Pública */}
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Pública
+                      </p>
+                      <p className="text-gray-900 font-medium text-base break-words">
+                        {publication?.esPública ? "Sí" : "No"}
+                      </p>
+                    </div>
+
+                    {/* Contenido */}
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Contenido
+                      </p>
+                      <div
+                        className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-40 overflow-hidden"
+                      >
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: publication?.contenido ?? "",
+                          }}
+                        />
+                      </div>
+                      {(publication?.contenido?.length ?? 0) > 200 && (
+                        <button
+                          type="button"
+                          onClick={navigateToContenidoDetail}
+                          className="text-blue-500 mt-2"
+                        >
+                          Ver más
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Nuevos datos */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                    Nuevos datos
+                  </h3>
+                  <div className="space-y-5">
+                    {/* Título */}
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Título
+                      </p>
+                      <p
+                        className={`text-base font-medium break-words ${
+                          formData.título !== publication?.título
+                            ? "text-blue-600 font-semibold"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {formData.título}
+                      </p>
+                    </div>
+
+                    {/* URL Slug */}
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        URL Slug
+                      </p>
+                      <p
+                        className={`text-base font-medium break-words ${
+                          formData.slug !== publication?.slug
+                            ? "text-blue-600 font-semibold"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {formData.slug}
+                      </p>
+                    </div>
+
+                    {/* Enlace de portada */}
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Enlace de portada
+                      </p>
+                      <p
+                        className={`text-base font-medium break-words ${
+                          formData.portada !== publication?.portada
+                            ? "text-blue-600 font-semibold"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {formData.portada}
+                      </p>
+                    </div>
+
+                    {/* Descripción de portada */}
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Descripción de portada
+                      </p>
+                      <div
+                        className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                          showFullDescripcionPortada
+                            ? "max-h-80 overflow-y-auto"
+                            : "max-h-40 overflow-hidden"
+                        }`}
+                      >
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: formData.descripcionPortada ?? "",
+                          }}
+                        />
+                      </div>
+                      {(formData.descripcionPortada?.length ?? 0) > 200 && (
+                        <button
+                          type="button"
+                          onClick={toggleDescripcionPortada}
+                          className="text-blue-500 mt-2"
+                        >
+                          {showFullDescripcionPortada ? "Ver Menos" : "Ver Más"}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Pública */}
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Pública
+                      </p>
+                      <p
+                        className={`text-base font-medium break-words ${
+                          formData.esPública !== publication?.esPública
+                            ? "text-blue-600 font-semibold"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {formData.esPública ? "Sí" : "No"}
+                      </p>
+                    </div>
+
+                    {/* Contenido */}
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Contenido
+                      </p>
+                      <div
+                        className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-40 overflow-hidden"
+                      >
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: formData.contenido ?? "",
+                          }}
+                        />
+                      </div>
+                      {(formData.contenido?.length ?? 0) > 200 && (
+                        <button
+                          type="button"
+                          onClick={navigateToContenidoDetailNew}
+                          className="text-blue-500 mt-2"
+                        >
+                          Ver más
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Botones de Acción */}
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Volver
+              </button>
+              <button
+                onClick={handleFinalSubmit}
+                className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+              >
+                Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {(view === "contenidoDetail" || view === "contenidoDetailNew") && (
+        <>
+          <div className="bg-[#2096ed] py-4 px-8">
+            <h1 className="text-xl font-bold text-white">Confirmar publicación</h1>
+          </div>
+          <div className="p-8 pt-6">
+            <div className="bg-white rounded-lg mb-6">
+              <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-80 overflow-y-auto">
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: view === "contenidoDetailNew" ? formData.contenido ?? "" : publication?.contenido ?? "",
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={navigateToConfirmation}
+                className="text-blue-500 mt-4"
+              >
+                Ver menos
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </dialog>
   );
 }
 
@@ -465,8 +1217,11 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Eliminar publicación</h1>
+      </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
         autoComplete="off"
@@ -476,10 +1231,10 @@ function DeleteModal({
           const loadingToast = toast.loading("Eliminando publicación...");
           PublicationService.delete(publicación?.id!).then((data) => {
             toast.dismiss(loadingToast);
-            if (data) {
-              toast.success("Publicación eliminada con exito.");
+            if (data.status === "success") {
+              toast.success(data.message);
             } else {
-              toast.error("Publicación no pudo ser eliminada.");
+              toast.error(data.message);
             }
             setOperationAsCompleted();
           });
@@ -518,8 +1273,7 @@ function DataRow({
 }: DataRowProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.editar.publicación
+    permissions.find()?.editar.publicación
       ? "EDIT"
       : permissions.find()?.eliminar.publicación
       ? "DELETE"
@@ -527,13 +1281,11 @@ function DataRow({
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
-  const anyAction =
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-    permissions.find()?.editar.publicación
-      ? true
-      : permissions.find()?.eliminar.publicación
-      ? true
-      : false;
+  const anyAction = permissions.find()?.editar.publicación
+    ? true
+    : permissions.find()?.eliminar.publicación
+    ? true
+    : false;
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
@@ -547,7 +1299,7 @@ function DataRow({
     <tr>
       <th
         scope="row"
-        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
         {publicación?.id}
       </th>
@@ -686,8 +1438,7 @@ function Dropup({ close, selectAction }: DropupProps) {
           border
         "
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.publicación) && (
+      {permissions.find()?.crear.publicación && (
         <li>
           <div
             onClick={() => {
@@ -779,8 +1530,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
         "
       style={{ top: top }}
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.editar.publicación) && (
+      {permissions.find()?.editar.publicación && (
         <li>
           <div
             onClick={() => {
@@ -805,8 +1555,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.eliminar.publicación) && (
+      {permissions.find()?.eliminar.publicación && (
         <li>
           <div
             onClick={() => {
@@ -906,7 +1655,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-1/3 min-h-[200px] h-fit rounded-md shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar publicaciones</h1>
@@ -1011,10 +1760,7 @@ export default function PublicationsDataDisplay() {
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.crear.publicación
-      ? "ADD"
-      : "SEARCH"
+    permissions.find()?.crear.publicación ? "ADD" : "SEARCH"
   );
   const [publication, setPublication] = useState<Publicación>();
   const [toEdit, setToEdit] = useState(false);
@@ -1033,6 +1779,7 @@ export default function PublicationsDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const size = 8;
 
   const openAddModal = () => {
     setToAdd(true);
@@ -1052,7 +1799,7 @@ export default function PublicationsDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0) {
-      PublicationService.getAll(page, 8).then((data) => {
+      PublicationService.getAll(page, size).then((data) => {
         if (data === false) {
           setNotFound(true);
           setLoading(false);
@@ -1072,7 +1819,7 @@ export default function PublicationsDataDisplay() {
       });
     } else {
       if (isPrecise && wasSearch) {
-        PublicationService.getByTitulo(input, page, 8).then((data) => {
+        PublicationService.getByTitulo(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setLoading(false);
@@ -1086,7 +1833,7 @@ export default function PublicationsDataDisplay() {
           setIsOperationCompleted(false);
         });
       } else if (!isPrecise && wasSearch) {
-        PublicationService.getByExactTitulo(input, page, 8).then((data) => {
+        PublicationService.getByExactTitulo(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setLoading(false);

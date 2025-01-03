@@ -12,22 +12,16 @@ export default function TicketsPage() {
     if (!session.find()) {
       navigate("/entrar");
     } else {
-      if (
-        session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-        !permissions.find()?.ver.ticket
-      ) {
+      if (!permissions.find()?.ver.ticket) {
         navigate("/");
       }
     }
-  })
+  });
 
   if (!session.find()) {
     return null;
   } else {
-    if (
-      session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-      !permissions.find()?.ver.ticket
-    ) {
+    if (!permissions.find()?.ver.ticket) {
       return null;
     }
   }
@@ -35,7 +29,7 @@ export default function TicketsPage() {
   return (
     <>
       <div className="h-screen bg-white grid md:grid-cols-[1fr,_5fr]">
-      <NavPanel />
+        <NavPanel />
         <main className="flex-grow bg-white relative max-h-screen">
           <TicketsDataDisplay />
         </main>

@@ -1,4 +1,4 @@
-import { DetalleCompra, Compra, Response } from "../types";
+import { Compra, Response } from "../types";
 import session from "../utils/session";
 
 export default class PurchaseService {
@@ -287,7 +287,7 @@ export default class PurchaseService {
     }
   }
 
-  static async create(purchase: Compra) {
+  static async create(purchase: Compra, impuestos?: any) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/compras/`,
@@ -298,7 +298,7 @@ export default class PurchaseService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-          body: JSON.stringify(purchase),
+          body: JSON.stringify({ purchase: purchase, impuestos: impuestos }),
         }
       );
 
@@ -307,31 +307,6 @@ export default class PurchaseService {
       }
 
       return (await response.json()) as Compra;
-    } catch {
-      return false;
-    }
-  }
-
-  static async update(id: number, purchase: Compra) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/compras/${id}`,
-        {
-          method: "PATCH",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: session.find()?.token!,
-          },
-          body: JSON.stringify(purchase),
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
     } catch {
       return false;
     }
@@ -348,81 +323,6 @@ export default class PurchaseService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  static async createDetails(id: number, details: DetalleCompra[]) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/compras/${id}/detalles`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: session.find()?.token!,
-          },
-          body: JSON.stringify(details),
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Compra;
-    } catch {
-      return false;
-    }
-  }
-
-  static async updateDetails(id: number, details: DetalleCompra[]) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/compras/${id}/detalles`,
-        {
-          method: "PATCH",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: session.find()?.token!,
-          },
-          body: JSON.stringify(details),
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  static async deleteDetails(id: number, details: DetalleCompra[]) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/compras/${id}/detalles`,
-        {
-          method: "DELETE",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: session.find()?.token!,
-          },
-          body: JSON.stringify(details),
         }
       );
 

@@ -1,6 +1,6 @@
-import { Permisos } from "../types";
+import { Rol } from "../types";
 
-const set = (permissions: Permisos) => {
+const set = (permissions: Partial<Rol>) => {
   localStorage.setItem("permissions", JSON.stringify(permissions));
 };
 
@@ -8,7 +8,7 @@ const find = () => {
   const permissions = localStorage.getItem("permissions");
 
   if (permissions) {
-    return JSON.parse(permissions) as Permisos;
+    return JSON.parse(permissions) as Rol;
   }
 
   return null;

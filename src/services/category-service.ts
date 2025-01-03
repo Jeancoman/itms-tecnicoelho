@@ -1,4 +1,4 @@
-import { Categoría, Response } from "../types";
+import type { Categoría, GenericResponse, Response } from "../types";
 import session from "../utils/session";
 
 export default class CategoryService {
@@ -170,13 +170,12 @@ export default class CategoryService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Categoría;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "Categoría no pudo ser añadida.",
+        status: "error"
+      } as GenericResponse;
     }
   }
 
@@ -195,13 +194,12 @@ export default class CategoryService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "Categoría no pudo ser editada.",
+        status: "error"
+      } as GenericResponse;
     }
   }
 
@@ -219,13 +217,12 @@ export default class CategoryService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "Categoría no pudo ser eliminada.",
+        status: "error"
+      } as GenericResponse;
     }
   }
 }

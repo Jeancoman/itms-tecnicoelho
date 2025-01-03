@@ -1,4 +1,4 @@
-import { Cliente, Response } from "../types";
+import type { Cliente, GenericResponse, Response } from "../types";
 import session from "../utils/session";
 
 export default class ClientService {
@@ -73,13 +73,12 @@ export default class ClientService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Cliente;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "Cliente no pudo ser añadido.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -366,13 +365,12 @@ export default class ClientService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "Cliente no pudo ser editado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -390,13 +388,12 @@ export default class ClientService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "Cliente no pudo ser eliminado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 }

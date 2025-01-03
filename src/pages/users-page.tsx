@@ -3,6 +3,7 @@ import UsersDataDisplay from "../components/data-display/users-data-display";
 import NavPanel from "../components/misc/nav-panel";
 import session from "../utils/session";
 import { useNavigate } from "react-router-dom";
+import permissions from "../utils/permissions";
 
 export default function UsersPage() {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ export default function UsersPage() {
     if (!session.find()) {
       navigate("/entrar");
     } else {
-      if (session.find()?.usuario.rol !== "ADMINISTRADOR") {
+      if (!permissions.find()?.ver.usuario) {
         navigate("/");
       }
     }
@@ -20,7 +21,7 @@ export default function UsersPage() {
   if (!session.find()) {
     return null;
   } else {
-    if (session.find()?.usuario.rol !== "ADMINISTRADOR") {
+    if (!permissions.find()?.ver.usuario) {
       return null;
     }
   }

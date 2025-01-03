@@ -1,4 +1,4 @@
-import { Permisos, Usuario, Response } from "../types";
+import { Usuario, Response, GenericResponse } from "../types";
 import session from "../utils/session";
 
 export default class UserService {
@@ -8,6 +8,38 @@ export default class UserService {
         `${
           import.meta.env.VITE_BACKEND_URL
         }/api/usuarios?page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 404) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getAccesos(id: number, page: number, size: number) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/usuarios/${id}/accesos?page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -258,80 +290,6 @@ export default class UserService {
     }
   }
 
-  static async getPermissionsById(id: number, token: string) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}/permisos`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: token,
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Permisos;
-    } catch {
-      return false;
-    }
-  }
-
-  static async patchPermissionsById(id: number, permissions: Permisos) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}/permisos`,
-        {
-          method: "PATCH",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: session.find()?.token!,
-          },
-          body: JSON.stringify(permissions),
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Permisos;
-    } catch {
-      return false;
-    }
-  }
-
-  static async postPermissionsById(id: number, permissions: Permisos) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}/permisos`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: session.find()?.token!,
-          },
-          body: JSON.stringify(permissions),
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Permisos;
-    } catch {
-      return false;
-    }
-  }
-
   static async create(user: Usuario) {
     try {
       const response = await fetch(
@@ -347,13 +305,12 @@ export default class UserService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Usuario;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El usuario no pudo ser añadido.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -372,13 +329,12 @@ export default class UserService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El usuario no pudo ser editado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -396,13 +352,12 @@ export default class UserService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El usuario no pudo ser eliminado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 

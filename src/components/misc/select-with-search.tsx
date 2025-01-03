@@ -75,7 +75,7 @@ function OptionGroup({
   return (
     <dialog
       ref={ref}
-      className="backdrop:bg-transparent max-h-48 overflow-auto scrollbar-none bg-white text-base z-[3000] py-1 list-none text-left rounded mt-1 shadow m-0 bg-clip-padding border border-slate-300 w-full sm:w-auto"
+      className="backdrop:bg-transparent max-h-48 overflow-auto bg-white text-base z-[3000] py-1 list-none text-left rounded mt-1 shadow m-0 bg-clip-padding border border-slate-300 w-full sm:w-auto"
       style={{
         position: "absolute",
         top: top,

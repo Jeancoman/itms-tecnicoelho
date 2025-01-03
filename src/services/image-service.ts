@@ -1,4 +1,4 @@
-import { Imagen, Response } from "../types";
+import type { GenericResponse, Imagen, Response } from "../types";
 import session from "../utils/session";
 
 export default class ImageService {
@@ -181,13 +181,13 @@ export default class ImageService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
 
-      return (await response.json()) as Imagen;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "La imagen no pudo ser añadida.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -206,13 +206,13 @@ export default class ImageService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
 
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "La imagen no pudo ser editada.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -230,13 +230,50 @@ export default class ImageService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
 
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "La imagen no pudo ser eliminada.",
+        status: "error",
+      } as GenericResponse;
     }
   }
+
+  static async upload(imageFile: File) {
+    try {
+      const formData = new FormData();
+
+      formData.append("image", imageFile);
+  
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/imagenes/subir`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: session.find()?.token!,
+          },
+          body: formData,
+        }
+      );
+  
+      if (!response.ok) {
+        throw new Error("Error al subir la imagen");
+      }
+  
+      return (await response.json()) as {
+        message: string,
+        status: string,
+        url: string
+      };
+    } catch (error) {
+      console.error(error);
+      return {
+        message: "La imagen no pudo ser subida.",
+        status: "error",
+        url: undefined
+      };
+    }
+  }
+  
 }

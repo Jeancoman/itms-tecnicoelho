@@ -10,7 +10,6 @@ export type ModalProps = {
   proveedor?: Proveedor;
   mensaje?: Mensaje;
   ticket?: Ticket;
-  servicio?: Servicio;
   venta?: Venta;
   compra?: Compra;
   plantilla?: Plantilla;
@@ -18,6 +17,8 @@ export type ModalProps = {
   imagen?: Imagen;
   imagenes?: Imagen[];
   impuesto?: Impuesto;
+  rol?: Rol;
+  deuda?: DeudaCliente;
 };
 
 export type SectionProps = {
@@ -82,12 +83,14 @@ export type DataRowProps = {
   proveedor?: Proveedor;
   mensaje?: Mensaje;
   ticket?: Ticket;
-  servicio?: Servicio;
   venta?: Venta;
   compra?: Compra;
   plantilla?: Plantilla;
   imagen?: Imagen;
-  impuesto?: Impuesto
+  impuesto?: Impuesto;
+  rol?: Rol;
+  historico?: HistoricoInventario;
+  acceso?: AccesoUsuario;
 };
 
 export type OptionProps = {
@@ -170,14 +173,12 @@ export type CommandBlock = {
 
 export type Previamente = {
   ticket?: Ticket;
-  servicio?: Servicio;
 };
 
 export interface Options {
   usuario?: Usuario;
   cliente?: Cliente;
   ticket?: Ticket;
-  servicio?: Servicio;
   previamente?: Previamente;
   categoría_de_servicio?: Categoría;
 }
@@ -206,9 +207,10 @@ export type Action =
   | "REPORT"
   | "OPTIONS"
   | "MESSAGING"
-  | "SEND";
+  | "SEND"
+  | "VIEW";
 
-export type UsuarioRol = "EMPLEADO" | "ADMINISTRADOR" | "SUPERADMINISTRADOR";
+export type UsuarioRol = string;
 
 export type TicketEstado = "ABIERTO" | "CERRADO";
 
@@ -245,6 +247,13 @@ export type Opciones = {
   };
 };
 
+export type DetalleImpuesto = {
+  codigo: string;
+  nombre: string;
+  porcentaje: number;
+  monto: number;
+}[];
+
 export interface Usuario {
   id?: number;
   nombre: string;
@@ -253,14 +262,26 @@ export interface Usuario {
   documento: string;
   nombreUsuario: string;
   contraseña?: string;
-  rol: UsuarioRol;
   creado_por?: {
     lista: number[];
   };
   permiso?: Permisos;
+  rol?: Rol;
+  rol_id?: number;
+}
+
+export interface Rol {
+  id?: number;
+  nombre: string;
+  ver: Permiso;
+  crear: Permiso;
+  editar: Permiso;
+  eliminar: Permiso;
 }
 
 export type Permiso = {
+  usuario: boolean;
+  restauracion: boolean;
   cliente: boolean;
   producto: boolean;
   mensaje: boolean;
@@ -274,6 +295,7 @@ export type Permiso = {
   reporte: boolean;
   mensajería: boolean;
   impuesto: boolean;
+  rol: boolean;
 };
 
 export interface Permisos {
@@ -303,20 +325,12 @@ export interface Ticket {
   asunto: string;
   prioridad: TicketPrioridad;
   estado: TicketEstado;
+  descripción?: string;
+  tipo: ServicioTipo;
   readonly creado?: Date;
   readonly cerrado?: Date;
   cliente_id?: number;
   cliente?: Cliente;
-  servicio?: Servicio;
-}
-
-export interface Servicio {
-  id?: number;
-  descripción?: string;
-  necesidades?: string;
-  tipo: ServicioTipo;
-  ticket_id?: number;
-  ticket?: Ticket;
   categoría_id?: number;
   categoría?: Categoría;
 }
@@ -327,7 +341,7 @@ export interface Mensaje {
   estado: MensajeEstado;
   readonly creado?: Date;
   modificado?: Date;
-  ticket_id?: number;
+  servicio_id?: number;
 }
 
 export interface Categoría {
@@ -341,8 +355,6 @@ export interface Categoría {
 export interface Producto {
   id?: number;
   código?: string;
-  marca: string;
-  modelo: string;
   slug: string;
   nombre: string;
   descripción?: string;
@@ -354,7 +366,7 @@ export interface Producto {
   categoría_id?: number;
   categoría?: Categoría;
   imagens?: Imagen[];
-  impuestos?: Impuesto[]
+  impuestos?: Impuesto[];
 }
 
 export interface Impuesto {
@@ -362,18 +374,22 @@ export interface Impuesto {
   codigo?: string;
   nombre: string;
   porcentaje: number;
+  aplicaA: "PRODUCTO" | "VENTA";
+  condicionPago: "CONTADO" | "CREDITO" | null;
+  tipoMoneda: "BOLIVAR" | "DIVISA" | null;
 }
 
 export interface Publicación {
   id?: number;
   slug: string;
   título: string;
+  portada: string;
+  descripcionPortada: string;
   contenido: string;
   esPública: boolean;
+  autor?: string;
   readonly creada?: Date;
   modificada?: Date;
-  imagen?: Imagen;
-  imagen_id?: number;
   usuario_id?: number;
   usuario?: Usuario;
 }
@@ -390,27 +406,44 @@ export interface Proveedor {
 export interface Venta {
   id?: number;
   fecha?: Date;
-  impuesto: number;
   subtotal: number;
   total: number;
   anulada?: boolean;
+  tipoPago: "CONTADO" | "CREDITO";
+  tipoMoneda: "BOLIVAR" | "DIVISA";
   cliente_id?: number;
   cliente?: Cliente;
   detalles?: DetalleVenta[];
   productos?: Producto[];
+  deudas?: DeudaCliente[];
+  historico_ventum?: HistoricoVenta;
 }
 
 export interface Compra {
   id?: number;
   fecha?: Date;
-  impuesto: number;
   subtotal: number;
   total: number;
   anulada?: boolean;
+  tipoPago: "CONTADO" | "CREDITO";
+  tipoMoneda: "BOLIVAR" | "DIVISA";
+  emisionFactura?: Date;
+  numeroFactura: string;
   proveedor_id: number;
   proveedor?: Proveedor;
   detalles?: DetalleCompra[];
   productos?: Producto[];
+  historico_compra?: HistoricoCompra;
+}
+
+export interface DeudaCliente {
+  id?: number;
+  cliente_id?: number;
+  venta_id?: number;
+  pagada?: boolean;
+  deudaPendiente?: number; // Monto de la deuda pendiente
+  fechaUltimoPago?: Date; // Fecha del último pago realizado
+  fechaVencimiento?: Date; // Fecha de vencimiento de la deuda
 }
 
 export interface DetalleVenta {
@@ -420,15 +453,21 @@ export interface DetalleVenta {
   cantidad: number;
   subtotal: number;
   producto?: Producto;
+  impuestos: DetalleImpuesto;
+  producto_codigo: string;
+  producto_nombre: string;
 }
 
 export interface DetalleCompra {
   compra_id?: number;
   producto_id?: number;
   precioUnitario: number;
+  producto_codigo: string;
+  producto_nombre: string;
   cantidad: number;
   subtotal: number;
   producto?: Producto;
+  impuestos: DetalleImpuesto;
 }
 
 export interface Imagen {
@@ -465,12 +504,18 @@ export type Response = {
   rows: any[];
 };
 
+export type GenericResponse = {
+  message: string;
+  status: "success" | "error";
+};
+
 export type PaginationProps = {
   pages: number;
   current: number;
   next: () => void;
   prev: () => void;
   className?: string;
+  customText?: string;
 };
 
 export interface JwtPayload {
@@ -484,7 +529,89 @@ export interface Session {
   token: string;
 }
 
+export interface AccesoUsuario {
+  id: number;
+  ip: string;
+  dispositivo: string;
+  navegador: string;
+  sistemaOperativo: string;
+  urlSolicitada: string;
+  urlReferida: string;
+  peticionCuerpo: string;
+  peticionEncabezados: string;
+  peticionMetodo: string;
+  readonly creado?: Date;
+  usuario_id?: number;
+  usuario?: Usuario;
+}
+
+export interface HistoricoInventario {
+  id?: number;
+  tipoCambio?: string; // Ej: 'ajuste', 'entrada', 'salida'
+  motivo?: string; // Motivo común del cambio
+  comentarios?: string;
+  existenciasAnterior?: number;
+  usuarioNombre?: string;
+  productoNombre?: string;
+  existenciasNuevo?: number;
+  readonly fechaCambio?: Date;
+  usuario_id?: number; // FK a Usuario
+  producto_id?: number;
+  producto?: Producto;
+  usuario?: Usuario;
+}
+
+export interface HistoricoCompra {
+  id?: number;
+  compra_id: number;
+  fecha: Date;
+  proveedor_nombre: string;
+  proveedor_documento: string;
+  impuestos?: impuestoCalculado[];
+}
+
+export interface HistoricoVenta {
+  id?: number;
+  venta_id: number;
+  fecha: Date;
+  // Datos del cliente
+  cliente_nombre: string;
+  cliente_apellido: string;
+  cliente_documento: string;
+  cliente_direccion: string;
+  tasa_cambio: number;
+  fecha_tasa_cambio: string;
+  impuestos?: impuestoCalculado[]
+}
+
 export interface FormErrors {
   nombre?: string; // Using optional chaining as 'nombre' may not always be set
   // Add other fields as needed
 }
+
+export type Asset = {
+  asset_id: string;
+  public_id: string;
+  version: number;
+  resource_type: string;
+  type: string;
+  created_at: string; // ISO 8601 timestamp
+  bytes: number;
+  asset_folder: string;
+  display_name: string;
+  url: string;
+  secure_url: string;
+};
+
+export type impuestoCalculado = {
+  impuesto: Impuesto,
+  total: number
+}
+
+export type ReportType = 
+  | "VENDIDO_EN"
+  | "COMPRADO_EN"
+  | "MAS_VENDIDO"
+  | "MAS_COMPRADO"
+  | "STOCK_BAJO"
+  | "SIN_STOCK";

@@ -39,43 +39,26 @@ export default function LoginPage() {
 
       const usuario = TokenDecoder.decodeAndReturnUser(token);
       const userSession = { usuario, token };
-      console.log(userSession);
-      session.set(userSession);
 
-      if (usuario.rol === "EMPLEADO") {
-        await handleEmployeeLogin(usuario.id!, token);
-      } else {
-        toast.success("Sesión iniciada exitosamente.");
-        navigate("/");
-      }
-    } else if(token === "429"){
+      session.set(userSession);
+      permissions.set(usuario.rol!);
+
+      toast.success("Sesión iniciada exitosamente.");
+      navigate("/");
+    } else if (token === "429") {
       toast.dismiss(validationToast);
-      toast.error("Demasiados intentos fallidos. Intente de nuevo dentro de 5 minutos.");
+      toast.error(
+        "Demasiados intentos fallidos. Intente de nuevo dentro de 5 minutos."
+      );
     } else {
       toast.dismiss(validationToast);
       toast.error("Credenciales inválidas.");
     }
   };
 
-  const handleEmployeeLogin = async (userId: number, token: string) => {
-    const permissionsToast = toast.loading("Validando permisos...");
-
-    const permisos = await UserService.getPermissionsById(userId, token);
-    toast.dismiss(permissionsToast);
-
-    if (permisos === false) {
-      toast.error("Error validando los permisos.");
-    } else {
-      permissions.set(permisos);
-      toast.success("Permisos validados.");
-      toast.success("Sesión iniciada exitosamente.");
-      navigate("/");
-    }
-  };
-
   return (
     <>
-      <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center gap-4 scrollbar-none overflow-hidden">
+      <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center gap-4 overflow-hidden">
         <img src="/assets/logo-sin-eslogan.png" className="w-96" />
         <div className="bg-white w-96 h-fit rounded-md shadow border">
           <form className="flex flex-col gap-4 p-8" onSubmit={onSubmit}>

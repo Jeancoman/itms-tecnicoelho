@@ -20,6 +20,7 @@ import hljs from "highlight.js/lib/core";
 import options from "../../utils/options";
 import { Socket, io } from "socket.io-client";
 import MessageSenderService from "../../services/message-sender-service";
+import permissions from "../../utils/permissions";
 
 hljs.registerLanguage("tecniplantilla", () => {
   return {
@@ -141,7 +142,7 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="flex flex-col p-8 pt-6 gap-4">
         {isOn === false ? (
@@ -265,7 +266,7 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Configurar mensajería</h1>
@@ -464,7 +465,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar plantilla</h1>
@@ -533,7 +534,7 @@ function EditModal({
               ¿Esta activa?
             </label>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 text-base">
             <button
               type="button"
               onClick={closeModal}
@@ -562,7 +563,7 @@ function DataRow({ plantilla, setOperationAsCompleted }: DataRowProps) {
     <tr>
       <th
         scope="row"
-        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
         {plantilla?.id}
       </th>
@@ -584,20 +585,25 @@ function DataRow({ plantilla, setOperationAsCompleted }: DataRowProps) {
         )}
       </td>
       <td className="px-6 py-3 border border-slate-300 w-[200px]">
-        <button
-          onClick={() => {
-            setIsEditOpen(true);
-          }}
-          className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-        >
-          Editar plantilla
-        </button>
-        <EditModal
-          plantilla={plantilla}
-          isOpen={isEditOpen}
-          closeModal={closeEditModal}
-          setOperationAsCompleted={setOperationAsCompleted}
-        />
+        {permissions.find()?.editar.mensajería && (
+          <>
+            <button
+              onClick={() => {
+                setIsEditOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Editar plantilla
+            </button>
+            <EditModal
+              plantilla={plantilla}
+              isOpen={isEditOpen}
+              closeModal={closeEditModal}
+              setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
+        )}
+        {!permissions.find()?.editar.mensajería && "Ninguna acción permitida"}
       </td>
     </tr>
   );
@@ -631,8 +637,8 @@ function Dropup({ close, selectAction }: DropupProps) {
           bg-white
           text-base
           z-50
-          right-8
-          top-14
+          right-0
+          top-9
           py-2
           list-none
           text-left
@@ -644,13 +650,14 @@ function Dropup({ close, selectAction }: DropupProps) {
           border
         "
     >
-      <li>
-        <div
-          onClick={() => {
-            selectAction("OPTIONS");
-            close();
-          }}
-          className="
+      {permissions.find()?.editar.mensajería && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("OPTIONS");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -663,17 +670,19 @@ function Dropup({ close, selectAction }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Configurar mensajería
-        </div>
-      </li>
-      <li>
-        <div
-          onClick={() => {
-            selectAction("MESSAGING");
-            close();
-          }}
-          className="
+          >
+            Configurar mensajería
+          </div>
+        </li>
+      )}
+      {permissions.find()?.editar.mensajería && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("OPTIONS");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -686,10 +695,11 @@ function Dropup({ close, selectAction }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Servicio mensajero
-        </div>
-      </li>
+          >
+            Configurar mensajero
+          </div>
+        </li>
+      )}
     </ul>
   );
 }
@@ -720,6 +730,7 @@ export default function MessagingDataDisplay() {
     },
   });
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const size = 8;
 
   const closeDropup = () => {
     setIsDropup(false);
@@ -734,7 +745,7 @@ export default function MessagingDataDisplay() {
   };
 
   useEffect(() => {
-    void TemplateService.getAll(page, 8).then((data) => {
+    void TemplateService.getAll(page, size).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
@@ -759,45 +770,47 @@ export default function MessagingDataDisplay() {
   return (
     <>
       <div className="absolute h-full w-full px-8 py-5">
-        <nav className="flex justify-between items-center select-none">
+        <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">Mensajería</span>
           </div>
-          <div className="flex gap-2">
-            {isDropup && (
-              <Dropup
-                close={closeDropup}
-                selectAction={selectAction}
-                openAddModal={() => null}
-              />
-            )}
-            {action === "OPTIONS" ? (
+          {permissions.find()?.editar.mensajería && (
+            <div className="flex gap-2 relative">
+              {isDropup && (
+                <Dropup
+                  close={closeDropup}
+                  selectAction={selectAction}
+                  openAddModal={() => null}
+                />
+              )}
+              {action === "OPTIONS" ? (
+                <button
+                  onClick={() => setIsOption(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Configurar mensajería
+                </button>
+              ) : null}
+              {action === "MESSAGING" ? (
+                <button
+                  onClick={() => setIsAddOpen(true)}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Configurar mensajero
+                </button>
+              ) : null}
               <button
-                onClick={() => setIsOption(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                id="acciones-btn"
+                onClick={() => {
+                  setIsDropup(!isDropup);
+                }}
+                className="bg-gray-300 border hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
               >
-                Configurar mensajería
+                <More className="w-5 h-5 inline fill-black" />
               </button>
-            ) : null}
-            {action === "MESSAGING" ? (
-              <button
-                onClick={() => setIsAddOpen(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Servicio mensajero
-              </button>
-            ) : null}
-            <button
-              id="acciones-btn"
-              onClick={() => {
-                setIsDropup(!isDropup);
-              }}
-              className="bg-gray-300 border hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-            >
-              <More className="w-5 h-5 inline fill-black" />
-            </button>
-          </div>
+            </div>
+          )}
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         {template.length > 0 && loading == false && (

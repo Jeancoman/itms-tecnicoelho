@@ -15,7 +15,6 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import ClientService from "../../services/client-service";
 import Select from "../misc/select";
-import session from "../../utils/session";
 import permissions from "../../utils/permissions";
 import { useClientSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
@@ -25,9 +24,10 @@ import clsx from "clsx";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [documentType, setDocumentType] = useState<Selected>({
-    value: "RIF",
-    label: "RIF",
+    value: "V",
+    label: "V",
   });
   const [formData, setFormData] = useState<Cliente>({
     nombre: "",
@@ -52,11 +52,65 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       enviarMensajes: false,
       contraseña: "",
     });
-    setVisible(false);
     setDocumentType({
-      value: "RIF",
-      label: "RIF",
+      value: "V",
+      label: "V",
     });
+    setVisible(false);
+    setIsConfirmationScreen(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    closeModal();
+    const updatedFormData = { ...formData };
+
+    // Formatear el documento según el tipo seleccionado
+    if (formData.documento) {
+      updatedFormData.documento = `${documentType.value}-${formData.documento}`;
+    }
+
+    const loadingToast = toast.loading("Añadiendo cliente...");
+    void ClientService.create(updatedFormData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data.status === "error") {
+        toast.error(data.message);
+      } else {
+        toast.success(data.message);
+      }
+    });
+  };
+
+  const getDocumentoPatternAndMessage = () => {
+    switch (documentType.value) {
+      case "V":
+      case "E":
+        return {
+          pattern: /^(\d{8}|\d{8}-\d{1})$/,
+          message: "Formato válido: 12345678 o 12345678-0",
+        };
+      case "G":
+      case "J":
+        return {
+          pattern: /^\d{8}-\d{1}$/,
+          message: "Formato válido: 12345678-0",
+        };
+      case "P":
+        return {
+          pattern: /^\d{8}$/,
+          message: "Formato válido: 12345678",
+        };
+      default:
+        return {
+          pattern: /^.*$/, // Acepta cualquier formato por defecto
+          message: "Formato inválido",
+        };
+    }
   };
 
   useEffect(() => {
@@ -76,6 +130,92 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     }
   }, [isOpen]);
 
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Nombre
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData.nombre}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Apellido
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData.apellido}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Documento
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {documentType.value}-{formData.documento}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Teléfono
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData.telefono || "No especificado"}
+            </p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Email
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData.email || "No especificado"}
+            </p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Dirección
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData.dirección || "No especificada"}
+            </p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Envio de mensajes
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              <span
+                className={
+                  formData.enviarMensajes ? "text-green-600" : "text-red-600"
+                }
+              >
+                {formData.enviarMensajes ? "Activado" : "Desactivado"}
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)}
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+        >
+          Volver
+        </button>
+        <button
+          onClick={handleFinalSubmit}
+          className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+        >
+          Guardar
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <dialog
       ref={ref}
@@ -91,262 +231,298 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Añadir cliente</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isConfirmationScreen
+            ? "Confirmar datos del cliente"
+            : "Añadir cliente"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 select-none group"
-        autoComplete="none"
-        noValidate={true}
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const updatedFormData = { ...formData };
-          updatedFormData.documento = formData.documento
-            ? documentType.value === "V"
-              ? "V-" + formData.documento
-              : formData.documento
-            : undefined;
-          const loadingToast = toast.loading("Añadiendo cliente...");
-          void ClientService.create(updatedFormData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Cliente no pudo ser añadido.");
-            } else {
-              toast.success("Cliente añadido con exito.");
-            }
-          });
-        }}
-      >
-        <div className="flex gap-2">
-          <div className="w-2/4">
-            <input
-              type="text"
-              placeholder="Nombre*"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  nombre: e.target.value,
-                });
-              }}
-              value={formData.nombre}
-              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              required
-              pattern="^.{2,}$"
-            />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 2 caracteres
-            </span>
-          </div>
-          <div className="w-2/4">
-            <input
-              type="text"
-              placeholder="Apellido"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  apellido: e.target.value,
-                });
-              }}
-              value={formData.apellido}
-              required
-              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              pattern="^.{2,}$"
-            />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 2 caracteres
-            </span>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <div className="flex w-2/4 gap-1">
-            <div className="relative w-[28%]">
-              <Select
-                options={[
-                  {
-                    value: "V",
-                    label: "V",
-                    onClick: (value, label) => {
-                      setDocumentType({
-                        value,
-                        label,
-                      });
-                    },
-                  },
-                  {
-                    value: "RIF",
-                    label: "RIF",
-                    onClick: (value, label) => {
-                      setDocumentType({
-                        value,
-                        label,
-                      });
-                    },
-                  },
-                ]}
-                selected={documentType}
-                small={true}
-              />
-            </div>
-            <div className="w-[72%]">
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4 select-none group"
+          autoComplete="none"
+          noValidate={true}
+          onSubmit={handleSubmit}
+        >
+          <div className="flex gap-2">
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Nombre*
+              </label>
               <input
                 type="text"
-                placeholder="Documento"
+                placeholder="Introducir nombre"
                 onChange={(e) => {
                   setFormData({
                     ...formData,
-                    documento: e.target.value,
+                    nombre: e.target.value,
                   });
                 }}
-                value={formData.documento}
-                required
+                value={formData.nombre}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                pattern={
-                  documentType.value === "RIF"
-                    ? "^[A-Za-z]-?\\d{1,9}-?\\d?$"
-                    : "^\\d{1,3}\\.\\d{3}\\.\\d{3}$"
-                }
+                required
+                pattern="^.{1,50}$"
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                {documentType.value === "RIF"
-                  ? "Formato: J-30684267-5"
-                  : "Formato: 29.946.012"}
+                Minimo 1 carácter, máximo 50
+              </span>
+            </div>
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Apellido*
+              </label>
+              <input
+                type="text"
+                placeholder="Introducir apellido"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    apellido: e.target.value,
+                  });
+                }}
+                value={formData.apellido}
+                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                pattern="^.{1,50}$"
+                required
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Minimo 1 carácter, máximo 50
               </span>
             </div>
           </div>
-          <div className="w-2/4">
+          <div className="flex gap-2">
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Documento*
+              </label>
+              <div className="flex w-full gap-1">
+                <div className="relative w-[20%]">
+                  <Select
+                    options={[
+                      {
+                        value: "V",
+                        label: "V",
+                        onClick: (value, label) => {
+                          setDocumentType({
+                            value,
+                            label,
+                          });
+                        },
+                      },
+                      {
+                        value: "J",
+                        label: "J",
+                        onClick: (value, label) => {
+                          setDocumentType({
+                            value,
+                            label,
+                          });
+                        },
+                      },
+                      {
+                        value: "G",
+                        label: "G",
+                        onClick: (value, label) => {
+                          setDocumentType({
+                            value,
+                            label,
+                          });
+                        },
+                      },
+                      {
+                        value: "E",
+                        label: "E",
+                        onClick: (value, label) => {
+                          setDocumentType({
+                            value,
+                            label,
+                          });
+                        },
+                      },
+                      {
+                        value: "P",
+                        label: "P",
+                        onClick: (value, label) => {
+                          setDocumentType({
+                            value,
+                            label,
+                          });
+                        },
+                      },
+                    ]}
+                    selected={documentType}
+                    small={true}
+                  />
+                </div>
+                <div className="w-[80%]">
+                  <input
+                    type="text"
+                    placeholder="Introducir documento"
+                    onChange={(e) => {
+                      setFormData({
+                        ...formData,
+                        documento: e.target.value,
+                      });
+                    }}
+                    value={formData.documento}
+                    required
+                    className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                    pattern={getDocumentoPatternAndMessage().pattern.source}
+                  />
+                  <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                    {getDocumentoPatternAndMessage().message}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Teléfono
+              </label>
+              <input
+                type="tel"
+                placeholder="Introducir teléfono"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    telefono: e.target.value,
+                  });
+                }}
+                value={formData.telefono}
+                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
+                required={formData.enviarMensajes}
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Teléfono debe estar en formato E.164
+              </span>
+            </div>
+          </div>
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              E-mail
+            </label>
             <input
-              type="tel"
-              placeholder="Teléfono"
+              type="email"
+              name="email"
+              placeholder="Introducir e-mail"
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  telefono: e.target.value,
+                  email: e.target.value,
                 });
               }}
-              value={formData.telefono}
+              value={formData.email}
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
+              pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              E-mail invalido
+            </span>
+          </div>
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Dirección
+            </label>
+            <input
+              type="text"
+              placeholder="Introducir dirección"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  dirección: e.target.value,
+                });
+              }}
+              value={formData.dirección}
+              autoComplete="none"
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              pattern="^.{1,100}$"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 100
+            </span>
+          </div>
+          <div className="relative w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Contraseña*
+            </label>
+            <input
+              type={visible ? "text" : "password"}
+              placeholder="Introducir contraseña"
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  contraseña: e.target.value,
+                })
+              }
+              value={formData.contraseña}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              name="password"
+              pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+              autoComplete="new-password"
               required
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Teléfono debe estar en formato E.164
+              La contraseña debe tener mínimo 8 caracteres, contener una letra
+              mayúscula, una letra minúscula, un número y un carácter especial
             </span>
+            {visible ? (
+              <On
+                onClick={() => setVisible(false)}
+                className="absolute top-10 right-4 fill-[#2096ed]"
+              />
+            ) : (
+              <Off
+                onClick={() => setVisible(true)}
+                className="absolute top-10 right-4 fill-[#2096ed]"
+              />
+            )}
           </div>
-        </div>
-        <div className="w-full">
-          <input
-            type="email"
-            name="email"
-            placeholder="E-mail"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                email: e.target.value,
-              });
-            }}
-            value={formData.email}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
-            required
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            E-mail invalido
-          </span>
-        </div>
-        <div className="w-full">
-          <input
-            type="text"
-            placeholder="Dirección"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                dirección: e.target.value,
-              });
-            }}
-            value={formData.dirección}
-            autoComplete="none"
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            pattern="^.{2,}$"
-            required
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Dirección debe tener minimo 2 caracteres
-          </span>
-        </div>
-        <div className="relative w-full">
-          <input
-            type={visible ? "text" : "password"}
-            placeholder="Contraseña"
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                contraseña: e.target.value,
-              })
-            }
-            value={formData.contraseña}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            name="password"
-            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-            required
-            autoComplete="new-password"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            La contraseña debe tener mínimo 8 caracteres, contener una letra
-            mayúscula, una letra minúscula, un número y un carácter especial
-          </span>
-          {visible ? (
-            <On
-              onClick={() => setVisible(false)}
-              className="absolute top-2 right-4 fill-[#2096ed]"
-            />
-          ) : (
-            <Off
-              onClick={() => setVisible(true)}
-              className="absolute top-2 right-4 fill-[#2096ed]"
-            />
-          )}
-        </div>
-        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
-          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
-            <input
-              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              type="checkbox"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  enviarMensajes: e.target.checked,
-                });
-              }}
-              checked={formData.enviarMensajes}
-              id="checkbox"
-            />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox"
-            >
-              ¿Enviar mensajes?
-            </label>
+          <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
+            <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+              <input
+                className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                type="checkbox"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    enviarMensajes: e.target.checked,
+                  });
+                }}
+                checked={formData.enviarMensajes}
+                id="checkbox"
+              />
+              <label
+                className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+                htmlFor="checkbox"
+              >
+                ¿Enviar mensajes?
+              </label>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cancelar
+              </button>
+              <button
+                className={
+                  "group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+                }
+              >
+                Completar
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button
-              className={"group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"}
-            >
-              Completar
-            </button>
-          </div>
-        </div>
-      </form>
+        </form>
+      )}
     </dialog>
   );
 }
@@ -358,16 +534,21 @@ function EditModal({
   cliente,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
+  const initialDocumentType = cliente?.documento
+    ? cliente.documento.split("-")[0]
+    : "V";
   const [documentType, setDocumentType] = useState<Selected>({
-    value: cliente?.documento?.startsWith("V") ? "V" : "RIF",
-    label: cliente?.documento?.startsWith("V") ? "V" : "RIF",
+    value: initialDocumentType,
+    label: initialDocumentType,
   });
+  const initialDocumento = cliente?.documento
+    ? cliente.documento.split("-").slice(1).join("-")
+    : "";
   const [formData, setFormData] = useState<Cliente>({
     ...cliente!,
     contraseña: "",
-    documento: cliente?.documento?.startsWith("V")
-      ? cliente?.documento?.slice(2)
-      : cliente?.documento,
+    documento: initialDocumento,
   });
   const [visible, setVisible] = useState(false);
 
@@ -375,15 +556,71 @@ function EditModal({
     setFormData({
       ...cliente!,
       contraseña: "",
-      documento: cliente?.documento?.startsWith("V")
-        ? cliente?.documento?.slice(2)
-        : cliente?.documento,
+      documento: cliente?.documento
+        ? cliente.documento.split("-").slice(1).join("-") // Extraer el documento sin el prefijo
+        : "",
     });
     setDocumentType({
-      value: cliente?.documento?.startsWith("V") ? "V" : "RIF",
-      label: cliente?.documento?.startsWith("V") ? "V" : "RIF",
+      value: cliente?.documento?.charAt(0) || "V",
+      label: cliente?.documento?.charAt(0) || "V",
     });
     setVisible(false);
+    setIsConfirmationScreen(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    closeModal();
+    const updatedFormData = { ...formData };
+
+    // Formatear el documento según el tipo seleccionado
+    if (formData.documento) {
+      updatedFormData.documento = `${documentType.value}-${formData.documento}`;
+    }
+
+    const loadingToast = toast.loading("Editando cliente...");
+    void ClientService.update(cliente?.id!, updatedFormData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data.status === "success") {
+        toast.success(data.message);
+      } else {
+        toast.error(data.message);
+      }
+      setOperationAsCompleted();
+    });
+  };
+
+  // Define una función para obtener el patrón y el mensaje de error según el tipo de documento
+  const getDocumentoPatternAndMessage = () => {
+    switch (documentType.value) {
+      case "V":
+      case "E":
+        return {
+          pattern: /^(\d{8}|\d{8}-\d{1})$/,
+          message: "Formato válido: 12345678 o 12345678-0",
+        };
+      case "G":
+      case "J":
+        return {
+          pattern: /^\d{8}-\d{1}$/,
+          message: "Formato válido: 12345678-0",
+        };
+      case "P":
+        return {
+          pattern: /^\d{8}$/,
+          message: "Formato válido: 12345678",
+        };
+      default:
+        return {
+          pattern: /^.*$/, // Acepta cualquier formato por defecto
+          message: "Formato inválido",
+        };
+    }
   };
 
   useEffect(() => {
@@ -392,14 +629,209 @@ function EditModal({
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           closeModal();
+          setIsConfirmationScreen(false);
           ref.current?.close();
         }
       });
     } else {
       closeModal();
+      setIsConfirmationScreen(false);
       ref.current?.close();
     }
   }, [isOpen]);
+
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+        <div className="grid grid-cols-2 gap-8">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Datos actuales
+            </h3>
+            <div className="space-y-5">
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {cliente?.nombre}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Apellido
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {cliente?.apellido}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Documento
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {cliente?.documento}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Teléfono
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {cliente?.telefono || "No especificado"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Email
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {cliente?.email || "No especificado"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Dirección
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {cliente?.dirección || "No especificada"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Envío de mensajes
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {cliente?.enviarMensajes ? "Activado" : "Desactivado"}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Nuevos datos
+            </h3>
+            <div className="space-y-5">
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.nombre !== cliente?.nombre
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.nombre}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Apellido
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.apellido !== cliente?.apellido
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.apellido}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Documento
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    `${documentType.value}-${formData.documento}` !==
+                    cliente?.documento
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {documentType.value}-{formData.documento}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Teléfono
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.telefono !== cliente?.telefono
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.telefono || "No especificado"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Email
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.email !== cliente?.email
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.email || "No especificado"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Dirección
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.dirección !== cliente?.dirección
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.dirección || "No especificada"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Envío de mensajes
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.enviarMensajes !== cliente?.enviarMensajes
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.enviarMensajes ? "Activado" : "Desactivado"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)}
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+        >
+          Volver
+        </button>
+        <button
+          onClick={handleFinalSubmit}
+          className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+        >
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <dialog
@@ -416,263 +848,293 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar cliente</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isConfirmationScreen ? "Confirmar cambios" : "Editar cliente"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Editando cliente...");
-          const updatedFormData = { ...formData };
-          updatedFormData.documento =
-            documentType.value === "V"
-              ? "V-" + formData.documento
-              : formData.documento;
-          void ClientService.update(cliente?.id!, updatedFormData).then(
-            (data) => {
-              toast.dismiss(loadingToast);
-              setOperationAsCompleted();
-              if (data) {
-                toast.success("Cliente editado con exito.");
-              } else {
-                toast.error("Cliente no pudo ser editado.");
-              }
-              setOperationAsCompleted();
-            }
-          );
-        }}
-      >
-        <div className="flex gap-2">
-          <div className="w-2/4">
-            <input
-              type="text"
-              placeholder="Nombre*"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  nombre: e.target.value,
-                });
-              }}
-              value={formData.nombre}
-              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              required
-              pattern="^.{2,}$"
-            />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 2 caracteres
-            </span>
-          </div>
-          <div className="w-2/4">
-            <input
-              type="text"
-              placeholder="Apellido"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  apellido: e.target.value,
-                });
-              }}
-              value={formData.apellido}
-              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              pattern="^.{2,}$"
-              required
-            />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 2 caracteres
-            </span>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <div className="flex w-2/4 gap-1">
-            <div className="relative w-[28%]">
-              <Select
-                options={[
-                  {
-                    value: "V",
-                    label: "V",
-                    onClick: (value, label) => {
-                      setDocumentType({
-                        value,
-                        label,
-                      });
-                    },
-                  },
-                  {
-                    value: "RIF",
-                    label: "RIF",
-                    onClick: (value, label) => {
-                      setDocumentType({
-                        value,
-                        label,
-                      });
-                    },
-                  },
-                ]}
-                selected={documentType}
-                small={true}
-              />
-            </div>
-            <div className="w-[72%]">
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4 group"
+          autoComplete="off"
+          onSubmit={handleSubmit}
+        >
+          <div className="flex gap-2">
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Nombre*
+              </label>
               <input
                 type="text"
-                placeholder="Documento"
+                placeholder="Introducir nombre"
                 onChange={(e) => {
                   setFormData({
                     ...formData,
-                    documento: e.target.value,
+                    nombre: e.target.value,
                   });
                 }}
-                required
-                value={formData.documento}
+                value={formData.nombre}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                pattern={
-                  documentType.value === "RIF"
-                    ? "^[A-Za-z]-?\\d{1,9}-?\\d?$"
-                    : "^\\d{1,3}\\.\\d{3}\\.\\d{3}$"
-                }
+                required
+                pattern="^.{1,50}$"
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                {documentType.value === "RIF"
-                  ? "Formato: J-30684267-5"
-                  : "Formato: 29.946.012"}
+                Minimo 1 carácter, máximo 50
+              </span>
+            </div>
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Apellido*
+              </label>
+              <input
+                type="text"
+                placeholder="Introducir apellido"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    apellido: e.target.value,
+                  });
+                }}
+                value={formData.apellido}
+                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                pattern="^.{1,50}$"
+                required
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Minimo 1 carácter, máximo 50
               </span>
             </div>
           </div>
-          <div className="w-2/4">
+          <div className="flex gap-2">
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Documento*
+              </label>
+              <div className="flex w-full gap-1">
+                <div className="relative w-[20%]">
+                  <Select
+                    options={[
+                      {
+                        value: "V",
+                        label: "V",
+                        onClick: (value, label) => {
+                          setDocumentType({
+                            value,
+                            label,
+                          });
+                        },
+                      },
+                      {
+                        value: "J",
+                        label: "J",
+                        onClick: (value, label) => {
+                          setDocumentType({
+                            value,
+                            label,
+                          });
+                        },
+                      },
+                      {
+                        value: "G",
+                        label: "G",
+                        onClick: (value, label) => {
+                          setDocumentType({
+                            value,
+                            label,
+                          });
+                        },
+                      },
+                      {
+                        value: "E",
+                        label: "E",
+                        onClick: (value, label) => {
+                          setDocumentType({
+                            value,
+                            label,
+                          });
+                        },
+                      },
+                      {
+                        value: "P",
+                        label: "P",
+                        onClick: (value, label) => {
+                          setDocumentType({
+                            value,
+                            label,
+                          });
+                        },
+                      },
+                    ]}
+                    selected={documentType}
+                    small={true}
+                  />
+                </div>
+                <div className="w-[80%]">
+                  <input
+                    type="text"
+                    placeholder="Introducir documento"
+                    onChange={(e) => {
+                      setFormData({
+                        ...formData,
+                        documento: e.target.value,
+                      });
+                    }}
+                    value={formData.documento}
+                    required
+                    className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                    pattern={getDocumentoPatternAndMessage().pattern.source}
+                  />
+                  <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                    {getDocumentoPatternAndMessage().message}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Teléfono
+              </label>
+              <input
+                type="tel"
+                placeholder="Introducir teléfono"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    telefono: e.target.value,
+                  });
+                }}
+                value={formData.telefono}
+                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
+                required={formData.enviarMensajes}
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Teléfono debe estar en formato E.164
+              </span>
+            </div>
+          </div>
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              E-mail
+            </label>
             <input
-              type="tel"
-              placeholder="Teléfono"
+              type="email"
+              name="email"
+              placeholder="Introducir e-mail"
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  telefono: e.target.value,
+                  email: e.target.value,
                 });
               }}
-              value={formData.telefono}
+              value={formData.email}
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
-              required
+              pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Teléfono debe estar en formato E.164
+              E-mail invalido
             </span>
           </div>
-        </div>
-        <div className="w-full">
-          <input
-            type="email"
-            name="email"
-            placeholder="E-mail"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                email: e.target.value,
-              });
-            }}
-            value={formData.email}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
-            required
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            E-mail invalido
-          </span>
-        </div>
-        <div className="w-full">
-          <input
-            type="text"
-            placeholder="Dirección"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                dirección: e.target.value,
-              });
-            }}
-            value={formData.dirección}
-            autoComplete="none"
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            pattern="^.{2,}$"
-            required
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Dirección debe tener minimo 2 caracteres
-          </span>
-        </div>
-        <div className="relative w-full">
-          <input
-            type={visible ? "text" : "password"}
-            placeholder="Nueva contraseña"
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                contraseña: e.target.value,
-              })
-            }
-            value={formData.contraseña}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            name="password"
-            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-            autoComplete="new-password"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            La contraseña debe tener mínimo 8 caracteres, contener una letra
-            mayúscula, una letra minúscula, un número y un carácter especial
-          </span>
-          {visible ? (
-            <On
-              onClick={() => setVisible(false)}
-              className="absolute top-2 right-4 fill-[#2096ed]"
-            />
-          ) : (
-            <Off
-              onClick={() => setVisible(true)}
-              className="absolute top-2 right-4 fill-[#2096ed]"
-            />
-          )}
-        </div>
-        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
-          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Dirección
+            </label>
             <input
-              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              type="checkbox"
+              type="text"
+              placeholder="Introducir dirección"
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  enviarMensajes: e.target.checked,
+                  dirección: e.target.value,
                 });
               }}
-              checked={formData.enviarMensajes}
-              id="checkbox"
+              value={formData.dirección}
+              autoComplete="none"
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              pattern="^.{1,100}$"
             />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox"
-            >
-              ¿Enviar mensajes?
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 100
+            </span>
+          </div>
+          <div className="relative w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Contraseña
             </label>
+            <input
+              type={visible ? "text" : "password"}
+              placeholder="Introducir nueva contraseña"
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  contraseña: e.target.value,
+                })
+              }
+              value={formData.contraseña}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              name="password"
+              pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+              autoComplete="new-password"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              La contraseña debe tener mínimo 8 caracteres, contener una letra
+              mayúscula, una letra minúscula, un número y un carácter especial.
+            </span>
+            {visible ? (
+              <On
+                onClick={() => setVisible(false)}
+                className="absolute top-10 right-4 fill-[#2096ed]"
+              />
+            ) : (
+              <Off
+                onClick={() => setVisible(true)}
+                className="absolute top-10 right-4 fill-[#2096ed]"
+              />
+            )}
           </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                closeModal();
-                resetFormData();
-              }}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
+          <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
+            <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+              <input
+                className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                type="checkbox"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    enviarMensajes: e.target.checked,
+                  });
+                }}
+                checked={formData.enviarMensajes}
+                id="checkbox"
+              />
+              <label
+                className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+                htmlFor="checkbox"
+              >
+                ¿Enviar mensajes?
+              </label>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  closeModal();
+                  resetFormData();
+                }}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cancelar
+              </button>
+              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+                Completar
+              </button>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      )}
     </dialog>
   );
 }
@@ -715,8 +1177,11 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Eliminar cliente</h1>
+      </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
         autoComplete="off"
@@ -726,10 +1191,10 @@ function DeleteModal({
           const loadingToast = toast.loading("Eliminando cliente...");
           ClientService.delete(cliente?.id!).then((data) => {
             toast.dismiss(loadingToast);
-            if (data) {
-              toast.success("Cliente eliminado con exito.");
+            if (data.status === "success") {
+              toast.success(data.message);
             } else {
-              toast.error("Cliente no pudo ser eliminado.");
+              toast.error(data.message);
             }
             setOperationAsCompleted();
           });
@@ -757,6 +1222,124 @@ function DeleteModal({
           </button>
         </div>
       </form>
+    </dialog>
+  );
+}
+
+function ViewModal({ isOpen, closeModal, cliente }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Datos del cliente</h1>
+      </div>
+      <div className="p-8 pt-6">
+        <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Nombre
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {cliente?.nombre}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Apellido
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {cliente?.apellido}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Documento
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {cliente?.documento}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Teléfono
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {cliente?.telefono || "No especificado"}
+              </p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Email
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {cliente?.email || "No especificado"}
+              </p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Dirección
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {cliente?.dirección || "No especificada"}
+              </p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Envio de mensajes
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                <span
+                  className={
+                    cliente?.enviarMensajes ? "text-green-600" : "text-red-600"
+                  }
+                >
+                  {cliente?.enviarMensajes ? "Activado" : "Desactivado"}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={closeModal}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
     </dialog>
   );
 }
@@ -825,7 +1408,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar cliente</h1>
@@ -963,22 +1546,19 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 
 function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.editar.cliente
+    permissions.find()?.editar.cliente
       ? "EDIT"
       : permissions.find()?.eliminar.cliente
       ? "DELETE"
-      : "NONE"
+      : "VIEW"
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
   const anyAction =
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-    permissions.find()?.editar.cliente ||
-    permissions.find()?.eliminar.cliente ||
-    false;
+    permissions.find()?.editar.cliente || permissions.find()?.eliminar.cliente;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -986,6 +1566,10 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const closeViewModal = () => {
+    setIsViewOpen(false);
   };
 
   const selectAction = (action: `${Action}`) => {
@@ -996,7 +1580,7 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
     <tr>
       <th
         scope="row"
-        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
         {cliente?.id}
       </th>
@@ -1004,32 +1588,16 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
         {cliente?.nombre} {cliente?.apellido}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {cliente?.documento
-          ? cliente.documento !== ""
-            ? cliente.documento
-            : "N/A"
-          : "N/A"}
+        {cliente?.documento ||  "No especificado"}
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[150px]">
-        {cliente?.email
-          ? cliente.email !== ""
-            ? cliente.email
-            : "N/A"
-          : "N/A"}
+        {cliente?.email || "No especificado"}
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
-        {cliente?.telefono
-          ? cliente.telefono !== ""
-            ? cliente.telefono
-            : "N/A"
-          : "N/A"}
+        {cliente?.telefono || "No especificado"}
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
-        {cliente?.dirección
-          ? cliente.dirección !== ""
-            ? cliente.dirección
-            : "N/A"
-          : "N/A"}
+        {cliente?.dirección || "No especificada"}
       </td>
       <td
         ref={ref}
@@ -1071,6 +1639,24 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
             />
           </>
         )}
+        {action === "VIEW" && (
+          <>
+            <button
+              onClick={() => {
+                setIsViewOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Mostrar cliente
+            </button>
+            <ViewModal
+              cliente={cliente}
+              isOpen={isViewOpen}
+              closeModal={closeViewModal}
+              setOperationAsCompleted={() => null}
+            />
+          </>
+        )}
         {isDropup && (
           <IndividualDropup
             close={() => setIsDropup(false)}
@@ -1099,11 +1685,7 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
           >
             <More className="w-5 h-5 inline fill-black" />
           </button>
-        ) : (
-          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
-            Nada permitido
-          </button>
-        )}
+        ) : null}
       </td>
     </tr>
   );
@@ -1150,8 +1732,7 @@ function Dropup({ close, selectAction }: DropupProps) {
           border
         "
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.cliente) && (
+      {permissions.find()?.crear.cliente && (
         <li>
           <div
             onClick={() => {
@@ -1243,8 +1824,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
         "
       style={{ top: top }}
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.editar.cliente) && (
+      {permissions.find()?.editar.cliente && (
         <li>
           <div
             onClick={() => {
@@ -1269,8 +1849,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol == "ADMINISTRADOR" ||
-        permissions.find()?.eliminar.cliente) && (
+      {permissions.find()?.eliminar.cliente && (
         <li>
           <div
             onClick={() => {
@@ -1295,11 +1874,29 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        (permissions.find()?.editar.cliente &&
-          permissions.find()?.eliminar.cliente)) && (
-        <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      )}
+      <li>
+        <div
+          onClick={() => {
+            selectAction("VIEW");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Mostrar cliente
+        </div>
+      </li>
     </ul>
   );
 }
@@ -1312,10 +1909,7 @@ export default function ClientsDataDisplay() {
   const [isDropup, setIsDropup] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.crear.cliente
-      ? "ADD"
-      : "SEARCH"
+    permissions.find()?.crear.cliente ? "ADD" : "SEARCH"
   );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
@@ -1330,6 +1924,7 @@ export default function ClientsDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const size = 8;
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -1353,7 +1948,7 @@ export default function ClientsDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0) {
-      void ClientService.getAll(page, 8).then((data) => {
+      void ClientService.getAll(page, size).then((data) => {
         if (data === false) {
           setNotFound(true);
           setClientes([]);
@@ -1375,55 +1970,61 @@ export default function ClientsDataDisplay() {
       if (isPrecise && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
         if (param === "NOMBRE") {
-          void ClientService.getByExactNombre(input, page, 8).then((data) => {
-            toast.dismiss(loadingToast);
-            if (data === false) {
-              setNotFound(true);
-              setClientes([]);
-              setLoading(false);
-            } else {
-              setClientes(data.rows);
-              setPages(data.pages);
-              setCurrent(data.current);
-              setLoading(false);
-              setNotFound(false);
+          void ClientService.getByExactNombre(input, page, size).then(
+            (data) => {
+              toast.dismiss(loadingToast);
+              if (data === false) {
+                setNotFound(true);
+                setClientes([]);
+                setLoading(false);
+              } else {
+                setClientes(data.rows);
+                setPages(data.pages);
+                setCurrent(data.current);
+                setLoading(false);
+                setNotFound(false);
+              }
+              setIsOperationCompleted(false);
             }
-            setIsOperationCompleted(false);
-          });
+          );
         } else if (param === "APELLIDO") {
-          void ClientService.getByExactApellido(input, page, 8).then((data) => {
-            toast.dismiss(loadingToast);
-            if (data === false) {
-              setNotFound(true);
-              setClientes([]);
-              setLoading(false);
-            } else {
-              setClientes(data.rows);
-              setPages(data.pages);
-              setCurrent(data.current);
-              setLoading(false);
-              setNotFound(false);
+          void ClientService.getByExactApellido(input, page, size).then(
+            (data) => {
+              toast.dismiss(loadingToast);
+              if (data === false) {
+                setNotFound(true);
+                setClientes([]);
+                setLoading(false);
+              } else {
+                setClientes(data.rows);
+                setPages(data.pages);
+                setCurrent(data.current);
+                setLoading(false);
+                setNotFound(false);
+              }
+              setIsOperationCompleted(false);
             }
-            setIsOperationCompleted(false);
-          });
+          );
         } else if (param === "TELEFONO") {
-          void ClientService.getByExactTelefono(input, page, 8).then((data) => {
-            toast.dismiss(loadingToast);
-            if (data === false) {
-              setNotFound(true);
-              setClientes([]);
-              setLoading(false);
-            } else {
-              setClientes(data.rows);
-              setPages(data.pages);
-              setCurrent(data.current);
-              setLoading(false);
-              setNotFound(false);
+          void ClientService.getByExactTelefono(input, page, size).then(
+            (data) => {
+              toast.dismiss(loadingToast);
+              if (data === false) {
+                setNotFound(true);
+                setClientes([]);
+                setLoading(false);
+              } else {
+                setClientes(data.rows);
+                setPages(data.pages);
+                setCurrent(data.current);
+                setLoading(false);
+                setNotFound(false);
+              }
+              setIsOperationCompleted(false);
             }
-            setIsOperationCompleted(false);
-          });
+          );
         } else if (param === "DOCUMENTO") {
-          void ClientService.getByExactDocumento(input, page, 8).then(
+          void ClientService.getByExactDocumento(input, page, size).then(
             (data) => {
               toast.dismiss(loadingToast);
               if (data === false) {
@@ -1444,7 +2045,7 @@ export default function ClientsDataDisplay() {
       } else if (!isPrecise && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
         if (param === "NOMBRE") {
-          void ClientService.getByNombre(input, page, 8).then((data) => {
+          void ClientService.getByNombre(input, page, size).then((data) => {
             toast.dismiss(loadingToast);
             if (data === false) {
               setNotFound(true);
@@ -1460,7 +2061,7 @@ export default function ClientsDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "APELLIDO") {
-          void ClientService.getByApellido(input, page, 8).then((data) => {
+          void ClientService.getByApellido(input, page, size).then((data) => {
             toast.dismiss(loadingToast);
             if (data === false) {
               setNotFound(true);
@@ -1476,7 +2077,7 @@ export default function ClientsDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "TELEFONO") {
-          void ClientService.getByTelefono(input, page, 8).then((data) => {
+          void ClientService.getByTelefono(input, page, size).then((data) => {
             toast.dismiss(loadingToast);
             if (data === false) {
               setNotFound(true);
@@ -1492,7 +2093,7 @@ export default function ClientsDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "DOCUMENTO") {
-          void ClientService.getByDocumento(input, page, 8).then((data) => {
+          void ClientService.getByDocumento(input, page, size).then((data) => {
             toast.dismiss(loadingToast);
             if (data === false) {
               setNotFound(true);

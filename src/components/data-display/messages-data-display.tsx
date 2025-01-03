@@ -18,7 +18,6 @@ import MessageService from "../../services/message-service";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import permissions from "../../utils/permissions";
-import session from "../../utils/session";
 import Select from "../misc/select";
 import { useMessageSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
@@ -74,7 +73,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir mensaje</h1>
@@ -89,18 +88,21 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           void MessageService.create(Number(id), formData).then((data) => {
             toast.dismiss(loadingToast);
             setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Mensaje no pudo ser añadido.");
+            if (data.status === "error") {
+              toast.error(data.message);
             } else {
-              toast.success("Mensaje añadido con exito.");
+              toast.success(data.message);
             }
           });
         }}
       >
         <div className="w-full">
+          <label className="block text-gray-600 text-base font-medium mb-2">
+            Contenido*
+          </label>
           <textarea
             rows={8}
-            placeholder="Contenido"
+            placeholder="Introducir contenido"
             onChange={(e) => {
               setFormData({
                 ...formData,
@@ -185,7 +187,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar mensaje</h1>
@@ -201,10 +203,10 @@ function EditModal({
             (data) => {
               toast.dismiss(loadingToast);
               setOperationAsCompleted();
-              if (data) {
-                toast.success("Mensaje editado con exito.");
+              if (data.status === "success") {
+                toast.success(data.message);
               } else {
-                toast.error("Mensaje no pudo ser editado.");
+                toast.error(data.message);
               }
               setOperationAsCompleted();
             }
@@ -212,6 +214,9 @@ function EditModal({
         }}
       >
         <div className="relative">
+          <label className="block text-gray-600 text-base font-medium mb-2">
+            Estado*
+          </label>
           <Select
             onChange={() => {
               setFormData({
@@ -245,9 +250,12 @@ function EditModal({
           />
         </div>
         <div className="w-full">
+          <label className="block text-gray-600 text-base font-medium mb-2">
+            Contenido*
+          </label>
           <textarea
             rows={8}
-            placeholder="Contenido*"
+            placeholder="Introducir contenido*"
             onChange={(e) => {
               setFormData({
                 ...formData,
@@ -322,8 +330,11 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Eliminar mensaje</h1>
+      </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
         autoComplete="off"
@@ -333,10 +344,10 @@ function DeleteModal({
           const loadingToast = toast.loading("Eliminando mensaje...");
           MessageService.delete(Number(id), mensaje?.id!).then((data) => {
             toast.dismiss(loadingToast);
-            if (data) {
-              toast.success("Mensaje eliminado con exito.");
+            if (data.status === "success") {
+              toast.success(data.message);
             } else {
-              toast.error("Mensaje no pudo ser eliminado.");
+              toast.error(data.message);
             }
             setOperationAsCompleted();
           });
@@ -372,8 +383,7 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.editar.mensaje
+    permissions.find()?.editar.mensaje
       ? "EDIT"
       : permissions.find()?.eliminar.mensaje
       ? "DELETE"
@@ -381,13 +391,11 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
-  const anyAction =
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-    permissions.find()?.editar.mensaje
-      ? true
-      : permissions.find()?.eliminar.mensaje
-      ? true
-      : false;
+  const anyAction = permissions.find()?.editar.mensaje
+    ? true
+    : permissions.find()?.eliminar.mensaje
+    ? true
+    : false;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -402,7 +410,7 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
   };
 
   const send = () => {
-    void TicketService.getById(mensaje?.ticket_id!).then((resTicket) => {
+    void TicketService.getById(mensaje?.servicio_id!).then((resTicket) => {
       if (resTicket) {
         if (resTicket.cliente?.enviarMensajes) {
           const sendingToast = toast.loading("Enviando mensaje...");
@@ -414,13 +422,13 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
               toast.dismiss(sendingToast);
               toast.success("Mensaje enviado exitosamente.");
               void MessageService.update(
-                mensaje?.ticket_id!,
+                mensaje?.servicio_id!,
                 mensaje?.id!,
                 //@ts-ignore
                 {
                   id: mensaje?.id!,
                   estado: "ENVIADO",
-                  ticket_id: mensaje?.ticket_id,
+                  servicio_id: mensaje?.servicio_id,
                 }
               ).then(() => {
                 setOperationAsCompleted();
@@ -439,7 +447,7 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
     <tr>
       <th
         scope="row"
-        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
         {mensaje?.id}
       </th>
@@ -613,7 +621,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar Messagen</h1>
@@ -738,8 +746,8 @@ function Dropup({ close, selectAction }: DropupProps) {
           bg-white
           text-base
           z-50
-          right-8
-          top-14
+          right-0
+          top-9
           py-2
           list-none
           text-left
@@ -751,9 +759,7 @@ function Dropup({ close, selectAction }: DropupProps) {
           border
         "
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.crear.mensaje) && (
+      {permissions.find()?.crear.mensaje && (
         <li>
           <div
             onClick={() => {
@@ -805,12 +811,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({
-  id,
-  close,
-  selectAction,
-  top,
-}: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -850,9 +851,7 @@ function IndividualDropup({
         "
       style={{ top: top }}
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.editar.mensaje) && (
+      {permissions.find()?.editar.mensaje && (
         <li>
           <div
             onClick={() => {
@@ -877,9 +876,7 @@ function IndividualDropup({
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.editar.mensaje) && (
+      {permissions.find()?.editar.mensaje && (
         <li>
           <div
             onClick={() => {
@@ -904,9 +901,7 @@ function IndividualDropup({
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.eliminar.mensaje) && (
+      {permissions.find()?.eliminar.mensaje && (
         <li>
           <div
             onClick={() => {
@@ -945,10 +940,7 @@ export default function MessagesDataDisplay() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.crear.mensaje
-      ? "ADD"
-      : "SEARCH"
+    permissions.find()?.crear.mensaje ? "ADD" : "SEARCH"
   );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
@@ -962,6 +954,7 @@ export default function MessagesDataDisplay() {
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
   const resetAllSearchs = useFunctionStore((state) => state.resetAllSearchs);
+  const size = 8;
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -985,7 +978,7 @@ export default function MessagesDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0) {
-      MessageService.getAll(Number(id), page, 8).then((data) => {
+      MessageService.getAll(Number(id), page, size).then((data) => {
         if (data === false) {
           setNotFound(true);
           setMessages([]);
@@ -1006,7 +999,7 @@ export default function MessagesDataDisplay() {
     }
     if (wasSearch) {
       const loadingToast = toast.loading("Buscando...");
-      MessageService.getByState(Number(id), secondParam, page, 8).then(
+      MessageService.getByState(Number(id), secondParam, page, size).then(
         (data) => {
           if (data === false) {
             setNotFound(true);
@@ -1037,7 +1030,7 @@ export default function MessagesDataDisplay() {
   return (
     <>
       <div className="absolute h-full w-full px-8 py-5">
-        <nav className="flex justify-between items-center select-none">
+        <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span
@@ -1053,7 +1046,7 @@ export default function MessagesDataDisplay() {
             <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">Mensajes</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative">
             {isDropup && (
               <Dropup
                 close={closeDropup}

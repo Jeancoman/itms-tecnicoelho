@@ -18,7 +18,6 @@ import CategoryService from "../../services/category-service";
 import toast, { Toaster } from "react-hot-toast";
 import Select from "../misc/select";
 import permissions from "../../utils/permissions";
-import session from "../../utils/session";
 import { useCategorySearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import clsx from "clsx";
@@ -30,6 +29,7 @@ function EditModal({
   categoría,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [formData, setFormData] = useState<Categoría>(categoría!);
   const [selectedType] = useState<Selected>({
     label: categoría?.tipo === "PRODUCTO" ? "Producto" : "Servicio",
@@ -38,6 +38,26 @@ function EditModal({
 
   const resetFormData = () => {
     setFormData(categoría!);
+    setIsConfirmationScreen(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    closeModal();
+    const loadingToast = toast.loading("Editando categoría...");
+    void CategoryService.update(categoría?.id!, formData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data.status === "error") {
+        toast.error(data.message);
+      } else {
+        toast.success(data.message);
+      }
+    });
   };
 
   useEffect(() => {
@@ -47,13 +67,155 @@ function EditModal({
         if (e.key === "Escape") {
           closeModal();
           ref.current?.close();
+          setIsConfirmationScreen(false);
         }
       });
     } else {
       closeModal();
       ref.current?.close();
+      setIsConfirmationScreen(false);
     }
   }, [closeModal, isOpen]);
+
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+        <div className="grid grid-cols-2 gap-8">
+          {/* COLUMNA IZQUIERDA - Datos actuales */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Datos actuales
+            </h3>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {categoría?.nombre || "No especificado"}
+                </p>
+              </div>
+              {/* Descripción */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Descripción
+                </p>
+                <p className="text-gray-900 font-medium text-base whitespace-pre-wrap">
+                  {categoría?.descripción || "No especificada"}
+                </p>
+              </div>
+              {/* Tipo */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Tipo
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {categoría?.tipo || "No especificado"}
+                </p>
+              </div>
+              {/* Es digital */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  ¿Es digital?
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {categoría?.esDigital ? "Sí" : "No"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* COLUMNA DERECHA - Nuevos datos */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Nuevos datos
+            </h3>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.nombre !== categoría?.nombre
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.nombre || "No especificado"}
+                </p>
+              </div>
+              {/* Descripción */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Descripción
+                </p>
+                <p
+                  className={`text-base font-medium whitespace-pre-wrap ${
+                    formData.descripción !== categoría?.descripción
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.descripción || "No especificada"}
+                </p>
+              </div>
+              {/* Tipo */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Tipo
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    selectedType?.value !== categoría?.tipo
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {selectedType?.label || "No especificado"}
+                </p>
+              </div>
+              {/* Es digital */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  ¿Es digital?
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.esDigital !== categoría?.esDigital
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.esDigital ? "Sí" : "No"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTONES DE ACCIÓN */}
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)} // Retorna al formulario
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+        >
+          Volver
+        </button>
+        <button
+          onClick={handleFinalSubmit} // Confirmación final
+          className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+        >
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <dialog
@@ -71,121 +233,125 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar categoría</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isConfirmationScreen ? "Confirmar cambios" : "Editar categoría"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Editando categoría...");
-          void CategoryService.update(categoría?.id!, formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Categoría no pudo ser editada.");
-            } else {
-              toast.success("Categoría editada con exito.");
-            }
-          });
-        }}
-      >
-        <div>
-          <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            value={formData.nombre}
-            placeholder="Nombre*"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^.{2,}$"
-            name="name"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 2 caracteres
-          </span>
-        </div>
-        <div>
-          <textarea
-            rows={3}
-            placeholder="Descripción"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                descripción: e.target.value,
-              });
-            }}
-            value={formData.descripción}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
-          </span>
-        </div>
-        <div className="relative">
-          <select
-            className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-            value={selectedType.value}
-            disabled={true}
-          >
-            <option value={selectedType.value}>{selectedType.label}</option>
-          </select>
-          <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-        </div>
-        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
-          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4 group text-base font-normal"
+          autoComplete="off"
+          onSubmit={handleSubmit}
+        >
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Nombre*
+            </label>
             <input
-              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              type="checkbox"
+              type="text"
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  esDigital: e.target.checked,
+                  nombre: e.target.value,
                 });
               }}
-              checked={formData.esDigital}
-              id="checkbox"
+              value={formData.nombre}
+              placeholder="Introducir nombre"
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^.{1,100}$"
+              name="name"
             />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox"
-            >
-              ¿Es digital?
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 100
+            </span>
+          </div>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Descripción
             </label>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                closeModal();
-                resetFormData();
+            <textarea
+              rows={3}
+              placeholder="Introducir descripción"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  descripción: e.target.value,
+                });
               }}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
+              value={formData.descripción}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={1}
+              maxLength={500}
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 500
+            </span>
           </div>
-        </div>
-      </form>
+          <div className="relative">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Tipo*
+            </label>
+            <select
+              className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+              value={selectedType.value}
+              disabled={true}
+            >
+              <option value={selectedType.value}>{selectedType.label}</option>
+            </select>
+            <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
+          </div>
+          <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
+            <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+              <input
+                className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                type="checkbox"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    esDigital: e.target.checked,
+                  });
+                }}
+                checked={formData.esDigital}
+                id="checkbox"
+              />
+              <label
+                className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+                htmlFor="checkbox"
+              >
+                ¿Es digital?
+              </label>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  closeModal();
+                  resetFormData();
+                }}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cancelar
+              </button>
+              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+                Completar
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
     </dialog>
   );
 }
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [selectedType, setSelectedType] = useState<Selected>({
     label: "Seleccionar tipo",
     value: "",
@@ -208,6 +374,26 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       label: "Seleccionar tipo",
       value: "",
     });
+    setIsConfirmationScreen(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    closeModal();
+    const loadingToast = toast.loading("Añadiendo categoría...");
+    void CategoryService.create(formData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data.status === "error") {
+        toast.error(data.message);
+      } else {
+        toast.success(data.message);
+      }
+    });
   };
 
   useEffect(() => {
@@ -227,6 +413,72 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     }
   }, [isOpen]);
 
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+        <div className="grid grid-cols-2 gap-6">
+          {/* NOMBRE */}
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Nombre
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData.nombre || "No especificado"}
+            </p>
+          </div>
+
+          {/* DESCRIPCIÓN */}
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Descripción
+            </p>
+            <p className="text-gray-900 font-medium text-base whitespace-pre-wrap">
+              {formData.descripción || "No especificada"}
+            </p>
+          </div>
+
+          {/* TIPO */}
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Tipo
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {selectedType?.label || "No especificado"}
+            </p>
+          </div>
+
+          {/* ES DIGITAL */}
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              ¿Es digital?
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData.esDigital ? "Sí" : "No"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTONES DE ACCIÓN */}
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)} // Retorna al formulario
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+        >
+          Volver
+        </button>
+        <button
+          onClick={handleFinalSubmit} // Confirmación final
+          className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+        >
+          Crear categoría
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <dialog
       ref={ref}
@@ -242,135 +494,138 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Añadir categoría</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isConfirmationScreen ? "Confirmar categoría" : "Añadir categoría"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Añadiendo categoría...");
-          void CategoryService.create(formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Categoría no pudo ser añadida.");
-            } else {
-              toast.success("Categoría añadida con exito.");
-            }
-          });
-        }}
-      >
-        <div>
-          <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            value={formData.nombre}
-            placeholder="Nombre*"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^.{2,}$"
-            name="name"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 2 caracteres
-          </span>
-        </div>
-        <div>
-          <textarea
-            rows={3}
-            placeholder="Descripción"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                descripción: e.target.value,
-              });
-            }}
-            value={formData.descripción}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
-          </span>
-        </div>
-        <div className="relative">
-          <Select
-            onChange={() => {
-              setFormData({
-                ...formData,
-                tipo: selectedType.value as CategoríaTipo,
-              });
-            }}
-            options={[
-              {
-                value: "PRODUCTO",
-                label: "Producto",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "SERVICIO",
-                label: "Servicio",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
-            ]}
-            selected={selectedType}
-          />
-        </div>
-        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
-          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4 group"
+          autoComplete="off"
+          onSubmit={handleSubmit}
+        >
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Nombre*
+            </label>
             <input
-              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              type="checkbox"
+              type="text"
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  esDigital: e.target.checked,
+                  nombre: e.target.value,
                 });
               }}
-              checked={formData.esDigital}
-              id="checkbox"
+              value={formData.nombre}
+              placeholder="Introducir nombre"
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^.{1,100}$"
+              name="name"
             />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox"
-            >
-              ¿Es digital?
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 100
+            </span>
+          </div>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Descripción
             </label>
+            <textarea
+              rows={3}
+              placeholder="Introducir descripción"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  descripción: e.target.value,
+                });
+              }}
+              value={formData.descripción}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={1}
+              maxLength={500}
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 500
+            </span>
           </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
+          <div className="relative">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Tipo*
+            </label>
+            <Select
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  tipo: selectedType.value as CategoríaTipo,
+                });
+              }}
+              options={[
+                {
+                  value: "PRODUCTO",
+                  label: "Producto",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "SERVICIO",
+                  label: "Servicio",
+                  onClick: (value, label) => {
+                    setSelectedType({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedType}
+            />
           </div>
-        </div>
-      </form>
+          <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
+            <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+              <input
+                className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                type="checkbox"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    esDigital: e.target.checked,
+                  });
+                }}
+                checked={formData.esDigital}
+                id="checkbox"
+              />
+              <label
+                className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+                htmlFor="checkbox"
+              >
+                ¿Es digital?
+              </label>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cancelar
+              </button>
+              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+                Completar
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
     </dialog>
   );
 }
@@ -413,8 +668,11 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Eliminar cliente</h1>
+      </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
         autoComplete="off"
@@ -424,10 +682,10 @@ function DeleteModal({
           const loadingToast = toast.loading("Eliminando categoría...");
           CategoryService.delete(categoría?.id!).then((data) => {
             toast.dismiss(loadingToast);
-            if (data) {
-              toast.success("Categoría eliminada con exito.");
+            if (data.status === "success") {
+              toast.success(data.message);
             } else {
-              toast.error("Categoría no pudo ser eliminada.");
+              toast.error(data.message);
             }
             setOperationAsCompleted();
           });
@@ -455,6 +713,106 @@ function DeleteModal({
           </button>
         </div>
       </form>
+    </dialog>
+  );
+}
+
+function ViewModal({ isOpen, closeModal, categoría }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  const capitalizeFirstLetter = (string: string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Datos de la categoría</h1>
+      </div>
+      <div className="p-8 pt-6">
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* NOMBRE */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Nombre
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {categoría?.nombre || "No especificado"}
+              </p>
+            </div>
+
+            {/* DESCRIPCIÓN */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Descripción
+              </p>
+              <p className="text-gray-900 font-medium text-base whitespace-pre-wrap">
+                {categoría?.descripción || "No especificada"}
+              </p>
+            </div>
+
+            {/* TIPO */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Tipo
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {capitalizeFirstLetter(categoría?.tipo || "") ||
+                  "No especificado"}
+              </p>
+            </div>
+
+            {/* ES DIGITAL */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                ¿Es digital?
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {categoría?.esDigital ? "Sí" : "No"}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={closeModal}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
     </dialog>
   );
 }
@@ -535,7 +893,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar categoría</h1>
@@ -684,24 +1042,20 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 
 function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.editar.categoría
+    permissions.find()?.editar.categoría
       ? "EDIT"
       : permissions.find()?.eliminar.categoría
       ? "DELETE"
-      : "NONE"
+      : "VIEW"
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
   const anyAction =
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-    permissions.find()?.editar.categoría
-      ? true
-      : permissions.find()?.eliminar.categoría
-      ? true
-      : false;
+    permissions.find()?.editar.categoría ||
+    permissions.find()?.eliminar.categoría;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -709,6 +1063,10 @@ function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const closeViewModal = () => {
+    setIsViewOpen(false);
   };
 
   const selectAction = (action: `${Action}`) => {
@@ -719,17 +1077,13 @@ function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
     <tr>
       <th
         scope="row"
-        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
         {categoría?.id}
       </th>
       <td className="px-6 py-4 border border-slate-300">{categoría?.nombre}</td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">
-        {categoría?.descripción
-          ? categoría.descripción !== ""
-            ? categoría.descripción
-            : "N/A"
-          : "N/A"}
+        {categoría?.descripción || "No especificada"}
       </td>
       <td className="px-6 py-4 border border-slate-300">{categoría?.tipo}</td>
       <td
@@ -777,6 +1131,24 @@ function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
             />
           </>
         )}
+        {action === "VIEW" && (
+          <>
+            <button
+              onClick={() => {
+                setIsViewOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Mostrar categoría
+            </button>
+            <ViewModal
+              categoría={categoría}
+              isOpen={isViewOpen}
+              closeModal={closeViewModal}
+              setOperationAsCompleted={() => null}
+            />
+          </>
+        )}
         {isDropup && (
           <IndividualDropup
             close={() => setIsDropup(false)}
@@ -805,11 +1177,7 @@ function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
           >
             <More className="w-5 h-5 inline fill-black" />
           </button>
-        ) : (
-          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
-            Nada permitido
-          </button>
-        )}
+        ) : null}
       </td>
     </tr>
   );
@@ -843,8 +1211,8 @@ function Dropup({ close, selectAction }: DropupProps) {
           bg-white
           text-base
           z-50
-          right-8
-          top-14
+          right-0
+          top-9
           py-2
           list-none
           text-left
@@ -856,9 +1224,7 @@ function Dropup({ close, selectAction }: DropupProps) {
           border
         "
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.crear.categoría) && (
+      {permissions.find()?.crear.categoría && (
         <li>
           <div
             onClick={() => {
@@ -950,9 +1316,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
         "
       style={{ top: top }}
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.editar.categoría) && (
+      {permissions.find()?.editar.categoría && (
         <li>
           <div
             onClick={() => {
@@ -977,9 +1341,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-        permissions.find()?.eliminar.categoría) && (
+      {permissions.find()?.eliminar.categoría && (
         <li>
           <div
             onClick={() => {
@@ -1004,6 +1366,29 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
+      <li>
+        <div
+          onClick={() => {
+            selectAction("VIEW");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Mostrar categoría
+        </div>
+      </li>
     </ul>
   );
 }
@@ -1016,10 +1401,7 @@ export default function CategoriesDataDisplay() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.crear.categoría
-      ? "ADD"
-      : "SEARCH"
+    permissions.find()?.crear.categoría ? "ADD" : "SEARCH"
   );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
@@ -1034,6 +1416,7 @@ export default function CategoriesDataDisplay() {
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
   const [isSearch, setIsSearch] = useState(false);
+  const size = 8;
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -1057,7 +1440,7 @@ export default function CategoriesDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0 || isOperationCompleted) {
-      CategoryService.getAll(page, 8).then((data) => {
+      CategoryService.getAll(page, size).then((data) => {
         if (data === false) {
           setNotFound(true);
           setLoading(false);
@@ -1078,7 +1461,7 @@ export default function CategoriesDataDisplay() {
     } else {
       if (param === "TIPO") {
         const loadingToast = toast.loading("Buscando...");
-        CategoryService.getByTipo(input, page, 8).then((data) => {
+        CategoryService.getByTipo(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setLoading(false);
@@ -1096,7 +1479,7 @@ export default function CategoriesDataDisplay() {
       } else if (isPrecise && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
         if (param === "NOMBRE") {
-          CategoryService.getByExactNombre(input, page, 8).then((data) => {
+          CategoryService.getByExactNombre(input, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -1114,7 +1497,7 @@ export default function CategoriesDataDisplay() {
         } else if (!isPrecise && wasSearch) {
           const loadingToast = toast.loading("Buscando...");
           if (param === "NOMBRE") {
-            CategoryService.getByNombre(input, page, 8).then((data) => {
+            CategoryService.getByNombre(input, page, size).then((data) => {
               if (data === false) {
                 setNotFound(true);
                 setLoading(false);
@@ -1142,12 +1525,12 @@ export default function CategoriesDataDisplay() {
   return (
     <>
       <div className="absolute h-full w-full px-8 py-5">
-        <nav className="flex justify-between items-center select-none">
+        <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">Categorías</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative">
             {isDropup && (
               <Dropup
                 close={closeDropup}

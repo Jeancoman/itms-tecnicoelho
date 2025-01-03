@@ -12,23 +12,17 @@ export default function ProductsPage() {
     if (!session.find()) {
       navigate("/entrar");
     } else {
-      if (
-        session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-        !permissions.find()?.ver.producto
-      ) {
+      if (!permissions.find()?.ver.producto) {
         navigate("/");
       }
     }
-  })
+  });
 
   if (!session.find()) {
-    return null
+    return null;
   } else {
-    if (
-      session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-      !permissions.find()?.ver.producto
-    ) {
-      return null
+    if (!permissions.find()?.ver.producto) {
+      return null;
     }
   }
 

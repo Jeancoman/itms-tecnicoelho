@@ -17,6 +17,9 @@ import RequestPasswordResetPage from "./pages/request-password-reset-page";
 import PasswordResetPage from "./pages/password-reset";
 import MessagesPage from "./pages/messages-page";
 import ImpuestoPage from "./pages/impuestos-page";
+import RolesPage from "./pages/roles-page";
+import HistoricoPage from "./pages/historico-pages";
+import AccesoPage from "./pages/acceso-page";
 
 export default function App() {
   return (
@@ -25,6 +28,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/clientes" element={<ClientsPage />} />
         <Route path="/usuarios" element={<UsersPage />} />
+        <Route path="/usuarios/:id/actividad" element={<AccesoPage />} />
         <Route path="/tickets" element={<TicketsPage />} />
         <Route path="/tickets/:id/mensajes" element={<MessagesPage />} />
         <Route path="/productos" element={<ProductsPage />} />
@@ -37,7 +41,9 @@ export default function App() {
         <Route path="/impuestos" element={<ImpuestoPage />} />
         <Route path="/mensajeria" element={<MessagingPage />} />
         <Route path="/galeria" element={<ImagesPage />} />
+        <Route path="/roles" element={<RolesPage />} />
         <Route path="/entrar" element={<LoginPage />} />
+        <Route path="/historico" element={<HistoricoPage />} />
         <Route
           path="/solicitar-restablecimiento-contraseña"
           element={<RequestPasswordResetPage />}

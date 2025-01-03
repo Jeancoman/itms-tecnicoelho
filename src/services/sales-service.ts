@@ -1,4 +1,4 @@
-import { DetalleVenta, Venta, Response } from "../types";
+import { Venta, Response } from "../types";
 import session from "../utils/session";
 
 export default class SaleService {
@@ -287,7 +287,7 @@ export default class SaleService {
     }
   }
 
-  static async create(sale: Venta) {
+  static async create(sale: Venta, impuestos: any) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/ventas/`,
@@ -298,7 +298,7 @@ export default class SaleService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-          body: JSON.stringify(sale),
+          body: JSON.stringify({ sale, impuestos: impuestos }),
         }
       );
 
@@ -307,31 +307,6 @@ export default class SaleService {
       }
 
       return (await response.json()) as Venta;
-    } catch {
-      return false;
-    }
-  }
-
-  static async update(id: number, sale: Venta) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/ventas/${id}`,
-        {
-          method: "PATCH",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: session.find()?.token!,
-          },
-          body: JSON.stringify(sale),
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
     } catch {
       return false;
     }
@@ -361,78 +336,4 @@ export default class SaleService {
     }
   }
 
-  static async createDetails(id: number, details: DetalleVenta[]) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/ventas/${id}/detalles`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: session.find()?.token!,
-          },
-          body: JSON.stringify(details),
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Venta;
-    } catch {
-      return false;
-    }
-  }
-
-  static async updateDetails(id: number, details: DetalleVenta[]) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/ventas/${id}/detalles`,
-        {
-          method: "PATCH",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: session.find()?.token!,
-          },
-          body: JSON.stringify(details),
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  static async deleteDetails(id: number, details: DetalleVenta[]) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/ventas/${id}/detalles`,
-        {
-          method: "DELETE",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: session.find()?.token!,
-          },
-          body: JSON.stringify(details),
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
-    } catch {
-      return false;
-    }
-  }
 }

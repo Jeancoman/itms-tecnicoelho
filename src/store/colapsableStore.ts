@@ -10,4 +10,9 @@ export const useColapsableInventoryStore = create<Colapsable>((set) => ({
   toggle: () => set((state) => ({ isColapsed: !state.isColapsed })),
 }));
 
+export const useColapsableSettingsStore = create<Colapsable>((set) => ({
+  isColapsed: false,
+  toggle: () => set((state) => ({ isColapsed: !state.isColapsed })),
+}));
+
   

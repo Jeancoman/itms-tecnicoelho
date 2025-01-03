@@ -12,10 +12,7 @@ export default function ImagesPage() {
     if (!session.find()) {
       navigate("/entrar");
     } else {
-      if (
-        session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-        !permissions.find()?.ver.imagen
-      ) {
+      if (!permissions.find()?.ver.imagen) {
         navigate("/");
       }
     }
@@ -24,10 +21,7 @@ export default function ImagesPage() {
   if (!session.find()) {
     return null;
   } else {
-    if (
-      session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-      !permissions.find()?.ver.imagen
-    ) {
+    if (!permissions.find()?.ver.imagen) {
       return null;
     }
   }

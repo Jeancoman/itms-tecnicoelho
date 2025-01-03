@@ -10,15 +10,23 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      document.addEventListener('focusin', (e) => {
-        if (e.target.closest(".tox-tinymce-aux, .moxman-window, .tam-assetmanager-root") !== null) {
+      document.addEventListener("focusin", (e) => {
+        if (
+          e.target.closest(
+            ".tox-tinymce-aux, .moxman-window, .tam-assetmanager-root"
+          ) !== null
+        ) {
           e.stopImmediatePropagation();
         }
       });
-      </script>
+    </script>
     <style>
-      .tox, .tox-tinymce {
-        z-index: 4000;
+      body.tox-fullscreen .tox.tox-tinymce.tox-fullscreen {
+        z-index: 1000001 !important;
+      }
+
+      .tox.tox-silver-sink.tox-tinymce-aux {
+        z-index: 1000001 !important;
       }
     </style>
   </body>

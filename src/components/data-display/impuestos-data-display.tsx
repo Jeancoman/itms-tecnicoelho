@@ -3,6 +3,7 @@ import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import { ReactComponent as More } from "/src/assets/more_vert.svg";
+import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -15,7 +16,6 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import Select from "../misc/select";
 import permissions from "../../utils/permissions";
-import session from "../../utils/session";
 import { useImpuestoSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import clsx from "clsx";
@@ -28,10 +28,43 @@ function EditModal({
   impuesto,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
+  const [selectedAplica] = useState<Selected>({
+    label: impuesto?.aplicaA === "PRODUCTO" ? "Productos" : "Ventas",
+    value: impuesto?.aplicaA,
+  });
+  const [selectedCondicion] = useState<Selected>({
+    label: impuesto?.condicionPago === "CONTADO" ? "Contado" : "Credito",
+    value: impuesto?.condicionPago ?? "NULL",
+  });
+  const [selectedMoneda] = useState<Selected>({
+    label: impuesto?.tipoMoneda === "BOLIVAR" ? "Bolívar" : "Divisa",
+    value: impuesto?.tipoMoneda ?? "NULL",
+  });
   const [formData, setFormData] = useState<Impuesto>(impuesto!);
 
   const resetFormData = () => {
     setFormData(impuesto!);
+    setIsConfirmationScreen(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    closeModal();
+    const loadingToast = toast.loading("Editando impuesto...");
+    void ImpuestoService.update(impuesto?.id!, formData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data.status === "error") {
+        toast.error(data.message);
+      } else {
+        toast.success(data.message);
+      }
+    });
   };
 
   useEffect(() => {
@@ -49,6 +82,126 @@ function EditModal({
     }
   }, [closeModal, isOpen]);
 
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+        <div className="grid grid-cols-2 gap-8">
+          {/* COLUMNA IZQUIERDA - Datos actuales */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Datos actuales
+            </h3>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {impuesto?.nombre || "No especificado"}
+                </p>
+              </div>
+              {/* Código */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Código
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {impuesto?.codigo || "No especificado"}
+                </p>
+              </div>
+              {/* Porcentaje */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Porcentaje
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {impuesto?.porcentaje !== undefined
+                    ? `${impuesto.porcentaje}%`
+                    : "No especificado"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* COLUMNA DERECHA - Nuevos datos */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Nuevos datos
+            </h3>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.nombre !== impuesto?.nombre
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.nombre || "No especificado"}
+                </p>
+              </div>
+              {/* Código */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Código
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.codigo !== impuesto?.codigo
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.codigo || "No especificado"}
+                </p>
+              </div>
+              {/* Porcentaje */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Porcentaje
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.porcentaje !== impuesto?.porcentaje
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.porcentaje !== undefined
+                    ? `${formData.porcentaje}%`
+                    : "No especificado"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTONES DE ACCIÓN */}
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)} // Retorna al formulario
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+        >
+          Volver
+        </button>
+        <button
+          onClick={handleFinalSubmit} // Confirmación final
+          className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+        >
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <dialog
       ref={ref}
@@ -65,117 +218,188 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar impuesto</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isConfirmationScreen ? "Confirmar cambios" : "Editar impuesto"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Editando impuesto...");
-          void ImpuestoService.update(impuesto?.id!, formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Impuesto no pudo ser editada.");
-            } else {
-              toast.success("Impuesto editada con exito.");
-            }
-          });
-        }}
-      >
-        <div>
-          <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            value={formData.nombre}
-            placeholder="Nombre*"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^.{2,}$"
-            name="name"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 2 caracteres
-          </span>
-        </div>
-        <div>
-          <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                codigo: e.target.value.toUpperCase(),
-              });
-            }}
-            value={formData.codigo}
-            placeholder="Código*"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^[A-Z0-9]{3,10}$"
-            name="codigo"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Solo letras mayúsculas y números (3-10 caracteres)
-          </span>
-        </div>
-        <div>
-          <input
-            type="number"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                porcentaje: parseFloat(e.target.value),
-              });
-            }}
-            value={formData.porcentaje}
-            placeholder="Porcentaje*"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            min="0"
-            max="100"
-            step="0.01"
-            name="porcentaje"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Debe ser un número entre 0 y 100
-          </span>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              closeModal();
-              resetFormData();
-            }}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Cancelar
-          </button>
-          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Completar
-          </button>
-        </div>
-      </form>
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4 group"
+          autoComplete="off"
+          onSubmit={handleSubmit}
+        >
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Nombre*
+            </label>
+            <input
+              type="text"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  nombre: e.target.value,
+                });
+              }}
+              value={formData.nombre}
+              placeholder="Introducir nombre*"
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^.{1,150}$"
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 150
+            </span>
+          </div>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Código*
+            </label>
+            <input
+              type="text"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  codigo: e.target.value.toUpperCase(),
+                });
+              }}
+              value={formData.codigo}
+              placeholder="Introducir código*"
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^[A-Z0-9]{2,10}$"
+              name="codigo"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Solo letras mayúsculas y números (2-10 caracteres)
+            </span>
+          </div>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Porcentaje*
+            </label>
+            <input
+              type="number"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  porcentaje: parseFloat(e.target.value),
+                });
+              }}
+              value={formData.porcentaje === 0 ? "" : formData.porcentaje}
+              placeholder="Introducir porcentaje*"
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              min="0"
+              max="100"
+              step="0.01"
+              name="porcentaje"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Debe ser un número entre 0 y 100
+            </span>
+          </div>
+          <div className="relative">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Aplica a*
+            </label>
+            <select
+              className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+              value={selectedAplica.value}
+              disabled={true}
+            >
+              <option value={selectedAplica.value}>
+                {selectedAplica.label}
+              </option>
+            </select>
+            <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
+          </div>
+          {selectedAplica.value === "VENTA" && (
+            <>
+              {selectedCondicion.value !== "NULL" && (
+                <div className="relative">
+                  <label className="block text-gray-600 text-base font-medium mb-2">
+                    Condición de pago
+                  </label>
+                  <select
+                    className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                    value={selectedCondicion.value}
+                    disabled={true}
+                  >
+                    <option value={selectedCondicion.value}>
+                      {selectedCondicion.label}
+                    </option>
+                  </select>
+                  <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
+                </div>
+              )}
+              {selectedMoneda.value !== "NULL" && (
+                <div className="relative">
+                  <label className="block text-gray-600 text-base font-medium mb-2">
+                    Moneda de pago
+                  </label>
+                  <select
+                    className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                    value={selectedMoneda.value}
+                    disabled={true}
+                  >
+                    <option value={selectedMoneda.value}>
+                      {selectedMoneda.label}
+                    </option>
+                  </select>
+                  <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
+                </div>
+              )}
+            </>
+          )}
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                closeModal();
+                resetFormData();
+              }}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
+            </button>
+          </div>
+        </form>
+      )}
     </dialog>
   );
 }
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
+  const [selectedAplica, setSelectedAplica] = useState<Selected>({
+    label: "Productos",
+    value: "PRODUCTO",
+  });
+  const [selectedCondicion, setSelectedCondicion] = useState<Selected>({
+    label: "Seleccionar la condición de pago (si aplica)",
+    value: "",
+  });
+  const [selectedMoneda, setSelectedMoneda] = useState<Selected>({
+    label: "Seleccionar la moneda de pago (si aplica)",
+    value: "",
+  });
   const [formData, setFormData] = useState<Impuesto>({
     nombre: "",
     codigo: "",
     porcentaje: 0,
+    aplicaA: "PRODUCTO",
+    tipoMoneda: null,
+    condicionPago: null,
   });
 
   const resetFormData = () => {
@@ -183,6 +407,41 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       nombre: "",
       codigo: "",
       porcentaje: 0,
+      aplicaA: "PRODUCTO",
+      tipoMoneda: null,
+      condicionPago: null,
+    });
+    setSelectedAplica({
+      label: "Producto",
+      value: "PRODUCTO",
+    });
+    setSelectedCondicion({
+      label: "Seleccionar la condición de pago (si aplica)",
+      value: "",
+    });
+    setSelectedMoneda({
+      label: "Seleccionar la moneda de pago (si aplica)",
+      value: "",
+    });
+    setIsConfirmationScreen(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    closeModal();
+    const loadingToast = toast.loading("Añadiendo impuesto...");
+    void ImpuestoService.create(formData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data.status === "error") {
+        toast.error(data.message);
+      } else {
+        toast.success(data.message);
+      }
     });
   };
 
@@ -203,6 +462,64 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     }
   }, [isOpen]);
 
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+        <div className="grid grid-cols-2 gap-6">
+          {/* NOMBRE */}
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Nombre
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData.nombre || "No especificado"}
+            </p>
+          </div>
+
+          {/* CÓDIGO */}
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Código
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData.codigo || "No especificado"}
+            </p>
+          </div>
+
+          {/* PORCENTAJE */}
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Porcentaje
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData.porcentaje !== undefined
+                ? `${formData.porcentaje}%`
+                : "No especificado"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTONES DE ACCIÓN */}
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)} // Retorna al formulario
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+        >
+          Volver
+        </button>
+        <button
+          onClick={handleFinalSubmit} // Confirmación final
+          className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+        >
+          Crear impuesto
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <dialog
       ref={ref}
@@ -218,104 +535,309 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Añadir Impuesto</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isConfirmationScreen ? "Confirmar impuesto" : "Añadir impuesto"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4 group"
+          autoComplete="off"
+          onSubmit={handleSubmit}
+        >
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Nombre*
+            </label>
+            <input
+              type="text"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  nombre: e.target.value,
+                });
+              }}
+              value={formData.nombre}
+              placeholder="Introducir nombre*"
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^.{1,150}$"
+              name="name"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 150
+            </span>
+          </div>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Código*
+            </label>
+            <input
+              type="text"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  codigo: e.target.value.toUpperCase(),
+                });
+              }}
+              value={formData.codigo}
+              placeholder="Introducir código*"
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^[A-Z0-9]{2,10}$"
+              name="codigo"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Solo letras mayúsculas y números (2-10 caracteres)
+            </span>
+          </div>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Porcentaje*
+            </label>
+            <input
+              type="number"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  porcentaje: parseFloat(e.target.value),
+                });
+              }}
+              value={formData.porcentaje === 0 ? "" : formData.porcentaje}
+              placeholder="Introducir porcentaje*"
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              min="0"
+              max="100"
+              step="0.01"
+              name="porcentaje"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Debe ser un número entre 0 y 100
+            </span>
+          </div>
+          <div className="relative">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Aplica a*
+            </label>
+            <Select
+              options={[
+                {
+                  value: "PRODUCTO",
+                  label: "Productos",
+                  onClick: (value, label) => {
+                    setSelectedAplica({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "VENTA",
+                  label: "Ventas",
+                  onClick: (value, label) => {
+                    setSelectedAplica({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedAplica}
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  aplicaA: selectedAplica.value as "PRODUCTO" | "VENTA",
+                });
+              }}
+            />
+          </div>
+          {selectedAplica.value === "VENTA" && (
+            <>
+              <div className="relative">
+                <label className="block text-gray-600 text-base font-medium mb-2">
+                  Condición de pago
+                </label>
+                <Select
+                  onChange={() => {
+                    if (selectedCondicion.value) {
+                      setFormData({
+                        ...formData,
+                        condicionPago: selectedCondicion.value as any,
+                      });
+                    }
+                  }}
+                  options={[
+                    {
+                      value: "CONTADO",
+                      label: "Contado",
+                      onClick: (value, label) => {
+                        setSelectedCondicion({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "CREDITO",
+                      label: "Credito",
+                      onClick: (value, label) => {
+                        setSelectedCondicion({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                  ]}
+                  selected={selectedCondicion}
+                />
+              </div>
+              <div className="relative">
+                <label className="block text-gray-600 text-base font-medium mb-2">
+                  Moneda de pago
+                </label>
+                <Select
+                  onChange={() => {
+                    if (selectedMoneda.value) {
+                      setFormData({
+                        ...formData,
+                        tipoMoneda: selectedMoneda.value as any,
+                      });
+                    }
+                  }}
+                  options={[
+                    {
+                      value: "BOLIVAR",
+                      label: "Bolívar",
+                      onClick: (value, label) => {
+                        setSelectedMoneda({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "DIVISA",
+                      label: "Divisa",
+                      onClick: (value, label) => {
+                        setSelectedMoneda({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                  ]}
+                  selected={selectedMoneda}
+                />
+              </div>
+            </>
+          )}
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
+            </button>
+          </div>
+        </form>
+      )}
+    </dialog>
+  );
+}
+
+function ViewModal({ isOpen, closeModal, impuesto }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
           closeModal();
-          const loadingToast = toast.loading("Añadiendo impuesto...");
-          void ImpuestoService.create(formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Impuesto no pudo ser añadido.");
-            } else {
-              toast.success("Impuesto añadido con éxito.");
-            }
-          });
-        }}
-      >
-        <div>
-          <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            value={formData.nombre}
-            placeholder="Nombre*"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^.{2,}$"
-            name="nombre"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Mínimo 2 caracteres
-          </span>
-        </div>
-        <div>
-          <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                codigo: e.target.value.toUpperCase(),
-              });
-            }}
-            value={formData.codigo}
-            placeholder="Código*"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^[A-Z0-9]{3,10}$"
-            name="codigo"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Solo letras mayúsculas y números (3-10 caracteres)
-          </span>
-        </div>
-        <div>
-          <input
-            type="number"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                porcentaje: parseFloat(e.target.value),
-              });
-            }}
-            value={formData.porcentaje}
-            placeholder="Porcentaje*"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            min="0"
-            max="100"
-            step="0.01"
-            name="porcentaje"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Debe ser un número entre 0 y 100
-          </span>
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Datos del impuesto</h1>
+      </div>
+      <div className="p-8 pt-6">
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* NOMBRE */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Nombre
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {impuesto?.nombre || "No especificado"}
+              </p>
+            </div>
+
+            {/* CÓDIGO */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Código
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {impuesto?.codigo || "No especificado"}
+              </p>
+            </div>
+
+            {/* PORCENTAJE */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Porcentaje
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {impuesto?.porcentaje !== undefined
+                  ? `${impuesto?.porcentaje}%`
+                  : "No especificado"}
+              </p>
+            </div>
+          </div>
         </div>
         <div className="flex gap-2 justify-end">
           <button
-            type="button"
             onClick={closeModal}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
           >
-            Cancelar
-          </button>
-          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Completar
+            Cerrar
           </button>
         </div>
-      </form>
+      </div>
     </dialog>
   );
 }
@@ -324,7 +846,7 @@ function DeleteModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  categoría,
+  impuesto,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -358,8 +880,11 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Eliminar impuesto</h1>
+      </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
         autoComplete="off"
@@ -367,12 +892,12 @@ function DeleteModal({
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Eliminando impuesto...");
-          ImpuestoService.delete(categoría?.id!).then((data) => {
+          ImpuestoService.delete(impuesto?.id!).then((data) => {
             toast.dismiss(loadingToast);
-            if (data) {
-              toast.success("Impuesto eliminada con exito.");
+            if (data.status === "success") {
+              toast.success(data.message);
             } else {
-              toast.error("Impuesto no pudo ser eliminada.");
+              toast.error(data.message);
             }
             setOperationAsCompleted();
           });
@@ -472,10 +997,10 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Buscar producto</h1>
+        <h1 className="text-xl font-bold text-white">Buscar impuesto</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center group"
@@ -585,25 +1110,21 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 }
 
 function DataRow({ impuesto, setOperationAsCompleted }: DataRowProps) {
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.editar.impuesto
+    permissions.find()?.editar.impuesto
       ? "EDIT"
       : permissions.find()?.eliminar.impuesto
       ? "DELETE"
-      : "NONE"
+      : "VIEW"
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
   const anyAction =
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-    permissions.find()?.editar.impuesto
-      ? true
-      : permissions.find()?.eliminar.impuesto
-      ? true
-      : false;
+    permissions.find()?.editar.impuesto ||
+    permissions.find()?.eliminar.impuesto;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -611,6 +1132,10 @@ function DataRow({ impuesto, setOperationAsCompleted }: DataRowProps) {
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const closeViewModal = () => {
+    setIsViewOpen(false);
   };
 
   const selectAction = (action: `${Action}`) => {
@@ -621,7 +1146,7 @@ function DataRow({ impuesto, setOperationAsCompleted }: DataRowProps) {
     <tr>
       <th
         scope="row"
-        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
         {impuesto?.id}
       </th>
@@ -677,6 +1202,24 @@ function DataRow({ impuesto, setOperationAsCompleted }: DataRowProps) {
             />
           </>
         )}
+        {action === "VIEW" && (
+          <>
+            <button
+              onClick={() => {
+                setIsViewOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Mostrar impuesto
+            </button>
+            <ViewModal
+              impuesto={impuesto}
+              isOpen={isViewOpen}
+              closeModal={closeViewModal}
+              setOperationAsCompleted={() => null}
+            />
+          </>
+        )}
         {isDropup && (
           <IndividualDropup
             close={() => setIsDropup(false)}
@@ -705,11 +1248,7 @@ function DataRow({ impuesto, setOperationAsCompleted }: DataRowProps) {
           >
             <More className="w-5 h-5 inline fill-black" />
           </button>
-        ) : (
-          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
-            Nada permitido
-          </button>
-        )}
+        ) : null}
       </td>
     </tr>
   );
@@ -743,8 +1282,8 @@ function Dropup({ close, selectAction }: DropupProps) {
           bg-white
           text-base
           z-50
-          right-8
-          top-14
+          right-0
+          top-9
           py-2
           list-none
           text-left
@@ -756,8 +1295,7 @@ function Dropup({ close, selectAction }: DropupProps) {
           border
         "
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.impuesto) && (
+      {permissions.find()?.crear.impuesto && (
         <li>
           <div
             onClick={() => {
@@ -849,8 +1387,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
         "
       style={{ top: top }}
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.editar.impuesto) && (
+      {permissions.find()?.editar.impuesto && (
         <li>
           <div
             onClick={() => {
@@ -875,8 +1412,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.eliminar.impuesto) && (
+      {permissions.find()?.eliminar.impuesto && (
         <li>
           <div
             onClick={() => {
@@ -901,6 +1437,29 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
+      <li>
+        <div
+          onClick={() => {
+            selectAction("VIEW");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Mostrar impuesto
+        </div>
+      </li>
     </ul>
   );
 }
@@ -913,10 +1472,7 @@ export default function ImpuestosDataDisplay() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.crear.categoría
-      ? "ADD"
-      : "SEARCH"
+    permissions.find()?.crear.impuesto ? "ADD" : "SEARCH"
   );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
@@ -931,6 +1487,7 @@ export default function ImpuestosDataDisplay() {
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
   const [isSearch, setIsSearch] = useState(false);
+  const size = 8;
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -954,7 +1511,7 @@ export default function ImpuestosDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0) {
-      ImpuestoService.getAll(page, 8).then((data) => {
+      ImpuestoService.getAll(page, size).then((data) => {
         if (data === false) {
           setNotFound(true);
           setImpuestos([]);
@@ -976,7 +1533,7 @@ export default function ImpuestosDataDisplay() {
       if (isPrecise && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
         if (param === "NOMBRE") {
-          ImpuestoService.getByExactNombre(input, page, 8).then((data) => {
+          ImpuestoService.getByExactNombre(input, page, size).then((data) => {
             toast.dismiss(loadingToast);
             if (data === false) {
               setNotFound(true);
@@ -991,7 +1548,7 @@ export default function ImpuestosDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "CÓDIGO") {
-          ImpuestoService.getByExactCódigo(input, page, 8).then((data) => {
+          ImpuestoService.getByExactCódigo(input, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setImpuestos([]);
@@ -1009,7 +1566,7 @@ export default function ImpuestosDataDisplay() {
       } else if (!isPrecise && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
         if (param === "NOMBRE") {
-          ImpuestoService.getByNombre(input, page, 8).then((data) => {
+          ImpuestoService.getByNombre(input, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setImpuestos([]);
@@ -1024,7 +1581,7 @@ export default function ImpuestosDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "CÓDIGO") {
-          ImpuestoService.getByCódigo(input, page, 8).then((data) => {
+          ImpuestoService.getByCódigo(input, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setImpuestos([]);
@@ -1050,12 +1607,12 @@ export default function ImpuestosDataDisplay() {
   return (
     <>
       <div className="absolute h-full w-full px-8 py-5">
-        <nav className="flex justify-between items-center select-none">
+        <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">Impuestos</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative">
             {isDropup && (
               <Dropup
                 close={closeDropup}

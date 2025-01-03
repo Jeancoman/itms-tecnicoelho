@@ -12,8 +12,7 @@ import {
   Action,
   Usuario,
   Selected,
-  UsuarioRol,
-  Permisos,
+  Rol,
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
 import UserService from "../../services/user-service";
@@ -25,10 +24,14 @@ import { ReactComponent as Off } from "/src/assets/visibility_off.svg";
 import session from "../../utils/session";
 import debounce from "lodash.debounce";
 import clsx from "clsx";
+import RolService from "../../services/rol-service";
+import permissions from "../../utils/permissions";
+import { useNavigate } from "react-router-dom";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
-  const [last, setLast] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
+  const [roles, setRoles] = useState<Rol[]>([]);
   const [selectedRole, setSelectedRole] = useState<Selected>({
     value: "",
     label: "Seleccionar rol",
@@ -39,162 +42,40 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     correo: "",
     nombreUsuario: "",
     documento: "",
-    rol: "EMPLEADO",
     contraseña: "",
     creado_por: {
       lista: [],
     },
+    rol_id: -1,
   });
   const [documentType, setDocumentType] = useState<Selected>({
-    value: "RIF",
-    label: "RIF",
+    value: "V",
+    label: "V",
   });
-  const [permisos, setPermisos] = useState<Permisos>();
   const [visible, setVisible] = useState(false);
   const [isTaken, setIsTaken] = useState(false);
   const [stillWriting, setStillWriting] = useState(false);
-
-  let iniciales: Permisos = {
-    ver: {
-      cliente: false,
-      mensaje: false,
-      ticket: false,
-      categoría: false,
-      imagen: false,
-      venta: false,
-      compra: false,
-      publicación: false,
-      proveedor: false,
-      reporte: false,
-      mensajería: false,
-      producto: false,
-      impuesto: false,
-    },
-    crear: {
-      cliente: false,
-      mensaje: false,
-      ticket: false,
-      categoría: false,
-      imagen: false,
-      venta: false,
-      compra: false,
-      publicación: false,
-      proveedor: false,
-      reporte: false,
-      mensajería: false,
-      producto: false,
-      impuesto: false,
-    },
-    editar: {
-      cliente: false,
-      mensaje: false,
-      ticket: false,
-      categoría: false,
-      imagen: false,
-      venta: false,
-      compra: false,
-      publicación: false,
-      proveedor: false,
-      reporte: false,
-      mensajería: false,
-      producto: false,
-      impuesto: false,
-    },
-    eliminar: {
-      cliente: false,
-      mensaje: false,
-      ticket: false,
-      categoría: false,
-      imagen: false,
-      venta: false,
-      compra: false,
-      publicación: false,
-      proveedor: false,
-      reporte: false,
-      mensajería: false,
-      producto: false,
-      impuesto: false,
-    },
-  };
 
   const resetFormData = () => {
     setFormData({
       nombre: "",
       apellido: "",
-      rol: "EMPLEADO",
       nombreUsuario: "",
       contraseña: "",
       correo: "",
+      creado_por: {
+        lista: [],
+      },
       documento: "",
+      rol_id: -1,
     });
     setSelectedRole({
       value: "",
       label: "Seleccionar rol",
     });
-    setDocumentType({ value: "RIF", label: "RIF" });
-    setLast(false);
-    iniciales = {
-      ver: {
-        cliente: false,
-        mensaje: false,
-        ticket: false,
-        categoría: false,
-        imagen: false,
-        venta: false,
-        compra: false,
-        publicación: false,
-        proveedor: false,
-        reporte: false,
-        mensajería: false,
-        producto: false,
-        impuesto: false,
-      },
-      crear: {
-        cliente: false,
-        mensaje: false,
-        ticket: false,
-        categoría: false,
-        imagen: false,
-        venta: false,
-        compra: false,
-        publicación: false,
-        proveedor: false,
-        reporte: false,
-        mensajería: false,
-        producto: false,
-        impuesto: false,
-      },
-      editar: {
-        cliente: false,
-        mensaje: false,
-        ticket: false,
-        categoría: false,
-        imagen: false,
-        venta: false,
-        compra: false,
-        publicación: false,
-        proveedor: false,
-        reporte: false,
-        mensajería: false,
-        producto: false,
-        impuesto: false,
-      },
-      eliminar: {
-        cliente: false,
-        mensaje: false,
-        ticket: false,
-        categoría: false,
-        imagen: false,
-        venta: false,
-        compra: false,
-        publicación: false,
-        proveedor: false,
-        reporte: false,
-        mensajería: false,
-        producto: false,
-        impuesto: false,
-      },
-    };
+    setDocumentType({ value: "V", label: "V" });
+    setIsConfirmationScreen(false);
+    setVisible(false)
   };
 
   const checkUsername = useCallback(
@@ -217,9 +98,88 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     []
   );
 
+  const loadRoles = async () => {
+    const data = await RolService.getAll(1, 100);
+    if (data) {
+      setRoles(data.rows);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    closeModal();
+    let lista = session.find()?.usuario.creado_por?.lista || [];
+
+    if (!lista?.find((id) => id === session.find()?.usuario.id)) {
+      lista?.push(session.find()?.usuario.id!);
+    }
+
+    const newFormData = { ...formData };
+
+    //@ts-ignore
+    newFormData.creado_por = {
+      lista: lista,
+    };
+
+    // Formatear el documento según el tipo seleccionado
+    if (formData.documento) {
+      newFormData.documento = `${documentType.value}-${formData.documento}`;
+    }
+
+    const loadingToast = toast.loading("Añadiendo usuario...");
+
+    void UserService.create(newFormData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data.status === "error") {
+        toast.error(data.message);
+      } else {
+        toast.success(data.message);
+      }
+    });
+  };
+
+  // Define una función para obtener el patrón y el mensaje de error según el tipo de documento
+  const getDocumentoPatternAndMessage = () => {
+    switch (documentType.value) {
+      case "V":
+      case "E":
+        return {
+          pattern: /^(\d{8}|\d{8}-\d{1})$/,
+          message: "Formato válido: 12345678 o 12345678-0",
+        };
+      case "G":
+      case "J":
+        return {
+          pattern: /^\d{8}-\d{1}$/,
+          message: "Formato válido: 12345678-0",
+        };
+      case "P":
+        return {
+          pattern: /^\d{8}$/,
+          message: "Formato válido: 12345678",
+        };
+      default:
+        return {
+          pattern: /^.*$/, // Acepta cualquier formato por defecto
+          message: "Formato inválido",
+        };
+    }
+  };
+
   useEffect(() => {
     checkUsername(formData.nombreUsuario);
   }, [formData.nombreUsuario]);
+
+  useEffect(() => {
+    if (roles.length === 0) {
+      void loadRoles();
+    }
+  }, [roles.length]);
 
   useEffect(() => {
     if (isOpen) {
@@ -238,6 +198,88 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     }
   }, [isOpen]);
 
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+        <div className="grid grid-cols-2 gap-6">
+          {/* Columna 1 */}
+          <div>
+            <div className="mb-4">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Nombre
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {formData.nombre || "No especificado"}
+              </p>
+            </div>
+            <div className="mb-4">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Nombre de usuario
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {formData.nombreUsuario || "No especificado"}
+              </p>
+            </div>
+            <div className="mb-4">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Documento
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {documentType.value}-{formData.documento}
+              </p>
+            </div>
+          </div>
+
+          {/* Columna 2 */}
+          <div>
+            <div className="mb-4">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Apellido
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {formData.apellido || "No especificado"}
+              </p>
+            </div>
+            <div className="mb-4">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Rol
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {selectedRole?.label || "No especificado"}
+              </p>
+            </div>
+            <div className="mb-4">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                E-mail
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {formData.correo || "No especificado"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTONES DE ACCIÓN */}
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)}
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+        >
+          Volver
+        </button>
+        <button
+          onClick={handleFinalSubmit}
+          className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+        >
+          Crear usuario
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <dialog
       ref={ref}
@@ -253,103 +295,71 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Añadir usuario</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isConfirmationScreen ? "Confirmar usuario" : "Añadir usuario"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          let lista = session.find()?.usuario.creado_por?.lista || [];
-
-          if (!lista?.find((id) => id === session.find()?.usuario.id)) {
-            lista?.push(session.find()?.usuario.id!);
-          }
-
-          const newFormData = { ...formData };
-
-          //@ts-ignore
-          newFormData.creado_por = {
-            lista: lista,
-          };
-
-          newFormData.documento = formData.documento
-            ? documentType.value === "V"
-              ? "V-" + formData.documento
-              : formData.documento
-            : "";
-
-          const loadingToast = toast.loading("Añadiendo usuario...");
-
-          void UserService.create(newFormData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Usuario no pudo ser añadido.");
-            } else {
-              let createPermisos = { ...permisos };
-              createPermisos.usuario_id = data.id;
-              if (createPermisos) {
-                //@ts-ignore
-                void UserService.postPermissionsById(data.id!, createPermisos);
-              }
-              toast.success("Usuario añadido con exito.");
-            }
-          });
-        }}
-      >
-        {last && selectedRole.value === "EMPLEADO" ? (
-          <PermissionPanel
-            permisos={iniciales}
-            onChange={(p) => {
-              setPermisos(p);
-            }}
-          />
-        ) : (
-          <>
-            <div className="flex gap-4 w-full">
-              <div className="w-2/4">
-                <input
-                  type="text"
-                  placeholder="Nombre*"
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      nombre: e.target.value,
-                    });
-                  }}
-                  value={formData.nombre}
-                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                  required
-                  pattern="^.{2,}$"
-                />
-                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  Minimo 2 caracteres
-                </span>
-              </div>
-              <div className="w-2/4">
-                <input
-                  type="text"
-                  placeholder="Apellido"
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      apellido: e.target.value,
-                    });
-                  }}
-                  value={formData.apellido}
-                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                  pattern="^.{2,}$"
-                />
-                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  Minimo 2 caracteres
-                </span>
-              </div>
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4 group"
+          autoComplete="off"
+          onSubmit={handleSubmit}
+        >
+          <div className="flex gap-4 w-full">
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Nombre*
+              </label>
+              <input
+                type="text"
+                placeholder="Introducir nombre"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    nombre: e.target.value,
+                  });
+                }}
+                value={formData.nombre}
+                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                required
+                pattern="^.{2,}$"
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Minimo 2 caracteres
+              </span>
             </div>
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Apellido*
+              </label>
+              <input
+                type="text"
+                placeholder="Introducir apellido"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    apellido: e.target.value,
+                  });
+                }}
+                value={formData.apellido}
+                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                pattern="^.{2,}$"
+                required
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Minimo 2 caracteres
+              </span>
+            </div>
+          </div>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Documento*
+            </label>
             <div className="flex gap-1">
               <div className="relative w-[20%]">
                 <Select
@@ -365,8 +375,38 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                       },
                     },
                     {
-                      value: "RIF",
-                      label: "RIF",
+                      value: "J",
+                      label: "J",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "G",
+                      label: "G",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "E",
+                      label: "E",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "P",
+                      label: "P",
                       onClick: (value, label) => {
                         setDocumentType({
                           value,
@@ -376,7 +416,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                     },
                   ]}
                   selected={documentType}
-                  small={true}
+                  small
                 />
               </div>
               <div className="w-[80%]">
@@ -392,164 +432,135 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   value={formData.documento}
                   required
                   className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                  pattern={
-                    documentType.value === "RIF"
-                      ? "^[A-Za-z]-?\\d{1,9}-?\\d?$"
-                      : "^\\d{1,3}\\.\\d{3}\\.\\d{3}$"
-                  }
+                  pattern={getDocumentoPatternAndMessage().pattern.source}
                 />
                 <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  {documentType.value === "RIF"
-                    ? "Formato: J-30684267-5"
-                    : "Formato: 29.946.012"}
+                  {getDocumentoPatternAndMessage().message}
                 </span>
               </div>
             </div>
-            <div className="flex gap-4">
-              <div className="w-2/4">
-                <input
-                  type="text"
-                  placeholder="Nombre de usuario*"
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      nombreUsuario: e.target.value.toLowerCase(),
-                    });
-                    setStillWriting(true);
-                  }}
-                  value={formData.nombreUsuario}
-                  className={clsx({
-                    ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
-                      !isTaken,
-                    ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
-                      isTaken,
-                  })}
-                  required
-                  minLength={3}
-                />
-                <span
-                  className={clsx({
-                    ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
-                      !isTaken,
-                    ["mt-2 text-sm text-red-500 block"]: isTaken,
-                  })}
-                >
-                  {isTaken
-                    ? "El nombre de usuario ya existe"
-                    : "Minimo 2 caracteres"}
-                </span>
-              </div>
-              <div className="relative w-2/4">
-                <Select
-                  onChange={() => {
-                    setFormData({
-                      ...formData,
-                      rol: selectedRole.value as UsuarioRol,
-                    });
-                  }}
-                  options={[
-                    {
-                      value: "ADMINISTRADOR",
-                      label: "Administrador",
-                      onClick: (value, label) => {
-                        setSelectedRole({
-                          value,
-                          label,
-                        });
-                      },
-                    },
-                    {
-                      value: "EMPLEADO",
-                      label: "Empleado",
-                      onClick: (value, label) => {
-                        setSelectedRole({
-                          value,
-                          label,
-                        });
-                      },
-                    },
-                  ]}
-                  selected={selectedRole}
-                />
-              </div>
-            </div>
-            <div className="w-full">
+          </div>
+          <div className="flex gap-4">
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Nombre de usuario*
+              </label>
               <input
-                type="email"
-                name="email"
-                placeholder="E-mail*"
+                type="text"
+                placeholder="Introducir nombre de usuario"
                 onChange={(e) => {
                   setFormData({
                     ...formData,
-                    correo: e.target.value,
+                    nombreUsuario: e.target.value.toLowerCase(),
                   });
+                  setStillWriting(true);
                 }}
-                value={formData.correo}
-                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+                value={formData.nombreUsuario}
+                className={clsx({
+                  ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                    !isTaken,
+                  ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                    isTaken,
+                })}
                 required
+                minLength={3}
               />
-              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                E-mail invalido
+              <span
+                className={clsx({
+                  ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                    !isTaken,
+                  ["mt-2 text-sm text-red-500 block"]: isTaken,
+                })}
+              >
+                {isTaken
+                  ? "El nombre de usuario ya existe"
+                  : "Minimo 2 caracteres"}
               </span>
             </div>
-            <div className="relative w-full">
-              <input
-                type={visible ? "text" : "password"}
-                placeholder="Contraseña*"
-                onChange={(e) =>
+            <div className="relative w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Rol*
+              </label>
+              <Select
+                options={roles.map((rol) => ({
+                  value: rol.id,
+                  label: rol.nombre,
+                  onClick: (value, label) => {
+                    setSelectedRole({
+                      value,
+                      label,
+                    });
+                  },
+                }))}
+                onChange={() => {
                   setFormData({
                     ...formData,
-                    contraseña: e.target.value,
-                  })
-                }
-                value={formData.contraseña}
-                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                name="password"
-                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-                autoComplete="new-password"
+                    rol_id: selectedRole.value as number,
+                  });
+                }}
+                selected={selectedRole}
               />
-              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                La contraseña debe tener mínimo 8 caracteres, contener una letra
-                mayúscula, una letra minúscula, un número y un carácter especial
-              </span>
-              {visible ? (
-                <On
-                  onClick={() => setVisible(false)}
-                  className="absolute top-2 right-4 fill-[#2096ed]"
-                />
-              ) : (
-                <Off
-                  onClick={() => setVisible(true)}
-                  className="absolute top-2 right-4 fill-[#2096ed]"
-                />
-              )}
             </div>
-          </>
-        )}
-        <div className="flex w-full justify-between">
-          {last === false && selectedRole.label === "Empleado" ? (
-            <button
-              type="button"
-              onClick={() => setLast(true)}
-              className="text-[#2096ed] bg-blue-100 font-semibold rounded-lg p-2 px-4 hover:bg-blue-200 transition ease-in-out delay-100 duration-300"
-            >
-              Permisos
-            </button>
-          ) : last === true && selectedRole.label === "Empleado" ? null : (
-            <div></div>
-          )}
-          {last === true && selectedRole.label === "Empleado" ? (
-            <button
-              type="button"
-              onClick={() => setLast(false)}
-              className="text-[#2096ed] bg-blue-100 font-semibold rounded-lg p-2 px-4 hover:bg-blue-200 transition ease-in-out delay-100 duration-300"
-            >
-              Volver
-            </button>
-          ) : (
-            <div></div>
-          )}
+          </div>
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              E-mail*
+            </label>
+            <input
+              type="email"
+              name="email"
+              placeholder="E-mail*"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  correo: e.target.value,
+                });
+              }}
+              value={formData.correo}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+              required
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              E-mail invalido
+            </span>
+          </div>
+          <div className="relative w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Contraseña*
+            </label>
+            <input
+              type={visible ? "text" : "password"}
+              placeholder="Contraseña*"
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  contraseña: e.target.value,
+                })
+              }
+              value={formData.contraseña}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              name="password"
+              pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+              autoComplete="new-password"
+              required
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              La contraseña debe tener mínimo 8 caracteres, contener una letra
+              mayúscula, una letra minúscula, un número y un carácter especial
+            </span>
+            {visible ? (
+              <On
+                onClick={() => setVisible(false)}
+                className="absolute top-10 right-4 fill-[#2096ed]"
+              />
+            ) : (
+              <Off
+                onClick={() => setVisible(true)}
+                className="absolute top-10 right-4 fill-[#2096ed]"
+              />
+            )}
+          </div>
           <div className="flex gap-2 justify-self-end justify-end">
             <button
               type="button"
@@ -567,14 +578,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   stillWriting ||
                   formData?.nombre.length < 2 ||
                   formData?.nombreUsuario.length < 3 ||
-                  selectedRole.label?.startsWith("Selecciona")
+                  selectedRole.label?.startsWith("Selecciona"),
               })}
             >
               Completar
             </button>
           </div>
-        </div>
-      </form>
+        </form>
+      )}
     </dialog>
   );
 }
@@ -585,25 +596,26 @@ function EditModal({
   setOperationAsCompleted,
   usuario,
 }: ModalProps) {
-  const [last, setLast] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Selected>({
-    value: usuario?.rol,
-    label: usuario?.rol === "ADMINISTRADOR" ? "Administrador" : "Empleado",
+    value: usuario?.rol?.id,
+    label: usuario?.rol?.nombre,
   });
+  const initialDocumentType = usuario?.documento
+    ? usuario.documento.split("-")[0]
+    : "V";
+  const [documentType, setDocumentType] = useState<Selected>({
+    value: initialDocumentType,
+    label: initialDocumentType,
+  });
+  const initialDocumento = usuario?.documento
+    ? usuario.documento.split("-").slice(1).join("-")
+    : "";
   const [formData, setFormData] = useState<Usuario>({
     ...usuario!,
     contraseña: "",
-    documento: usuario?.documento?.startsWith("V")
-      ? usuario?.documento?.slice(2)
-      : usuario?.documento || "",
-  });
-  const [permisos, setPermisos] = useState<Permisos | undefined>(
-    usuario?.permiso!
-  );
-  const [documentType, setDocumentType] = useState<Selected>({
-    value: usuario?.documento?.startsWith("V") ? "V" : "RIF",
-    label: usuario?.documento?.startsWith("V") ? "V" : "RIF",
+    documento: initialDocumento,
   });
   const [visible, setVisible] = useState(false);
   const [isTaken, setIsTaken] = useState(false);
@@ -613,19 +625,20 @@ function EditModal({
     setFormData({
       ...usuario!,
       contraseña: "",
-      documento: usuario?.documento?.startsWith("V")
-        ? usuario?.documento?.slice(2)
-        : usuario?.documento || "",
+      documento: usuario?.documento
+        ? usuario.documento.split("-").slice(1).join("-") // Extraer el documento sin el prefijo
+        : "",
     });
     setSelectedRole({
-      value: usuario?.rol,
-      label: usuario?.rol === "ADMINISTRADOR" ? "Administrador" : "Empleado",
+      value: usuario?.rol?.id,
+      label: usuario?.rol?.nombre,
     });
     setDocumentType({
-      value: usuario?.documento?.startsWith("V") ? "V" : "RIF",
-      label: usuario?.documento?.startsWith("V") ? "V" : "RIF",
+      value: usuario?.documento?.charAt(0) || "V",
+      label: usuario?.documento?.charAt(0) || "V",
     });
-    setPermisos(usuario?.permiso!);
+    setIsConfirmationScreen(false);
+    setVisible(false);
   };
 
   const checkUsername = useCallback(
@@ -648,6 +661,62 @@ function EditModal({
     []
   );
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    closeModal();
+
+    const newFormData = { ...formData };
+
+    // Formatear el documento según el tipo seleccionado
+    if (formData.documento) {
+      newFormData.documento = `${documentType.value}-${formData.documento}`;
+    }
+
+    const loadingToast = toast.loading("Editando usuario...");
+    void UserService.update(usuario?.id!, newFormData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data.status === "success") {
+        toast.success(data.message);
+      } else {
+        toast.error(data.message);
+      }
+      setOperationAsCompleted();
+    });
+  };
+
+  // Define una función para obtener el patrón y el mensaje de error según el tipo de documento
+  const getDocumentoPatternAndMessage = () => {
+    switch (documentType.value) {
+      case "V":
+      case "E":
+        return {
+          pattern: /^(\d{8}|\d{8}-\d{1})$/,
+          message: "Formato válido: 12345678 o 12345678-0",
+        };
+      case "G":
+      case "J":
+        return {
+          pattern: /^\d{8}-\d{1}$/,
+          message: "Formato válido: 12345678-0",
+        };
+      case "P":
+        return {
+          pattern: /^\d{8}$/,
+          message: "Formato válido: 12345678",
+        };
+      default:
+        return {
+          pattern: /^.*$/, // Acepta cualquier formato por defecto
+          message: "Formato inválido",
+        };
+    }
+  };
+
   useEffect(() => {
     checkUsername(formData.nombreUsuario);
   }, [formData.nombreUsuario]);
@@ -666,6 +735,196 @@ function EditModal({
       ref.current?.close();
     }
   }, [isOpen]);
+
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+        <div className="grid grid-cols-2 gap-8">
+          {/* COLUMNA IZQUIERDA - Datos actuales */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Datos actuales
+            </h3>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {usuario?.nombre || "No especificado"}
+                </p>
+              </div>
+              {/* Apellido */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Apellido
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {usuario?.apellido || "No especificado"}
+                </p>
+              </div>
+              {/* Documento */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Documento
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {usuario?.documento || "No especificado"}
+                </p>
+              </div>
+              {/* Nombre de usuario */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre de usuario
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {usuario?.nombreUsuario || "No especificado"}
+                </p>
+              </div>
+              {/* Rol */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Rol
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {usuario?.rol?.nombre || "No especificado"}
+                </p>
+              </div>
+              {/* E-mail */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  E-mail
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {usuario?.correo || "No especificado"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* COLUMNA DERECHA - Nuevos datos */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Nuevos datos
+            </h3>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.nombre !== usuario?.nombre
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.nombre || "No especificado"}
+                </p>
+              </div>
+              {/* Apellido */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Apellido
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.apellido !== usuario?.apellido
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.apellido || "No especificado"}
+                </p>
+              </div>
+              {/* Documento */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Documento
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    // Ejemplo de comparación con prefijo
+                    `${documentType.value}-${formData.documento}` !==
+                    usuario?.documento
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {documentType.value}-{formData.documento}
+                </p>
+              </div>
+              {/* Nombre de usuario */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre de usuario
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.nombreUsuario !== usuario?.nombreUsuario
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.nombreUsuario || "No especificado"}
+                </p>
+              </div>
+              {/* Rol */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Rol
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    selectedRole?.value !== usuario?.rol?.id
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {selectedRole?.label || "No especificado"}
+                </p>
+              </div>
+              {/* E-mail */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  E-mail
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.correo !== usuario?.correo
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.correo || "No especificado"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTONES DE ACCIÓN */}
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)}
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+        >
+          Volver
+        </button>
+        <button
+          onClick={handleFinalSubmit}
+          className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+        >
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <dialog
@@ -686,91 +945,74 @@ function EditModal({
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
-          {" "}
-          {session.find()?.usuario.id === usuario?.id
+          {isConfirmationScreen
+            ? session.find()?.usuario.id === usuario?.id
+              ? "Confirmar cambios"
+              : "Confirmar cambios"
+            : session.find()?.usuario.id === usuario?.id
             ? "Editar tu usuario"
             : "Editar usuario"}
         </h1>
+        <h1 className="text-xl font-bold text-white"> </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-
-          const newFormData = { ...formData };
-
-          newFormData.documento = formData.documento
-            ? documentType.value === "V"
-              ? "V-" + formData.documento
-              : formData.documento
-            : "";
-
-          const loadingToast = toast.loading("Editando usuario...");
-          void UserService.update(usuario?.id!, newFormData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data) {
-              if (permisos) {
-                UserService.patchPermissionsById(newFormData.id!, permisos);
-              }
-              toast.success("Usuario editado con exito.");
-            } else {
-              toast.error("Usuario no pudo ser editado.");
-            }
-            setOperationAsCompleted();
-          });
-        }}
-      >
-        {last ? (
-          <PermissionPanel
-            permisos={formData.permiso!}
-            onChange={(p) => {
-              setPermisos(p);
-            }}
-          />
-        ) : (
-          <>
-            <div className="flex gap-4 w-full">
-              <div className="w-2/4">
-                <input
-                  type="text"
-                  placeholder="Nombre*"
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      nombre: e.target.value,
-                    });
-                  }}
-                  value={formData.nombre}
-                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                  required
-                  pattern="^.{2,}$"
-                />
-                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  Minimo 2 caracteres
-                </span>
-              </div>
-              <div className="w-2/4">
-                <input
-                  type="text"
-                  placeholder="Apellido"
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      apellido: e.target.value,
-                    });
-                  }}
-                  value={formData.apellido}
-                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                  pattern="^.{2,}$"
-                />
-                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  Minimo 2 caracteres
-                </span>
-              </div>
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4 group"
+          autoComplete="off"
+          onSubmit={handleSubmit}
+        >
+          <div className="flex gap-4 w-full">
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Nombre*
+              </label>
+              <input
+                type="text"
+                placeholder="Introducir nombre"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    nombre: e.target.value,
+                  });
+                }}
+                value={formData.nombre}
+                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                required
+                pattern="^.{2,}$"
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Minimo 2 caracteres
+              </span>
             </div>
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Apellido*
+              </label>
+              <input
+                type="text"
+                placeholder="Introducir apellido"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    apellido: e.target.value,
+                  });
+                }}
+                value={formData.apellido}
+                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                pattern="^.{2,}$"
+                required
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Minimo 2 caracteres
+              </span>
+            </div>
+          </div>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Documento*
+            </label>
             <div className="flex gap-1">
               <div className="relative w-[20%]">
                 <Select
@@ -786,8 +1028,38 @@ function EditModal({
                       },
                     },
                     {
-                      value: "RIF",
-                      label: "RIF",
+                      value: "J",
+                      label: "J",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "G",
+                      label: "G",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "E",
+                      label: "E",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "P",
+                      label: "P",
                       onClick: (value, label) => {
                         setDocumentType({
                           value,
@@ -803,7 +1075,7 @@ function EditModal({
               <div className="w-[80%]">
                 <input
                   type="text"
-                  placeholder="Documento"
+                  placeholder="Introducir documento"
                   onChange={(e) => {
                     setFormData({
                       ...formData,
@@ -813,143 +1085,123 @@ function EditModal({
                   value={formData.documento}
                   required
                   className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                  pattern={
-                    documentType.value === "RIF"
-                      ? "^[A-Za-z]-?\\d{1,9}-?\\d?$"
-                      : "^\\d{1,3}\\.\\d{3}\\.\\d{3}$"
-                  }
+                  pattern={getDocumentoPatternAndMessage().pattern.source}
                 />
                 <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  {documentType.value === "RIF"
-                    ? "Formato: J-30684267-5"
-                    : "Formato: 29.946.012"}
+                  {getDocumentoPatternAndMessage().message}
                 </span>
               </div>
             </div>
-            <div className="flex gap-2">
-              <div className="w-2/4">
-                <input
-                  type="text"
-                  placeholder="Nombre de usuario*"
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      nombreUsuario: e.target.value.toLowerCase(),
-                    });
-                    setStillWriting(true);
-                  }}
-                  value={formData.nombreUsuario}
-                  className={clsx({
-                    ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
-                      !isTaken,
-                    ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
-                      isTaken,
-                  })}
-                  required
-                  minLength={3}
-                />
-                <span
-                  className={clsx({
-                    ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
-                      !isTaken,
-                    ["mt-2 text-sm text-red-500 block"]: isTaken,
-                  })}
-                >
-                  {isTaken
-                    ? "El nombre de usuario ya existe"
-                    : "Minimo 3 caracteres"}
-                </span>
-              </div>
-              <div className="relative w-2/4">
-                <select
-                  className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-                  value={selectedRole.value}
-                  disabled={true}
-                >
-                  <option value={selectedRole.value}>
-                    {selectedRole.label}
-                  </option>
-                </select>
-                <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-              </div>
-            </div>
-            <div className="w-full">
+          </div>
+          <div className="flex gap-2">
+            <div className="w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Nombre de usuario*
+              </label>
               <input
-                type="email"
-                name="email"
-                placeholder="E-mail"
+                type="text"
+                placeholder="Introducir nombre de usuario"
                 onChange={(e) => {
                   setFormData({
                     ...formData,
-                    correo: e.target.value,
+                    nombreUsuario: e.target.value.toLowerCase(),
                   });
+                  setStillWriting(true);
                 }}
-                value={formData.correo}
-                className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+                value={formData.nombreUsuario}
+                className={clsx({
+                  ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                    !isTaken,
+                  ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                    isTaken,
+                })}
                 required
+                minLength={3}
               />
-              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                E-mail invalido
+              <span
+                className={clsx({
+                  ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                    !isTaken,
+                  ["mt-2 text-sm text-red-500 block"]: isTaken,
+                })}
+              >
+                {isTaken
+                  ? "El nombre de usuario ya existe"
+                  : "Minimo 3 caracteres"}
               </span>
             </div>
-            <div className="relative w-full">
-              <input
-                type={visible ? "text" : "password"}
-                placeholder="Nueva contraseña"
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    contraseña: e.target.value,
-                  })
-                }
-                value={formData.contraseña}
-                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                name="password"
-                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-                autoComplete="new-password"
-              />
-              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                La contraseña debe tener mínimo 8 caracteres, contener una letra
-                mayúscula, una letra minúscula, un número y un carácter especial
-              </span>
-              {visible ? (
-                <On
-                  onClick={() => setVisible(false)}
-                  className="absolute top-2 right-4 fill-[#2096ed]"
-                />
-              ) : (
-                <Off
-                  onClick={() => setVisible(true)}
-                  className="absolute top-2 right-4 fill-[#2096ed]"
-                />
-              )}
+            <div className="relative w-2/4">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Rol*
+              </label>
+              <select
+                className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                value={selectedRole.value}
+                disabled={true}
+              >
+                <option value={selectedRole.value}>{selectedRole.label}</option>
+              </select>
+              <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
             </div>
-          </>
-        )}
-        <div className="flex w-full justify-between">
-          {last === false && selectedRole.label === "Empleado" ? (
-            <button
-              type="button"
-              onClick={() => setLast(true)}
-              className="text-[#2096ed] bg-blue-100 font-semibold rounded-lg p-2 px-4 hover:bg-blue-200 transition ease-in-out delay-100 duration-300"
-            >
-              Permisos
-            </button>
-          ) : last === true && selectedRole.label === "Empleado" ? null : (
-            <div></div>
-          )}
-          {last === true && selectedRole.label === "Empleado" ? (
-            <button
-              type="button"
-              onClick={() => setLast(false)}
-              className="text-[#2096ed] bg-blue-100 font-semibold rounded-lg p-2 px-4 hover:bg-blue-200 transition ease-in-out delay-100 duration-300"
-            >
-              Volver
-            </button>
-          ) : (
-            <div></div>
-          )}
+          </div>
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              E-mail*
+            </label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Introducir e-mail"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  correo: e.target.value,
+                });
+              }}
+              value={formData.correo}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+              required
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              E-mail invalido
+            </span>
+          </div>
+          <div className="relative w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Contraseña*
+            </label>
+            <input
+              type={visible ? "text" : "password"}
+              placeholder="Introducir nueva contraseña"
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  contraseña: e.target.value,
+                })
+              }
+              value={formData.contraseña}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              name="password"
+              pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+              autoComplete="new-password"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              La contraseña debe tener mínimo 8 caracteres, contener una letra
+              mayúscula, una letra minúscula, un número y un carácter especial
+            </span>
+            {visible ? (
+              <On
+                onClick={() => setVisible(false)}
+                className="absolute top-2 right-4 fill-[#2096ed]"
+              />
+            ) : (
+              <Off
+                onClick={() => setVisible(true)}
+                className="absolute top-2 right-4 fill-[#2096ed]"
+              />
+            )}
+          </div>
           <div className="flex gap-2 justify-self-end justify-end">
             <button
               type="button"
@@ -975,8 +1227,8 @@ function EditModal({
               Completar
             </button>
           </div>
-        </div>
-      </form>
+        </form>
+      )}
     </dialog>
   );
 }
@@ -1019,8 +1271,11 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-md shadow-md text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Eliminar usuario</h1>
+      </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
         autoComplete="off"
@@ -1030,10 +1285,10 @@ function DeleteModal({
           const loadingToast = toast.loading("Eliminando usuario...");
           void UserService.delete(usuario?.id!).then((data) => {
             toast.dismiss(loadingToast);
-            if (data) {
-              toast.success("Usuario eliminado con exito.");
+            if (data.status === "success") {
+              toast.success(data.message);
             } else {
-              toast.error("Usuario no pudo ser eliminado.");
+              toast.error(data.message);
             }
             setOperationAsCompleted();
           });
@@ -1065,12 +1320,131 @@ function DeleteModal({
   );
 }
 
+function ViewModal({ isOpen, closeModal, usuario }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Datos del usuario</h1>
+      </div>
+      <div className="p-8 pt-6">
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* Columna 1 */}
+            <div>
+              <div className="mb-4">
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {usuario?.nombre || "No especificado"}
+                </p>
+              </div>
+              <div className="mb-4">
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre de usuario
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {usuario?.nombreUsuario || "No especificado"}
+                </p>
+              </div>
+              <div className="mb-4">
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Documento
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {usuario?.documento}
+                </p>
+              </div>
+            </div>
+
+            {/* Columna 2 */}
+            <div>
+              <div className="mb-4">
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Apellido
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {usuario?.apellido || "No especificado"}
+                </p>
+              </div>
+              <div className="mb-4">
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Rol
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {usuario?.rol?.nombre || "No especificado"}
+                </p>
+              </div>
+              <div className="mb-4">
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  E-mail
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {usuario?.correo || "No especificado"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={closeModal}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
 function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [action, setAction] = useState<`${Action}`>("EDIT");
+  const [action, setAction] = useState<`${Action}`>(
+    permissions.find()?.editar.usuario
+      ? "EDIT"
+      : permissions.find()?.eliminar.usuario
+      ? "DELETE"
+      : "NONE"
+  );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
+  const navigate = useNavigate();
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -1078,6 +1452,10 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const closeViewModal = () => {
+    setIsViewOpen(false);
   };
 
   const selectAction = (action: `${Action}`) => {
@@ -1088,7 +1466,7 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
     <tr>
       <th
         scope="row"
-        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
         {usuario?.id}
       </th>
@@ -1106,82 +1484,105 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
       </td>
       <td className="px-6 py-4 border border-slate-300">{usuario?.correo}</td>
       <td className="px-6 py-2 border border-slate-300">
-        {" "}
-        {usuario?.rol === "EMPLEADO" ? (
-          <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg">
-            Empleado
-          </div>
-        ) : (
-          <div className="bg-blue-200 text-center text-blue-600 text-xs py-2 font-bold rounded-lg">
-            Administrador
-          </div>
-        )}
+        <div className="bg-blue-200 text-center text-blue-600 text-xs py-2 font-bold rounded-lg">
+          Administrador
+        </div>
       </td>
       <td ref={ref} className="px-6 py-3 w-52 border border-slate-300 relative">
         {action === "EDIT" && (
           <>
-            {usuario?.rol === "EMPLEADO" ||
-            //@ts-ignore
-            usuario?.creado_por?.lista?.find(
-              (id) => session.find()?.usuario.id === id
-            ) ||
-            session.find()?.usuario.id === usuario?.id ? (
-              <>
-                <button
-                  onClick={() => {
-                    setIsEditOpen(true);
-                  }}
-                  className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-                >
-                  {session.find()?.usuario.id === usuario?.id
-                    ? "Editar usuario"
-                    : "Editar usuario"}
+            {
+              //@ts-ignore
+              usuario?.creado_por?.lista?.find(
+                (id) => session.find()?.usuario.id === id
+              ) || session.find()?.usuario.id === usuario?.id ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setIsEditOpen(true);
+                    }}
+                    className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+                  >
+                    {session.find()?.usuario.id === usuario?.id
+                      ? "Editar usuario"
+                      : "Editar usuario"}
+                  </button>
+                  <EditModal
+                    usuario={usuario}
+                    isOpen={isEditOpen}
+                    closeModal={closeEditModal}
+                    setOperationAsCompleted={setOperationAsCompleted}
+                  />
+                </>
+              ) : (
+                <button className="font-medium text-[#2096ed] dark:text-blue-500 line-through cursor-default">
+                  Editar usuario
                 </button>
-                <EditModal
-                  usuario={usuario}
-                  isOpen={isEditOpen}
-                  closeModal={closeEditModal}
-                  setOperationAsCompleted={setOperationAsCompleted}
-                />
-              </>
-            ) : (
-              <button className="font-medium text-[#2096ed] dark:text-blue-500 line-through cursor-default">
-                Editar usuario
-              </button>
-            )}
+              )
+            }
+          </>
+        )}
+        {action === "PREVIEW" && (
+          <>
+            <button
+              onClick={() => {
+                navigate(`/usuarios/${usuario?.id}/actividad`);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Actividad
+            </button>
           </>
         )}
         {action === "DELETE" && (
           <>
-            {usuario?.rol === "EMPLEADO" ||
-            //@ts-ignore
-            usuario?.creado_por?.lista?.find(
-              (id) => session.find()?.usuario.id === id
-            ) ||
-            session.find()?.usuario.id === usuario?.id ? (
-              <>
-                <button
-                  onClick={() => {
-                    setIsDeleteOpen(true);
-                  }}
-                  className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-                >
-                  {session.find()?.usuario.id === usuario?.id
-                    ? "Eliminar usuario"
-                    : "Eliminar usuario"}
+            {
+              //@ts-ignore
+              usuario?.creado_por?.lista?.find(
+                (id) => session.find()?.usuario.id === id
+              ) || session.find()?.usuario.id === usuario?.id ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setIsDeleteOpen(true);
+                    }}
+                    className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+                  >
+                    {session.find()?.usuario.id === usuario?.id
+                      ? "Eliminar usuario"
+                      : "Eliminar usuario"}
+                  </button>
+                  <DeleteModal
+                    usuario={usuario}
+                    isOpen={isDeleteOpen}
+                    closeModal={closeDeleteModal}
+                    setOperationAsCompleted={setOperationAsCompleted}
+                  />
+                </>
+              ) : (
+                <button className="font-medium text-[#2096ed] dark:text-blue-500 line-through cursor-default">
+                  Eliminar usuario
                 </button>
-                <DeleteModal
-                  usuario={usuario}
-                  isOpen={isDeleteOpen}
-                  closeModal={closeDeleteModal}
-                  setOperationAsCompleted={setOperationAsCompleted}
-                />
-              </>
-            ) : (
-              <button className="font-medium text-[#2096ed] dark:text-blue-500 line-through cursor-default">
-                Eliminar usuario
-              </button>
-            )}
+              )
+            }
+          </>
+        )}
+        {action === "VIEW" && (
+          <>
+            <button
+              onClick={() => {
+                setIsViewOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Mostrar usuario
+            </button>
+            <ViewModal
+              usuario={usuario}
+              isOpen={isViewOpen}
+              closeModal={closeViewModal}
+              setOperationAsCompleted={() => null}
+            />
           </>
         )}
         {isDropup && (
@@ -1276,7 +1677,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-1/3 h-fit rounded-md shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar usuario</h1>
@@ -1440,10 +1841,60 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
         "
       style={{ top: top }}
     >
+      {permissions.find()?.editar.usuario && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("EDIT");
+              close();
+            }}
+            className="
+            text-sm
+            py-2
+            px-4
+            font-medium
+            block
+            w-full
+            whitespace-nowrap
+            bg-transparent
+            text-slate-600
+            hover:bg-slate-100
+            cursor-pointer
+          "
+          >
+            Editar usuario
+          </div>
+        </li>
+      )}
+      {permissions.find()?.eliminar.usuario && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("DELETE");
+              close();
+            }}
+            className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+          >
+            Eliminar usuario
+          </div>
+        </li>
+      )}
       <li>
         <div
           onClick={() => {
-            selectAction("EDIT");
+            selectAction("VIEW");
             close();
           }}
           className="
@@ -1460,13 +1911,13 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
               cursor-pointer
             "
         >
-          Editar usuario
+          Mostrar usuario
         </div>
       </li>
       <li>
         <div
           onClick={() => {
-            selectAction("DELETE");
+            selectAction("PREVIEW");
             close();
           }}
           className="
@@ -1483,7 +1934,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
               cursor-pointer
             "
         >
-          Eliminar usuario
+          Actividad
         </div>
       </li>
     </ul>
@@ -1531,13 +1982,14 @@ function Dropup({ close, selectAction }: DropupProps) {
           border
         "
     >
-      <li>
-        <div
-          onClick={() => {
-            selectAction("ADD");
-            close();
-          }}
-          className="
+      {permissions.find()?.crear.usuario && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("ADD");
+              close();
+            }}
+            className="
               text-sm
               py-2
               px-4
@@ -1550,10 +2002,11 @@ function Dropup({ close, selectAction }: DropupProps) {
               hover:bg-slate-100
               cursor-pointer
             "
-        >
-          Añadir usuario
-        </div>
-      </li>
+          >
+            Añadir usuario
+          </div>
+        </li>
+      )}
       <li>
         <div
           onClick={() => {
@@ -1581,1114 +2034,6 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-type PermissionPanelProps = {
-  onChange: (permissions: Permisos) => void;
-  permisos: Permisos;
-};
-
-function PermissionPanel({ onChange, permisos }: PermissionPanelProps) {
-  const [permissions, setPermissions] = useState<Permisos>(permisos);
-
-  useEffect(() => {
-    onChange(permissions);
-  }, [permissions]);
-
-  return (
-    <div className="max-h-[300px] overflow-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100 scrollbar-rounded-xl text-sm">
-      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
-        Clientes
-      </div>
-      <div className="ml-5 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox1"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  cliente: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.cliente}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox1"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox2"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  cliente: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  cliente: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.cliente}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox2"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox3"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  cliente: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  cliente: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.cliente}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox3"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox4"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  cliente: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  cliente: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.cliente}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox4"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="ml-5 mt-2 font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
-        Tickets
-      </div>
-      <div className="ml-10 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox1111"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  ticket: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.ticket}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox1111"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox1112"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  ticket: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  ticket: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.ticket}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox1112"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox1113"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  ticket: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  ticket: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.ticket}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox1113"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox1114"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  ticket: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  ticket: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.ticket}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox1114"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="ml-5 mt-2 font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg">
-        Mensajes
-      </div>
-      <div className="ml-10 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox5111"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  mensaje: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.mensaje}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox5111"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox5112"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  mensaje: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  mensaje: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.mensaje}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox5112"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox5113"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  mensaje: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  mensaje: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.mensaje}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox5113"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox5114"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  mensaje: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  mensaje: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.mensaje}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox5114"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
-        Publicaciones
-      </div>
-      <div className="ml-5 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox9"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  publicación: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.publicación}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox9"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox10"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  publicación: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  publicación: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.publicación}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox10"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox11"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  publicación: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  publicación: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.publicación}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox11"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox12"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  publicación: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  publicación: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.publicación}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox12"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
-        Productos
-      </div>
-      <div className="ml-5 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox13"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  producto: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.producto}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox13"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox14"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  producto: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  producto: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.producto}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox14"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox15"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  producto: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  producto: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.producto}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox15"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox16"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  producto: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  producto: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.producto}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox16"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
-        Proveedores
-      </div>
-      <div className="ml-5 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox17"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  proveedor: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.proveedor}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox17"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox18"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  proveedor: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  proveedor: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.proveedor}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox18"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox19"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  proveedor: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  proveedor: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.proveedor}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox19"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox20"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  proveedor: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  proveedor: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.proveedor}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox20"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
-        Ventas
-      </div>
-      <div className="ml-5 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox21"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  venta: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.venta}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox21"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox22"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  venta: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  venta: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.venta}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox22"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox23"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  venta: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  venta: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.venta}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox23"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox24"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  venta: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  venta: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.venta}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox24"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
-        Compras
-      </div>
-      <div className="ml-5 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox25"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  compra: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.compra}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox25"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox26"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  compra: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  compra: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.compra}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox26"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox27"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  compra: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  compra: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.compra}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox27"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox28"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  compra: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  compra: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.compra}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox28"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
-        Categorías
-      </div>
-      <div className="ml-5 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox29"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  categoría: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.categoría}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox29"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox30"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  categoría: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  categoría: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.categoría}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox30"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox31"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  categoría: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  categoría: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.categoría}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox31"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox32"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  categoría: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  categoría: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.categoría}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox32"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-      <div className="font-medium leading-tight uppercase text-[#2096ed] bg-blue-100 w-fit p-1 px-2 rounded-lg mt-2">
-        Galería
-      </div>
-      <div className="ml-5 mt-2 flex gap-4">
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox229"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  imagen: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.ver.imagen}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox229"
-          >
-            VER
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox230"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  imagen: true,
-                },
-                crear: {
-                  ...permissions.crear,
-                  imagen: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.crear.imagen}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox230"
-          >
-            CREAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox231"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  imagen: true,
-                },
-                editar: {
-                  ...permissions.editar,
-                  imagen: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.editar.imagen}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox231"
-          >
-            EDITAR
-          </label>
-        </div>
-        <div className="mb-[0.125rem] min-h-[1.5rem] block">
-          <input
-            className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-            type="checkbox"
-            id="checkbox232"
-            onChange={(e) => {
-              setPermissions({
-                ...permissions,
-                ver: {
-                  ...permissions.ver,
-                  imagen: true,
-                },
-                eliminar: {
-                  ...permissions.eliminar,
-                  imagen: e.target.checked,
-                },
-              });
-            }}
-            checked={permissions.eliminar.imagen}
-          />
-          <label
-            className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-            htmlFor="checkbox232"
-          >
-            ELIMINAR
-          </label>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function UsersDataDisplay() {
   const [currentUser, setCurrentUser] = useState<Usuario | undefined>();
   const [users, setUsers] = useState<Usuario[]>([]);
@@ -2711,6 +2056,7 @@ export default function UsersDataDisplay() {
   const isPrecise = useUserSearchParamStore((state) => state.isPrecise);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const size = 7;
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -2734,7 +2080,7 @@ export default function UsersDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0) {
-      void UserService.getAll(page, 7).then((data) => {
+      void UserService.getAll(page, size).then((data) => {
         if (data === false) {
           setNotFound(true);
           setLoading(false);
@@ -2779,7 +2125,7 @@ export default function UsersDataDisplay() {
       if (isPrecise && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
         if (param === "NOMBRE") {
-          void UserService.getByExactNombre(input, page, 7).then((data) => {
+          void UserService.getByExactNombre(input, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2795,23 +2141,25 @@ export default function UsersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "APELLIDO") {
-          void UserService.getByExactApellido(input, page, 7).then((data) => {
-            if (data === false) {
-              setNotFound(true);
-              setLoading(false);
-              setUsers([]);
-            } else {
-              setUsers(data.rows);
-              setPages(data.pages);
-              setCurrent(data.current);
-              setLoading(false);
-              setNotFound(false);
+          void UserService.getByExactApellido(input, page, size).then(
+            (data) => {
+              if (data === false) {
+                setNotFound(true);
+                setLoading(false);
+                setUsers([]);
+              } else {
+                setUsers(data.rows);
+                setPages(data.pages);
+                setCurrent(data.current);
+                setLoading(false);
+                setNotFound(false);
+              }
+              toast.dismiss(loadingToast);
+              setIsOperationCompleted(false);
             }
-            toast.dismiss(loadingToast);
-            setIsOperationCompleted(false);
-          });
+          );
         } else if (param === "NOMBRE_USUARIO") {
-          void UserService.getByExactNombreUsuario(input, page, 7).then(
+          void UserService.getByExactNombreUsuario(input, page, size).then(
             (data) => {
               if (data === false) {
                 setNotFound(true);
@@ -2832,7 +2180,7 @@ export default function UsersDataDisplay() {
       } else if (!isPrecise && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
         if (param === "NOMBRE") {
-          void UserService.getByNombre(input, page, 7).then((data) => {
+          void UserService.getByNombre(input, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2848,7 +2196,7 @@ export default function UsersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "APELLIDO") {
-          void UserService.getByApellido(input, page, 7).then((data) => {
+          void UserService.getByApellido(input, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2864,21 +2212,23 @@ export default function UsersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "NOMBRE_USUARIO") {
-          void UserService.getByNombreUsuario(input, page, 7).then((data) => {
-            if (data === false) {
-              setNotFound(true);
-              setLoading(false);
-              setUsers([]);
-            } else {
-              setUsers(data.rows);
-              setPages(data.pages);
-              setCurrent(data.current);
-              setLoading(false);
-              setNotFound(false);
+          void UserService.getByNombreUsuario(input, page, size).then(
+            (data) => {
+              if (data === false) {
+                setNotFound(true);
+                setLoading(false);
+                setUsers([]);
+              } else {
+                setUsers(data.rows);
+                setPages(data.pages);
+                setCurrent(data.current);
+                setLoading(false);
+                setNotFound(false);
+              }
+              toast.dismiss(loadingToast);
+              setIsOperationCompleted(false);
             }
-            toast.dismiss(loadingToast);
-            setIsOperationCompleted(false);
-          });
+          );
         }
       }
     }

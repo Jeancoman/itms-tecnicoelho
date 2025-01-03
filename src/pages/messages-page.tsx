@@ -12,10 +12,7 @@ export default function MessagesPage() {
     if (!session.find()) {
       navigate("/entrar");
     } else {
-      if (
-        session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-        !permissions.find()?.ver.mensaje
-      ) {
+      if (!permissions.find()?.ver.mensaje) {
         navigate("/");
       }
     }
@@ -24,10 +21,7 @@ export default function MessagesPage() {
   if (!session.find()) {
     return null;
   } else {
-    if (
-      session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-      !permissions.find()?.ver.mensaje
-    ) {
+    if (!permissions.find()?.ver.mensaje) {
       return null;
     }
   }

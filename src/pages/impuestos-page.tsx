@@ -12,10 +12,7 @@ export default function ImpuestoPage() {
     if (!session.find()) {
       navigate("/entrar");
     } else {
-      if (
-        session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-        !permissions.find()?.ver.impuesto
-      ) {
+      if (!permissions.find()?.ver.impuesto) {
         navigate("/");
       }
     }
@@ -24,10 +21,7 @@ export default function ImpuestoPage() {
   if (!session.find()) {
     return null;
   } else {
-    if (
-      session.find()?.usuario.rol !== "ADMINISTRADOR" &&
-      !permissions.find()?.ver.impuesto
-    ) {
+    if (!permissions.find()?.ver.impuesto) {
       return null;
     }
   }
@@ -35,7 +29,7 @@ export default function ImpuestoPage() {
   return (
     <>
       <div className="h-screen bg-white md:grid md:grid-cols-[1fr,_5fr]">
-      <NavPanel />
+        <NavPanel />
         <main className="flex-grow bg-white relative max-h-screen">
           <ImpuestoDataDisplay />
         </main>

@@ -1,4 +1,4 @@
-import { Ticket, Response, Servicio } from "../types";
+import { Ticket, Response, GenericResponse } from "../types";
 import session from "../utils/session";
 
 export default class TicketService {
@@ -388,7 +388,7 @@ export default class TicketService {
     }
   }
 
-  static async create(ticket: Ticket, servicio: Servicio) {
+  static async create(ticket: Ticket) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/tickets`,
@@ -399,24 +399,26 @@ export default class TicketService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-          body: JSON.stringify({
-            ticket,
-            servicio,
-          }),
+          body: JSON.stringify(ticket),
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
 
-      return (await response.json()) as Ticket;
+      return (await response.json()) as {
+        message: string;
+        status: string;
+        ticket: Ticket
+      };
     } catch {
-      return false;
+      return {
+        message: "El ticket no pudo ser añadido.",
+        status: "error",
+        ticket: undefined
+      };
     }
   }
 
-  static async update(id: number, ticket: Ticket, servicio: Servicio) {
+  static async update(id: number, ticket: Ticket) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${id}`,
@@ -427,20 +429,17 @@ export default class TicketService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-          body: JSON.stringify({
-            ticket,
-            servicio,
-          }),
+          body: JSON.stringify(ticket),
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
 
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El ticket no pudo ser editado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -458,13 +457,13 @@ export default class TicketService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
 
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El ticket no pudo ser eliminado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 }

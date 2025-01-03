@@ -16,14 +16,18 @@ import { ReactComponent as House } from "/src/assets/home.svg";
 import { ReactComponent as Tag } from "/src/assets/tag.svg";
 import { ReactComponent as Library } from "/src/assets/library.svg";
 import { ReactComponent as Backup } from "/src/assets/backup.svg";
-import { ReactComponent as Check } from "/src/assets/check_circle.svg";
 import { ReactComponent as Bank } from "/src/assets/bank.svg";
-import { ReactComponent as Error } from "/src/assets/error.svg";
 import { ReactComponent as Help } from "/src/assets/help.svg";
+import { ReactComponent as Roles } from "/src/assets/roles.svg";
+import { ReactComponent as Settings } from "/src/assets/settings.svg";
+import { ReactComponent as Timeline } from "/src/assets/timeline.svg";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import session from "../../utils/session";
 import permissions from "../../utils/permissions";
-import { useColapsableInventoryStore } from "../../store/colapsableStore";
+import {
+  useColapsableInventoryStore,
+  useColapsableSettingsStore,
+} from "../../store/colapsableStore";
 import {
   useCategorySearchParamStore,
   useClientSearchParamStore,
@@ -39,211 +43,141 @@ import {
 import options from "../../utils/options";
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
-import { ModalProps } from "../../types";
-import toast from "react-hot-toast";
+import { Asset, ModalProps } from "../../types";
 import { useFunctionStore } from "../../store/functionStore";
+import Pagination from "./pagination";
+import RespaldoService from "../../services/respaldo-service";
 
 function RestaurationModal({ isOpen, closeModal }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
-  const [isImporting, setIsImporting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [backups, setBackups] = useState<Asset[]>([]);
+  const [fetched, setFetched] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredBackups, setFilteredBackups] = useState(backups);
+  const [currentPage, setCurrentPage] = useState(1);
+  const backupsPerPage = 5;
 
   useEffect(() => {
     if (isOpen) {
       ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-        }
-      });
     } else {
       closeModal();
       ref.current?.close();
-      reset();
     }
   }, [isOpen]);
 
-  const reset = () => {
-    if (isSuccess || isError) {
-      setIsError(false);
-      setIsSuccess(false);
-      setIsImporting(false);
-      setIsLoading(false);
+  useEffect(() => {
+    const filtered = backups.filter((backup) =>
+      backup.public_id.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredBackups(filtered);
+    setCurrentPage(1); // Reset to first page after filtering
+  }, [searchTerm, backups]);
+
+  useEffect(() => {
+    if (!fetched) {
+      RespaldoService.getAll().then((data) => {
+        setBackups(data);
+      });
+      setFetched(true);
     }
+  });
+
+  const handleCreateBackup = async () => {
+    await RespaldoService.create();
+    setFetched(false);
   };
 
-  const handleExport = async () => {
-    try {
-      const toastId = toast.loading("Exportando datos...");
-      closeModal();
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/backup/exportar`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: session.find()?.token!,
-          },
-        }
-      );
-      const blob = await response.blob();
-
-      toast.dismiss(toastId);
-
-      let fileName = "copia-de-seguridad-" + new Date().toISOString() + ".json";
-
-      const contentDisposition = response.headers.get("content-disposition");
-      if (contentDisposition) {
-        const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
-        if (fileNameMatch?.length === 2) fileName = fileNameMatch?.[1];
-      }
-
-      let urlBlob = window.URL.createObjectURL(blob);
-      let linkTempDownload = document.createElement("a");
-      linkTempDownload.href = urlBlob;
-      linkTempDownload.download = fileName;
-      document.body.appendChild(linkTempDownload);
-      linkTempDownload.click();
-      document.body.removeChild(linkTempDownload);
-    } catch (error) {
-      console.error("Hubo un error al descargar el archivo: ", error);
-    }
+  const handleRestoreBackup = async (id: string) => {
+    await RespaldoService.restore(id);
   };
 
-  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      const input = event?.target as HTMLInputElement;
-      const file = input?.files?.[0];
-      const formData = new FormData();
-
-      formData.append("file", file!);
-
-      setIsImporting(true);
-      setIsLoading(true);
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/backup/importar`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: session.find()?.token!,
-          },
-          body: formData,
-        }
-      );
-
-      if (response.ok) {
-        setIsLoading(false);
-        setIsSuccess(true);
-      } else {
-        setIsLoading(false);
-        setIsError(true);
-      }
-    } catch {
-      console.error("");
-    }
+  const handleDeleteBackup = async (id: string) => {
+    await RespaldoService.delete(id);
+    setFetched(false);
   };
+
+  const paginatedBackups = filteredBackups.slice(
+    (currentPage - 1) * backupsPerPage,
+    currentPage * backupsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredBackups.length / backupsPerPage);
 
   return (
     <dialog
       ref={ref}
       onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        const dialogDimensions = ref.current?.getBoundingClientRect();
         if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
+          e.clientX < dialogDimensions!.left ||
+          e.clientX > dialogDimensions!.right ||
+          e.clientY < dialogDimensions!.top ||
+          e.clientY > dialogDimensions!.bottom
         ) {
           closeModal();
           ref.current?.close();
         }
       }}
-      className="w-96 h-fit rounded-xl shadow text-base"
+      className="w-full max-w-lg rounded-xl shadow-lg text-base"
     >
-      <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Restauración</h1>
+      <div className="bg-[#2096ed] py-4 px-8 text-white">
+        <h1 className="text-xl font-bold">Restauración</h1>
       </div>
-      <div className="flex flex-col p-8 pt-6 justify-center">
-        {isImporting === true ? (
-          <>
-            {isLoading === true ? (
-              <div className="flex flex-col items-center gap-2">
-                <div className="grid w-full h-4/5">
-                  <div className="place-self-center">
-                    <div role="status">
-                      <svg
-                        aria-hidden="true"
-                        className="inline w-20 h-20 mr-2 text-blue-200 animate-spin dark:text-gray-600 fill-[#2096ed]"
-                        viewBox="0 0 100 101"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                          fill="currentColor"
-                        />
-                        <path
-                          d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                          fill="currentFill"
-                        />
-                      </svg>
-                      <span className="sr-only">Cargando...</span>
-                    </div>
-                  </div>
-                </div>
-                <p className="font-medium">Importando datos...</p>
-              </div>
-            ) : null}
-            {isError === true ? (
-              <div className="flex flex-col items-center gap-2">
-                <div className="grid w-full h-4/5">
-                  <Error className="place-self-center h-24 w-24 fill-red-400" />
-                </div>
-                <p className="font-medium">Error importando datos</p>
-              </div>
-            ) : null}
-            {isSuccess === true ? (
-              <div className="flex flex-col items-center gap-2">
-                <div className="grid w-full h-4/5">
-                  <Check className="place-self-center h-24 w-24 fill-green-400" />
-                </div>
-                <p className="font-medium">
-                  Los datos fueron importados exitosamente
-                </p>
-              </div>
-            ) : null}
-          </>
-        ) : (
-          <div className="flex flex-col gap-4 justify-center items-center">
-            <div>
-              <button
-                type="button"
-                onClick={handleExport}
-                className="outline-none bg-red-400 font-semibold rounded-lg py-2 px-4 hover:bg-red-500 text-white transition ease-in-out delay-100 duration-300 w-full"
-              >
-                Exportar copia de seguridad
-              </button>
-            </div>
-            <div className="items-center justify-center bg-grey-lighter cursor-pointer">
-              <label className="outline-none bg-green-400 font-semibold rounded-lg py-2 px-4 hover:bg-green-500 text-white transition ease-in-out delay-100 duration-300 w-full">
-                <span className="mt-2 text-base leading-normal">
-                  Importar copia de seguridad
-                </span>
-                <input type="file" className="hidden" onChange={handleImport} />
-              </label>
-            </div>
-          </div>
-        )}
-        <div className="flex gap-2 justify-center mt-6">
+      <div className="p-8">
+        <div className="flex gap-4 mb-4">
+          <input
+            type="text"
+            placeholder="Buscar respaldo..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 px-4 py-2 border rounded-lg"
+          />
           <button
             type="button"
-            onClick={() => {
-              closeModal();
-              reset();
-            }}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            onClick={handleCreateBackup}
+            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+          >
+            Crear
+          </button>
+        </div>
+        <ul className="divide-y divide-gray-200 mb-4">
+          {paginatedBackups.map((backup) => (
+            <li
+              key={backup.asset_id}
+              className="flex justify-between items-center py-2"
+            >
+              <span>{backup.public_id.substring(9)}</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleRestoreBackup(backup.public_id)}
+                  className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600"
+                >
+                  Restaurar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteBackup(backup.public_id)}
+                  className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <Pagination
+          current={currentPage}
+          pages={totalPages}
+          next={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+          prev={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+        />
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
           >
             Cerrar
           </button>
@@ -265,6 +199,11 @@ export default function NavPanel() {
     (state) => state.isColapsed
   );
   const toggleInventory = useColapsableInventoryStore((state) => state.toggle);
+
+  const isSettingsColapsed = useColapsableSettingsStore(
+    (state) => state.isColapsed
+  );
+  const toggleSettings = useColapsableSettingsStore((state) => state.toggle);
 
   const resetProductSearchCount = useProductSearchParamStore(
     (state) => state.resetSearchCount
@@ -318,10 +257,20 @@ export default function NavPanel() {
   useEffect(() => {
     if (
       (location.pathname.includes("ventas") ||
-        location.pathname.includes("compras")) &&
+        location.pathname.includes("compras") ||
+        location.pathname.includes("productos") ||
+        location.pathname.includes("historico")) &&
       isInventoryColapsed === false
     ) {
       toggleInventory();
+    }
+    if (
+      (location.pathname.includes("roles") ||
+        location.pathname.includes("impuestos") ||
+        location.pathname.includes("mensajeria")) &&
+      isSettingsColapsed === false
+    ) {
+      toggleSettings();
     }
   }, [location]);
 
@@ -337,7 +286,7 @@ export default function NavPanel() {
   const handleTouchMove = (e: TouchEvent) => {
     const touch = e.touches[0];
     //@ts-ignore
-    const deltaX = touch.clientX - navPanelRef.current.startX;
+    const deltaX = touch.clientX - navPanelRef?.current?.startX;
     if (deltaX > 50) {
       setIsNavOpen(true);
     }
@@ -370,22 +319,25 @@ export default function NavPanel() {
         onClick={() => setIsNavOpen(false)}
       ></div>
       <aside
-        className={`pt-7 fixed top-0 left-0 h-full w-64 shadow-md bg-[#2096ed] select-none z-40 transform transition-transform ${
+        className={`fixed top-0 left-0 h-screen w-64 shadow-md bg-[#2096ed] select-none z-40 transform transition-transform ${
           isNavOpen ? "translate-x-0" : "-translate-x-full"
-        } md:relative md:translate-x-0 md:w-64 md:h-auto md:block`}
+        } md:relative md:translate-x-0 md:w-64 flex flex-col`}
         ref={navPanelRef}
       >
-        <div className="font-bold text-white text-lg pl-6 flex gap-2 items-center -mt-1">
-          <img
-            className="h-8 w-8 object-cover"
-            src="/assets/logo.png"
-            alt="Logo de TecniCoelho"
-            draggable="false"
-          />
-          <p className="cursor-default uppercase">Tecnicoelho</p>
+        <div className="px-5 pt-7">
+          <div className="font-bold text-white text-lg flex gap-2 items-center -mt-1">
+            <img
+              className="h-8 w-8 object-cover"
+              src="/assets/logo.png"
+              alt="Logo de TecniCoelho"
+              draggable="false"
+            />
+            <p className="cursor-default uppercase">Tecnicoelho</p>
+          </div>
         </div>
+
         <hr className="my-5 mx-5" />
-        <div className="max-h-screen scrollbar-none overflow-auto pb-5">
+        <div className="flex-1 overflow-y-auto">
           <div className="text-white font-semibold flex flex-col gap-0.5 px-5">
             <NavLink
               to="/"
@@ -406,8 +358,7 @@ export default function NavPanel() {
               />
               <p>Inicio</p>
             </NavLink>
-            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-            session.find()?.usuario.rol === "SUPERADMINISTRADOR" ? (
+            {permissions.find()?.ver.usuario ? (
               <NavLink
                 to="/usuarios"
                 onClick={resetAllSearchs}
@@ -434,8 +385,7 @@ export default function NavPanel() {
                 <p>No permitido</p>
               </div>
             )}
-            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-            permissions.find()?.ver.cliente ? (
+            {permissions.find()?.ver.cliente ? (
               <NavLink
                 to="/clientes"
                 onClick={resetAllSearchs}
@@ -462,64 +412,7 @@ export default function NavPanel() {
                 <p>No permitido</p>
               </div>
             )}
-            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-            permissions.find()?.ver.ticket ? (
-              <NavLink
-                to="/tickets"
-                onClick={resetAllSearchs}
-                className={clsx({
-                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                    !location.pathname.includes("tickets"),
-                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                    location.pathname.includes("tickets"),
-                })}
-              >
-                <Ticket
-                  className={clsx({
-                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
-                      !location.pathname.includes("tickets"),
-                    ["h-6 w-6 fill-[#2096ed]"]:
-                      location.pathname.includes("tickets"),
-                  })}
-                />
-                <p>Tickets</p>
-              </NavLink>
-            ) : (
-              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-                <Tag className="h-6 w-6 fill-white " />
-                <p>No permitido</p>
-              </div>
-            )}
-            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-            permissions.find()?.ver.producto ? (
-              <NavLink
-                to="/productos"
-                onClick={resetAllSearchs}
-                className={clsx({
-                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                    !location.pathname.includes("productos"),
-                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                    location.pathname.includes("productos"),
-                })}
-              >
-                <Store
-                  className={clsx({
-                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
-                      !location.pathname.includes("productos"),
-                    ["h-6 w-6 fill-[#2096ed]"]:
-                      location.pathname.includes("productos"),
-                  })}
-                />
-                <p>Productos</p>
-              </NavLink>
-            ) : (
-              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-                <Tag className="h-6 w-6 fill-white " />
-                <p>No permitido</p>
-              </div>
-            )}
-            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-            permissions.find()?.ver.proveedor ? (
+            {permissions.find()?.ver.proveedor ? (
               <NavLink
                 to="/proveedores"
                 onClick={resetAllSearchs}
@@ -546,27 +439,26 @@ export default function NavPanel() {
                 <p>No permitido</p>
               </div>
             )}
-            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-            permissions.find()?.ver.imagen ? (
+            {permissions.find()?.ver.ticket ? (
               <NavLink
-                to="/galeria"
+                to="/tickets"
                 onClick={resetAllSearchs}
                 className={clsx({
                   ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                    !location.pathname.includes("galeria"),
+                    !location.pathname.includes("tickets"),
                   ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                    location.pathname.includes("galeria"),
+                    location.pathname.includes("tickets"),
                 })}
               >
-                <Library
+                <Ticket
                   className={clsx({
                     ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
-                      !location.pathname.includes("galeria"),
+                      !location.pathname.includes("tickets"),
                     ["h-6 w-6 fill-[#2096ed]"]:
-                      location.pathname.includes("galeria"),
+                      location.pathname.includes("tickets"),
                   })}
                 />
-                <p>Galería</p>
+                <p>Tickets</p>
               </NavLink>
             ) : (
               <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
@@ -574,9 +466,9 @@ export default function NavPanel() {
                 <p>No permitido</p>
               </div>
             )}
-            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-            permissions.find()?.ver.venta ||
-            permissions.find()?.ver.compra ? (
+            {permissions.find()?.ver.venta ||
+            permissions.find()?.ver.compra ||
+            permissions.find()?.ver.producto ? (
               <div
                 onClick={toggleInventory}
                 className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
@@ -597,8 +489,61 @@ export default function NavPanel() {
             )}
             {isInventoryColapsed ? (
               <div className="pl-3">
-                {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-                permissions.find()?.ver.venta ? (
+                {permissions.find()?.ver.producto ? (
+                  <NavLink
+                    to="/productos"
+                    onClick={resetAllSearchs}
+                    className={clsx({
+                      ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                        !location.pathname.includes("productos"),
+                      ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                        location.pathname.includes("productos"),
+                    })}
+                  >
+                    <Store
+                      className={clsx({
+                        ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                          !location.pathname.includes("productos"),
+                        ["h-6 w-6 fill-[#2096ed]"]:
+                          location.pathname.includes("productos"),
+                      })}
+                    />
+                    <p>Productos</p>
+                  </NavLink>
+                ) : (
+                  <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                    <Tag className="h-6 w-6 fill-white " />
+                    <p>No permitido</p>
+                  </div>
+                )}
+                {permissions.find()?.ver.producto ? (
+                  <NavLink
+                    to="/historico"
+                    onClick={resetAllSearchs}
+                    className={clsx({
+                      ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                        !location.pathname.includes("historico"),
+                      ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                        location.pathname.includes("historico"),
+                    })}
+                  >
+                    <Timeline
+                      className={clsx({
+                        ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                          !location.pathname.includes("historico"),
+                        ["h-6 w-6 fill-[#2096ed]"]:
+                          location.pathname.includes("historico"),
+                      })}
+                    />
+                    <p>Historico</p>
+                  </NavLink>
+                ) : (
+                  <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                    <Tag className="h-6 w-6 fill-white " />
+                    <p>No permitido</p>
+                  </div>
+                )}
+                {permissions.find()?.ver.venta ? (
                   <NavLink
                     to="/ventas"
                     onClick={resetAllSearchs}
@@ -625,8 +570,7 @@ export default function NavPanel() {
                     <p>No permitido</p>
                   </div>
                 )}
-                {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-                permissions.find()?.ver.compra ? (
+                {permissions.find()?.ver.compra ? (
                   <NavLink
                     to="/compras"
                     onClick={resetAllSearchs}
@@ -655,36 +599,7 @@ export default function NavPanel() {
                 )}
               </div>
             ) : null}
-            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-            permissions.find()?.ver.publicación ? (
-              <NavLink
-                to="/publicaciones"
-                onClick={resetAllSearchs}
-                className={clsx({
-                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                    !location.pathname.includes("publicaciones"),
-                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                    location.pathname.includes("publicaciones"),
-                })}
-              >
-                <Article
-                  className={clsx({
-                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
-                      !location.pathname.includes("publicaciones"),
-                    ["h-6 w-6 fill-[#2096ed]"]:
-                      location.pathname.includes("publicaciones"),
-                  })}
-                />
-                <p>Publicaciones</p>
-              </NavLink>
-            ) : (
-              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
-                <Tag className="h-6 w-6 fill-white " />
-                <p>No permitido</p>
-              </div>
-            )}
-            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-            permissions.find()?.ver.categoría ? (
+            {permissions.find()?.ver.categoría ? (
               <NavLink
                 to="/categorias"
                 onClick={resetAllSearchs}
@@ -711,50 +626,26 @@ export default function NavPanel() {
                 <p>No permitido</p>
               </div>
             )}
-            {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-              permissions.find()?.ver.mensajería) && (
+            {permissions.find()?.ver.imagen ? (
               <NavLink
-                to="/mensajeria"
+                to="/galeria"
                 onClick={resetAllSearchs}
                 className={clsx({
                   ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                    !location.pathname.includes("mensajeria"),
+                    !location.pathname.includes("galeria"),
                   ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                    location.pathname.includes("mensajeria"),
+                    location.pathname.includes("galeria"),
                 })}
               >
-                <Envelopes
+                <Library
                   className={clsx({
                     ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
-                      !location.pathname.includes("mensajeria"),
+                      !location.pathname.includes("galeria"),
                     ["h-6 w-6 fill-[#2096ed]"]:
-                      location.pathname.includes("mensajeria"),
+                      location.pathname.includes("galeria"),
                   })}
                 />
-                <p>Mensajería</p>
-              </NavLink>
-            )}
-            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-            permissions.find()?.ver.impuesto ? (
-              <NavLink
-                to="/impuestos"
-                onClick={resetAllSearchs}
-                className={clsx({
-                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
-                    !location.pathname.includes("impuestos"),
-                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
-                    location.pathname.includes("impuestos"),
-                })}
-              >
-                <Bank
-                  className={clsx({
-                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
-                      !location.pathname.includes("impuestos"),
-                    ["h-6 w-6 fill-[#2096ed]"]:
-                      location.pathname.includes("impuestos"),
-                  })}
-                />
-                <p>Impuestos</p>
+                <p>Galería</p>
               </NavLink>
             ) : (
               <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
@@ -762,14 +653,48 @@ export default function NavPanel() {
                 <p>No permitido</p>
               </div>
             )}
-            {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-            session.find()?.usuario.rol === "SUPERADMINISTRADOR" ? (
+            {permissions.find()?.ver.publicación ? (
+              <NavLink
+                to="/publicaciones"
+                onClick={resetAllSearchs}
+                className={clsx({
+                  ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"]:
+                    !location.pathname.includes("publicaciones"),
+                  ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg"]:
+                    location.pathname.includes("publicaciones"),
+                })}
+              >
+                <Article
+                  className={clsx({
+                    ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                      !location.pathname.includes("publicaciones"),
+                    ["h-6 w-6 fill-[#2096ed]"]:
+                      location.pathname.includes("publicaciones"),
+                  })}
+                />
+                <p>Publicaciones</p>
+              </NavLink>
+            ) : (
+              <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                <Tag className="h-6 w-6 fill-white " />
+                <p>No permitido</p>
+              </div>
+            )}
+            {permissions.find()?.ver.restauracion ||
+            permissions.find()?.ver.impuesto ||
+            permissions.find()?.ver.rol ||
+            permissions.find()?.ver.mensajería ? (
               <div
-                onClick={() => setIsOpen(true)}
+                onClick={toggleSettings}
                 className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
               >
-                <Backup className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
-                <p className="mr-8">Restauración</p>
+                <Settings className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+                <p className="mr-1">Configuración</p>
+                {isSettingsColapsed ? (
+                  <Up className="h-3 w-3 fill-white group-hover/parent:fill-[#2096ed]" />
+                ) : (
+                  <Down className="h-3 w-3 fill-white group-hover/parent:fill-[#2096ed]" />
+                )}
               </div>
             ) : (
               <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
@@ -777,6 +702,100 @@ export default function NavPanel() {
                 <p>No permitido</p>
               </div>
             )}
+            {isSettingsColapsed ? (
+              <div className="pl-3">
+                {permissions.find()?.ver.mensajería && (
+                  <NavLink
+                    to="/mensajeria"
+                    onClick={resetAllSearchs}
+                    className={clsx({
+                      ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                        !location.pathname.includes("mensajeria"),
+                      ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                        location.pathname.includes("mensajeria"),
+                    })}
+                  >
+                    <Envelopes
+                      className={clsx({
+                        ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                          !location.pathname.includes("mensajeria"),
+                        ["h-6 w-6 fill-[#2096ed]"]:
+                          location.pathname.includes("mensajeria"),
+                      })}
+                    />
+                    <p>Mensajería</p>
+                  </NavLink>
+                )}
+                {permissions.find()?.ver.rol ? (
+                  <NavLink
+                    to="/roles"
+                    onClick={resetAllSearchs}
+                    className={clsx({
+                      ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                        !location.pathname.includes("roles"),
+                      ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                        location.pathname.includes("roles"),
+                    })}
+                  >
+                    <Roles
+                      className={clsx({
+                        ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                          !location.pathname.includes("roles"),
+                        ["h-6 w-6 fill-[#2096ed]"]:
+                          location.pathname.includes("roles"),
+                      })}
+                    />
+                    <p>Roles</p>
+                  </NavLink>
+                ) : (
+                  <div className="group/parent flex gap-3 items-center  p-2 rounded-lg">
+                    <Tag className="h-6 w-6 fill-white " />
+                    <p>No permitido</p>
+                  </div>
+                )}
+                {permissions.find()?.ver.impuesto ? (
+                  <NavLink
+                    to="/impuestos"
+                    onClick={resetAllSearchs}
+                    className={clsx({
+                      ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                        !location.pathname.includes("impuestos"),
+                      ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                        location.pathname.includes("impuestos"),
+                    })}
+                  >
+                    <Bank
+                      className={clsx({
+                        ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                          !location.pathname.includes("impuestos"),
+                        ["h-6 w-6 fill-[#2096ed]"]:
+                          location.pathname.includes("impuestos"),
+                      })}
+                    />
+                    <p>Impuestos</p>
+                  </NavLink>
+                ) : (
+                  <div className="group/parent flex gap-3 items-center p-2 rounded-lg">
+                    <Tag className="h-6 w-6 fill-white " />
+                    <p>No permitido</p>
+                  </div>
+                )}
+                {permissions.find()?.crear.restauracion ? (
+                  <div
+                    onClick={() => setIsOpen(true)}
+                    className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg mb-0.5"
+                  >
+                    <Backup className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+                    <p className="mr-8">Restauración</p>
+                  </div>
+                ) : (
+                  <div className="group/parent flex gap-3 items-center p-2 rounded-lg">
+                    <Tag className="h-6 w-6 fill-white " />
+                    <p>No permitido</p>
+                  </div>
+                )}
+              </div>
+            ) : null}
             <div
               onClick={() =>
                 window.open(`${window.location.origin}/manual_de_usuario.pdf`)

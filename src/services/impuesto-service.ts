@@ -1,4 +1,4 @@
-import { Impuesto, Response } from "../types";
+import { GenericResponse, Impuesto, Response } from "../types";
 import session from "../utils/session";
 
 export default class ImpuestoService {
@@ -186,7 +186,7 @@ export default class ImpuestoService {
     }
   }
 
-  static async create(product: Impuesto) {
+  static async create(impuesto: Impuesto) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/impuestos/`,
@@ -197,21 +197,20 @@ export default class ImpuestoService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-          body: JSON.stringify(product),
+          body: JSON.stringify(impuesto),
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Impuesto;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El impuesto no pudo ser añadido.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
-  static async update(id: number, product: Impuesto) {
+  static async update(id: number, impuesto: Impuesto) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/impuestos/${id}`,
@@ -222,17 +221,16 @@ export default class ImpuestoService {
             "Content-Type": "application/json",
             Authorization: session.find()?.token!,
           },
-          body: JSON.stringify(product),
+          body: JSON.stringify(impuesto),
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El impuesto no pudo ser editado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -250,13 +248,12 @@ export default class ImpuestoService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El impuesto no pudo ser eliminado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 }

@@ -8,10 +8,17 @@ export default function Pagination({
   pages,
   next,
   prev,
-  className
+  className,
+  customText,
 }: PaginationProps) {
   return (
-    <div className={className ? className : "absolute bottom-5 left-8 flex items-center gap-4"}>
+    <div
+      className={
+        className
+          ? className
+          : "absolute bottom-5 left-8 flex items-center gap-4"
+      }
+    >
       <div
         onClick={prev}
         className={clsx({
@@ -24,7 +31,7 @@ export default function Pagination({
         <Left className="h-4 w-4" />
       </div>
       <div className="font-medium text-slate-600">
-        Mostrando página{" "}
+        {customText ? customText : "Mostrando página"}{" "}
         <span className="font-bold text-[#2096ed]">{current}</span> de{" "}
         <span className="font-bold text-[#2096ed]">{pages}</span>
       </div>

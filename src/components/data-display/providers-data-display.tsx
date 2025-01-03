@@ -16,7 +16,6 @@ import toast, { Toaster } from "react-hot-toast";
 import ProviderService from "../../services/provider-service";
 import Select from "../misc/select";
 import permissions from "../../utils/permissions";
-import session from "../../utils/session";
 import { useProviderSearchParamStore } from "../../store/searchParamStore";
 import clsx from "clsx";
 import { useSearchedStore } from "../../store/searchedStore";
@@ -24,19 +23,18 @@ import ExportCSV from "../misc/export-to-cvs";
 import { format } from "date-fns";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [documentType, setDocumentType] = useState<Selected>({
     value: "V",
     label: "V",
   });
-
   const [formData, setFormData] = useState<Proveedor>({
     nombre: "",
     documento: undefined,
     descripción: "",
     telefono: "",
   });
-
-  const ref = useRef<HTMLDialogElement>(null);
 
   const resetFormData = useCallback(() => {
     setFormData({
@@ -45,6 +43,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       descripción: "",
       telefono: "",
     });
+    setDocumentType({
+      value: "V",
+      label: "V",
+    });
+    setIsConfirmationScreen(false);
   }, []);
 
   const handleEscape = useCallback((e: KeyboardEvent) => {
@@ -59,19 +62,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     resetFormData();
   }, [closeModal, resetFormData]);
 
-  useEffect(() => {
-    if (isOpen) {
-      ref.current?.showModal();
-      document.addEventListener("keydown", handleEscape);
-    } else {
-      handleClose();
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, handleEscape, handleClose]);
-
   const handleClickOutside = (e: React.MouseEvent) => {
     const dialogDimensions = ref.current?.getBoundingClientRect();
     if (
@@ -85,25 +75,32 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     }
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = async () => {
     handleClose();
 
     let updatedFormData = { ...formData };
-    updatedFormData.documento = formData.documento
-      ? `${documentType.value}-${formData.documento}`
-      : undefined;
+
+    // Formatear el documento según el tipo seleccionado
+    if (formData.documento) {
+      updatedFormData.documento = `${documentType.value}-${formData.documento}`;
+    }
 
     const loadingToast = toast.loading("Añadiendo proveedor...");
     const data = await ProviderService.create(updatedFormData);
 
     toast.dismiss(loadingToast);
+
     setOperationAsCompleted();
 
-    if (data === false) {
-      toast.error("Proveedor no pudo ser añadido.");
+    if (data.status === "error") {
+      toast.error(data.message);
     } else {
-      toast.success("Proveedor añadido con éxito.");
+      toast.success(data.message);
     }
   };
 
@@ -116,122 +113,281 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       }));
     };
 
+  // Define una función para obtener el patrón y el mensaje de error según el tipo de documento
+  const getDocumentoPatternAndMessage = () => {
+    switch (documentType.value) {
+      case "V":
+      case "E":
+        return {
+          pattern: /^(\d{8}|\d{8}-\d{1})$/,
+          message: "Formato válido: 12345678 o 12345678-0",
+        };
+      case "G":
+      case "J":
+        return {
+          pattern: /^\d{8}-\d{1}$/,
+          message: "Formato válido: 12345678-0",
+        };
+      case "P":
+        return {
+          pattern: /^\d{8}$/,
+          message: "Formato válido: 12345678",
+        };
+      default:
+        return {
+          pattern: /^.*$/, // Acepta cualquier formato por defecto
+          message: "Formato inválido",
+        };
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", handleEscape);
+    } else {
+      handleClose();
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, handleEscape, handleClose]);
+
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+        <div className="grid grid-cols-2 gap-6">
+          {/* NOMBRE */}
+          <div>
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Nombre
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData.nombre || "No especificado"}
+            </p>
+          </div>
+
+          {/* DOCUMENTO */}
+          <div>
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Documento
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {documentType.value}-{formData.documento}
+            </p>
+          </div>
+
+          {/* DESCRIPCIÓN */}
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Descripción
+            </p>
+            <p className="text-gray-900 font-medium text-base whitespace-pre-wrap">
+              {formData.descripción || "No especificada"}
+            </p>
+          </div>
+
+          {/* TELÉFONO */}
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Teléfono
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData.telefono || "No especificado"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTONES DE ACCIÓN */}
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)}
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 
+                       hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+        >
+          Volver
+        </button>
+        <button
+          onClick={handleFinalSubmit}
+          className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+        >
+          Crear
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <dialog
       ref={ref}
       onClick={handleClickOutside}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Añadir proveedor</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isConfirmationScreen ? "Confirmar proveedor" : "Añadir proveedor"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={handleFormSubmit}
-      >
-        <div className="w-full">
-          <input
-            type="text"
-            id="name"
-            placeholder="Introduzca el nombre*"
-            onChange={handleInputChange("nombre")}
-            value={formData.nombre}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^.{2,}$"
-            name="name"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Mínimo 2 caracteres
-          </span>
-        </div>
-        <div className="flex gap-1">
-          <div className="relative w-[20%]">
-            <Select
-              options={[
-                {
-                  value: "V",
-                  label: "V",
-                  onClick(value, label) {
-                    setDocumentType({ value, label });
-                  },
-                },
-                {
-                  value: "RIF",
-                  label: "RIF",
-                  onClick(value, label) {
-                    setDocumentType({ value, label });
-                  },
-                },
-              ]}
-              selected={documentType}
-            />
-          </div>
-          <div className="w-[80%]">
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4 group"
+          autoComplete="off"
+          onSubmit={handleSubmit}
+        >
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Nombre*
+            </label>
             <input
               type="text"
-              id="document"
-              placeholder="Introduzca el documento"
-              onChange={handleInputChange("documento")}
-              value={formData.documento || ""}
-              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              pattern={
-                documentType.value !== "V"
-                  ? "^([A-Za-z]-\\d{8,}|[A-Za-z]-\\d{8,}-\\d)$"
-                  : "^\\d{1,3}\\.\\d{3}\\.\\d{3}$"
-              }
+              id="name"
+              placeholder="Introducir nombre"
+              onChange={handleInputChange("nombre")}
+              value={formData.nombre}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               required
+              pattern="^.{1,150}$"
+              name="name"
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              {documentType.value !== "V"
-                ? "Formato: J-30684267-5"
-                : "Formato: 29.946.012"}
+              Minimo 1 carácter, máximo 150
             </span>
           </div>
-        </div>
-        <div className="w-full">
-          <textarea
-            rows={3}
-            id="description"
-            placeholder="Introduzca la descripción"
-            onChange={handleInputChange("descripción")}
-            value={formData.descripción}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-            name="descripción"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Mínimo 10 caracteres
-          </span>
-        </div>
-        <div className="w-full">
-          <input
-            type="tel"
-            id="phone"
-            placeholder="Introduzca el teléfono"
-            onChange={handleInputChange("telefono")}
-            value={formData.telefono}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Teléfono debe estar en formato E.164
-          </span>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Cancelar
-          </button>
-          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Completar
-          </button>
-        </div>
-      </form>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Documento*
+            </label>
+            <div className="flex gap-1">
+              <div className="relative w-[20%]">
+                <Select
+                  options={[
+                    {
+                      value: "V",
+                      label: "V",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "J",
+                      label: "J",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "G",
+                      label: "G",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "E",
+                      label: "E",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "P",
+                      label: "P",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                  ]}
+                  selected={documentType}
+                  small
+                />
+              </div>
+              <div className="w-[80%]">
+                <input
+                  type="text"
+                  placeholder="Introducir documento"
+                  onChange={handleInputChange("documento")}
+                  value={formData.documento || ""}
+                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                  pattern={getDocumentoPatternAndMessage().pattern.source}
+                  required
+                />
+                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                  {getDocumentoPatternAndMessage().message}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Descripción
+            </label>
+            <textarea
+              rows={3}
+              id="description"
+              placeholder="Introducir descripción"
+              onChange={handleInputChange("descripción")}
+              value={formData.descripción}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={1}
+              maxLength={500}
+              name="descripción"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 500
+            </span>
+          </div>
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Teléfono
+            </label>
+            <input
+              type="tel"
+              id="phone"
+              placeholder="Introducir teléfono"
+              onChange={handleInputChange("telefono")}
+              value={formData.telefono}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Teléfono debe estar en formato E.164
+            </span>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
+            </button>
+          </div>
+        </form>
+      )}
     </dialog>
   );
 }
@@ -243,40 +399,35 @@ function EditModal({
   proveedor,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
-
-  const extractDocumentType = (documento: string | undefined) => {
-    const prefix = documento?.substring(0, 1);
-    return ["V", "J", "G", "E", "P"].includes(prefix || "") ? prefix : "V";
-  };
-
-  const extractDocumentNumber = (documento: string | undefined) => {
-    if (documento && documento.length > 2) {
-      return documento.slice(2);
-    }
-
-    return documento;
-  };
-
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
+  const initialDocumentType = proveedor?.documento
+    ? proveedor.documento.split("-")[0]
+    : "V";
   const [documentType, setDocumentType] = useState<Selected>({
-    value: extractDocumentType(proveedor?.documento),
-    label: extractDocumentType(proveedor?.documento),
+    value: initialDocumentType,
+    label: initialDocumentType,
   });
-
+  const initialDocumento = proveedor?.documento
+    ? proveedor.documento.split("-").slice(1).join("-")
+    : "";
   const [formData, setFormData] = useState<Proveedor>({
     ...proveedor!,
-    documento: extractDocumentNumber(proveedor?.documento),
+    documento: initialDocumento,
   });
 
-  const resetFormData = useCallback(() => {
+  const resetFormData = () => {
     setFormData({
       ...proveedor!,
-      documento: extractDocumentNumber(proveedor?.documento),
+      documento: proveedor?.documento
+        ? proveedor.documento.split("-").slice(1).join("-") // Extraer el documento sin el prefijo
+        : "",
     });
     setDocumentType({
-      value: extractDocumentType(proveedor?.documento),
-      label: extractDocumentType(proveedor?.documento),
+      value: proveedor?.documento?.charAt(0) || "V",
+      label: proveedor?.documento?.charAt(0) || "V",
     });
-  }, [proveedor]);
+    setIsConfirmationScreen(false);
+  };
 
   const handleEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") {
@@ -288,20 +439,7 @@ function EditModal({
     closeModal();
     ref.current?.close();
     resetFormData();
-  }, [closeModal, resetFormData]);
-
-  useEffect(() => {
-    if (isOpen) {
-      ref.current?.showModal();
-      document.addEventListener("keydown", handleEscape);
-    } else {
-      handleClose();
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, handleEscape, handleClose]);
+  }, [closeModal]);
 
   const handleClickOutside = (e: React.MouseEvent) => {
     const dialogDimensions = ref.current?.getBoundingClientRect();
@@ -316,14 +454,20 @@ function EditModal({
     }
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = async () => {
     handleClose();
 
     let updatedFormData = { ...formData };
-    updatedFormData.documento = formData.documento
-      ? `${documentType.value}-${formData.documento}`
-      : undefined;
+
+    // Formatear el documento según el tipo seleccionado
+    if (formData.documento) {
+      updatedFormData.documento = `${documentType.value}-${formData.documento}`;
+    }
 
     const loadingToast = toast.loading("Editando proveedor...");
     const data = await ProviderService.update(proveedor?.id!, updatedFormData);
@@ -331,10 +475,38 @@ function EditModal({
     toast.dismiss(loadingToast);
     setOperationAsCompleted();
 
-    if (data) {
-      toast.success("Proveedor editado con éxito.");
+    if (data.status === "success") {
+      toast.success(data.message);
     } else {
-      toast.error("Proveedor no pudo ser editado.");
+      toast.error(data.message);
+    }
+  };
+
+  // Define una función para obtener el patrón y el mensaje de error según el tipo de documento
+  const getDocumentoPatternAndMessage = () => {
+    switch (documentType.value) {
+      case "V":
+      case "E":
+        return {
+          pattern: /^(\d{8}|\d{8}-\d{1})$/,
+          message: "Formato válido: 12345678 o 12345678-0",
+        };
+      case "G":
+      case "J":
+        return {
+          pattern: /^\d{8}-\d{1}$/,
+          message: "Formato válido: 12345678-0",
+        };
+      case "P":
+        return {
+          pattern: /^\d{8}$/,
+          message: "Formato válido: 12345678",
+        };
+      default:
+        return {
+          pattern: /^.*$/, // Acepta cualquier formato por defecto
+          message: "Formato inválido",
+        };
     }
   };
 
@@ -347,132 +519,324 @@ function EditModal({
       }));
     };
 
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", handleEscape);
+    } else {
+      handleClose();
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, handleEscape, handleClose]);
+
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+        <div className="grid grid-cols-2 gap-8">
+          {/* COLUMNA IZQUIERDA - Datos actuales */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Datos actuales
+            </h3>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {proveedor?.nombre || "No especificado"}
+                </p>
+              </div>
+              {/* Documento */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Documento
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {proveedor?.documento || "No especificado"}
+                </p>
+              </div>
+              {/* Descripción */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Descripción
+                </p>
+                <p className="text-gray-900 font-medium text-base whitespace-pre-wrap">
+                  {proveedor?.descripción || "No especificada"}
+                </p>
+              </div>
+              {/* Teléfono */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Teléfono
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {proveedor?.telefono || "No especificado"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* COLUMNA DERECHA - Nuevos datos */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Nuevos datos
+            </h3>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Nombre
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.nombre !== proveedor?.nombre
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.nombre || "No especificado"}
+                </p>
+              </div>
+              {/* Documento */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Documento
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    `${documentType.value}-${formData.documento}` !==
+                    proveedor?.documento
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {documentType.value}-{formData.documento}
+                </p>
+              </div>
+              {/* Descripción */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Descripción
+                </p>
+                <p
+                  className={`text-base font-medium whitespace-pre-wrap ${
+                    formData.descripción !== proveedor?.descripción
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.descripción || "No especificada"}
+                </p>
+              </div>
+              {/* Teléfono */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Teléfono
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.telefono !== proveedor?.telefono
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.telefono || "No especificado"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTONES DE ACCIÓN */}
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)} // Retorna al formulario
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+        >
+          Volver
+        </button>
+        <button
+          onClick={handleFinalSubmit} // Confirmación final
+          className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+        >
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <dialog
       ref={ref}
       onClick={handleClickOutside}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar proveedor</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isConfirmationScreen ? "Confirmar cambios" : "Editar proveedor"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4"
-        autoComplete="off"
-        onSubmit={handleFormSubmit}
-      >
-        <div className="w-full">
-          <input
-            type="text"
-            placeholder="Nombre*"
-            onChange={handleInputChange("nombre")}
-            value={formData.nombre}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^.{2,}$"
-            name="name"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 2 caracteres
-          </span>
-        </div>
-        <div className="flex gap-1">
-          <div className="relative w-[20%]">
-            <Select
-              options={[
-                {
-                  value: "V",
-                  label: "V",
-                  onClick(value, label) {
-                    setDocumentType({ value, label });
-                  },
-                },
-                {
-                  value: "J",
-                  label: "J",
-                  onClick(value, label) {
-                    setDocumentType({ value, label });
-                  },
-                },
-                {
-                  value: "G",
-                  label: "G",
-                  onClick(value, label) {
-                    setDocumentType({ value, label });
-                  },
-                },
-                {
-                  value: "E",
-                  label: "E",
-                  onClick(value, label) {
-                    setDocumentType({ value, label });
-                  },
-                },
-                {
-                  value: "P",
-                  label: "P",
-                  onClick(value, label) {
-                    setDocumentType({ value, label });
-                  },
-                },
-              ]}
-              selected={documentType}
-            />
-          </div>
-          <div className="w-[80%]">
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4"
+          autoComplete="off"
+          onSubmit={handleSubmit}
+        >
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Nombre*
+            </label>
             <input
               type="text"
-              placeholder="Documento"
-              onChange={handleInputChange("documento")}
-              value={formData.documento || ""}
-              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              pattern="^.{7,}$"
+              placeholder="Introducir nombre"
+              onChange={handleInputChange("nombre")}
+              value={formData.nombre}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              required
+              pattern="^.{1,150}$"
+              name="name"
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 7 caracteres
+              Minimo 1 carácter, máximo 150
             </span>
           </div>
-        </div>
-        <div className="w-full">
-          <textarea
-            rows={3}
-            placeholder="Descripción"
-            onChange={handleInputChange("descripción")}
-            value={formData.descripción || ""}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-            name="descripción"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
-          </span>
-        </div>
-        <div className="w-full">
-          <input
-            type="tel"
-            placeholder="Teléfono"
-            onChange={handleInputChange("telefono")}
-            value={formData.telefono}
-            className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            pattern="^\+?(\d{1,3})?[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Formato de teléfono invalido
-          </span>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Cancelar
-          </button>
-          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Completar
-          </button>
-        </div>
-      </form>
+          <div>
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Documento*
+            </label>
+            <div className="flex gap-1">
+              <div className="relative w-[20%]">
+                <Select
+                  options={[
+                    {
+                      value: "V",
+                      label: "V",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "J",
+                      label: "J",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "G",
+                      label: "G",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "E",
+                      label: "E",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "P",
+                      label: "P",
+                      onClick: (value, label) => {
+                        setDocumentType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                  ]}
+                  selected={documentType}
+                  small={true}
+                />
+              </div>
+              <div className="w-[80%]">
+                <input
+                  type="text"
+                  placeholder="Introducir documento"
+                  onChange={handleInputChange("documento")}
+                  value={formData.documento || ""}
+                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                  pattern={getDocumentoPatternAndMessage().pattern.source}
+                  required
+                />
+                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                  {getDocumentoPatternAndMessage().message}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Descripción
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Introducir descripción"
+              onChange={handleInputChange("descripción")}
+              value={formData.descripción || ""}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={1}
+              maxLength={500}
+              name="descripción"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 1 carácter, máximo 500
+            </span>
+          </div>
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Teléfono
+            </label>
+            <input
+              type="tel"
+              placeholder="Teléfono"
+              onChange={handleInputChange("telefono")}
+              value={formData.telefono}
+              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              pattern="^\+?(\d{1,3})?[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$"
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Formato de teléfono invalido
+            </span>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
+            </button>
+          </div>
+        </form>
+      )}
     </dialog>
   );
 }
@@ -515,8 +879,11 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Eliminar proveedor</h1>
+      </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
         autoComplete="off"
@@ -526,10 +893,10 @@ function DeleteModal({
           const loadingToast = toast.loading("Eliminando proveedor...");
           ProviderService.delete(proveedor?.id!).then((data) => {
             toast.dismiss(loadingToast);
-            if (data) {
-              toast.success("Proveedor eliminado con exito.");
+            if (data.status === "error") {
+              toast.success(data.message);
             } else {
-              toast.error("Proveedor no pudo ser eliminado.");
+              toast.error(data.message);
             }
             setOperationAsCompleted();
           });
@@ -557,6 +924,104 @@ function DeleteModal({
           </button>
         </div>
       </form>
+    </dialog>
+  );
+}
+
+function ViewModal({ isOpen, closeModal, proveedor }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Datos del proveedor</h1>
+      </div>
+      <div className="p-8 pt-6">
+        {/* CONTENEDOR PRINCIPAL */}
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* NOMBRE */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Nombre
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {proveedor?.nombre || "No especificado"}
+              </p>
+            </div>
+
+            {/* DOCUMENTO */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Documento
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {proveedor?.documento}
+              </p>
+            </div>
+
+            {/* DESCRIPCIÓN */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Descripción
+              </p>
+              <p className="text-gray-900 font-medium text-base whitespace-pre-wrap">
+                {proveedor?.descripción || "No especificada"}
+              </p>
+            </div>
+
+            {/* TELÉFONO */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Teléfono
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {proveedor?.telefono || "No especificado"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* BOTONES DE ACCIÓN */}
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={closeModal}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
     </dialog>
   );
 }
@@ -629,7 +1094,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar proveedor</h1>
@@ -742,54 +1207,138 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 }
 
 function ReportModal({ isOpen, closeModal }: ModalProps) {
-  const [param, setParam] = useState("");
   const ref = useRef<HTMLDialogElement>(null);
   const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
     value: "",
-    label: "Seleccionar parametro de reporte",
+    label: "Seleccionar parámetro de reporte",
   });
 
-  const resetSearch = () => {
-    setParam("");
+  const resetSearch = useCallback(() => {
     setSelectedSearchType({
       value: "",
-      label: "Seleccionar parametro de reporte",
+      label: "Seleccionar parámetro de reporte",
     });
-  };
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        resetSearch();
+        closeModal();
+        ref.current?.close();
+      }
+    },
+    [resetSearch, closeModal]
+  );
 
   useEffect(() => {
     if (isOpen) {
       ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          resetSearch();
-          closeModal();
-          ref.current?.close();
-        }
-      });
+      document.addEventListener("keydown", handleKeyDown);
     } else {
       resetSearch();
-      closeModal();
       ref.current?.close();
     }
-  }, [isOpen]);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, handleKeyDown, resetSearch]);
+
+  const handleClickOutside = (e: React.MouseEvent<HTMLDialogElement>) => {
+    const dialog = ref.current;
+    if (dialog) {
+      const rect = dialog.getBoundingClientRect();
+      if (
+        e.clientX < rect.left ||
+        e.clientX > rect.right ||
+        e.clientY < rect.top ||
+        e.clientY > rect.bottom
+      ) {
+        closeModal();
+        dialog.close();
+        resetSearch();
+      }
+    }
+  };
+
+  const generateReport = useCallback(
+    async (fetchFunction: () => Promise<any>, mapData: (data: any) => any) => {
+      const loadingToastId = toast.loading("Generando reporte...");
+      try {
+        const data = await fetchFunction();
+        toast.dismiss(loadingToastId);
+        if (!data || data === false) {
+          toast.error("No se encontraron datos para el reporte.");
+        } else {
+          ExportCSV.handleDownload(
+            data.rows.map(mapData),
+            `reporte-de-proveedores-${new Date().toISOString()}`
+          );
+        }
+      } catch (error) {
+        toast.dismiss(loadingToastId);
+        toast.error("Ocurrió un error al generar el reporte.");
+      } finally {
+        closeModal();
+      }
+    },
+    [closeModal]
+  );
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSearchType.value) return;
+
+    switch (selectedSearchType.value) {
+      case "TODOS":
+        await generateReport(
+          () => ProviderService.getAll(1, 100000),
+          (proveedor: any) => ({
+            "Nombre del proveedor": proveedor?.nombre,
+            "Documento del proveedor": proveedor?.documento,
+            "Telefono del proveedor": proveedor?.telefono,
+            "Fecha de registro": format(new Date(proveedor?.registrado), "dd/MM/yyyy"),
+          })
+        );
+        break;
+
+      case "TOTAL":
+        await generateReport(
+          () => ProviderService.orderByTotal(1, 100000),
+          (proveedor: any) => ({
+            "Nombre del proveedor": proveedor?.nombre,
+            "Documento del proveedor": proveedor?.documento,
+            "Telefono del proveedor": proveedor?.telefono,
+            "Fecha de registro": format(new Date(proveedor?.registrado), "dd/MM/yyyy"),
+            "Total de compras": proveedor?.total_compras,
+          })
+        );
+        break;
+
+      case "CANTIDAD":
+        await generateReport(
+          () => ProviderService.orderByCantidad(1, 10000),
+          (proveedor: any) => ({
+            "Nombre del proveedor": proveedor?.nombre,
+            "Documento del proveedor": proveedor?.documento,
+            "Telefono del proveedor": proveedor?.telefono,
+            "Fecha de registro": format(new Date(proveedor?.registrado), "dd/MM/yyyy"),
+            "Cantidad de compras": proveedor?.cantidad_compras,
+          })
+        );
+        break;
+
+      default:
+        toast.error("Tipo de reporte no válido.");
+    }
+  };
 
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      onClick={handleClickOutside}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Generar reporte</h1>
@@ -797,98 +1346,10 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center group"
         autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (selectedSearchType.value !== "") {
-            if (param === "TODOS") {
-              const loadingToast = toast.loading("Generando reporte...");
-              ProviderService.getAll(1, 100000).then((data) => {
-                if (data === false) {
-                  toast.dismiss(loadingToast);
-                  toast.error("Noy datos para reportar.");
-                } else {
-                  ExportCSV.handleDownload(
-                    data.rows.map((venta) => {
-                      return {
-                        "Nombre del proveedor": venta?.nombre,
-                        "Documento del proveedor": venta?.documento,
-                        "Telefono del proveedor": venta?.telefono,
-                        "Fecha de registro": format(
-                          new Date(venta?.registrado),
-                          "dd/MM/yyyy"
-                        ),
-                      };
-                    }),
-                    "reporte-de-proveedores-" + new Date().toISOString()
-                  );
-                  toast.dismiss(loadingToast);
-                }
-                closeModal();
-              });
-            } else if (param === "TOTAL") {
-              const loadingToast = toast.loading("Generando reporte...");
-              ProviderService.orderByTotal(1, 100000).then((data) => {
-                if (data === false) {
-                  toast.dismiss(loadingToast);
-                  toast.error("Error obteniendo datos.");
-                } else {
-                  ExportCSV.handleDownload(
-                    data.rows
-                      .filter((venta) => venta.compra_cantidad > 0)
-                      .map((venta) => {
-                        return {
-                          "Nombre del proveedor": venta?.nombre,
-                          "Documento del proveedor": venta?.documento,
-                          "Telefono del proveedor": venta?.telefono,
-                          "Fecha de registro": format(
-                            new Date(venta?.registrado),
-                            "dd/MM/yyyy"
-                          ),
-                          "Total de compras": venta?.total_compras,
-                        };
-                      }),
-                    "reporte-de-proveedores-" + new Date().toISOString()
-                  );
-                  toast.dismiss(loadingToast);
-                }
-                closeModal();
-              });
-            } else if (param === "CANTIDAD") {
-              const loadingToast = toast.loading("Generando reporte...");
-              ProviderService.orderByCantidad(1, 10000).then((data) => {
-                if (data === false) {
-                  toast.dismiss(loadingToast);
-                  toast.error("Error obteniendo datos.");
-                } else {
-                  ExportCSV.handleDownload(
-                    data.rows.map((venta: any) => {
-                      return {
-                        "Nombre del proveedor": venta?.nombre,
-                        "Documento del proveedor": venta?.documento,
-                        "Telefono del proveedor": venta?.telefono,
-                        "Fecha de registro": format(
-                          new Date(venta?.registrado),
-                          "dd/MM/yyyy"
-                        ),
-                        "Cantidad de compras": venta?.cantidad_compras,
-                      };
-                    }),
-                    "reporte-de-proveedores-" + new Date().toISOString()
-                  );
-                  toast.dismiss(loadingToast);
-                }
-                closeModal();
-              });
-            }
-          }
-          closeModal();
-        }}
+        onSubmit={handleSubmit}
       >
         <div className="relative">
           <Select
-            onChange={() => {
-              setParam(selectedSearchType.value as string);
-            }}
             options={[
               {
                 value: "TODOS",
@@ -936,12 +1397,15 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
             Cancelar
           </button>
           <button
-            className={clsx({
-              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                selectedSearchType.label?.startsWith("Seleccionar"),
-              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                true,
-            })}
+            type="submit"
+            className={clsx(
+              "bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300",
+              {
+                "pointer-events-none opacity-30":
+                  selectedSearchType.value === "",
+              }
+            )}
+            disabled={selectedSearchType.value === ""}
           >
             Generar
           </button>
@@ -953,24 +1417,20 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
 
 function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.editar.proveedor
+    permissions.find()?.editar.proveedor
       ? "EDIT"
       : permissions.find()?.eliminar.proveedor
       ? "DELETE"
-      : "NONE"
+      : "VIEW"
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
   const anyAction =
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-    permissions.find()?.editar.proveedor
-      ? true
-      : permissions.find()?.eliminar.proveedor
-      ? true
-      : false;
+    permissions.find()?.editar.proveedor ||
+    permissions.find()?.eliminar.proveedor;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -978,6 +1438,10 @@ function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const closeViewModal = () => {
+    setIsViewOpen(false);
   };
 
   const selectAction = (action: `${Action}`) => {
@@ -988,31 +1452,19 @@ function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
     <tr>
       <th
         scope="row"
-        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300"
+        className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
         {proveedor?.id}
       </th>
       <td className="px-6 py-4 border border-slate-300">{proveedor?.nombre}</td>
       <td className="px-6 py-4 border border-slate-300">
-        {proveedor?.documento
-          ? proveedor.documento !== ""
-            ? proveedor.documento
-            : "N/A"
-          : "N/A"}
+        {proveedor?.documento || "No especificado"}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {proveedor?.descripción
-          ? proveedor.descripción !== ""
-            ? proveedor.descripción
-            : "N/A"
-          : "N/A"}
+        {proveedor?.descripción || "No especificada"}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {proveedor?.telefono
-          ? proveedor.telefono !== ""
-            ? proveedor.telefono
-            : "N/A"
-          : "N/A"}
+        {proveedor?.telefono || "No especificado"}
       </td>
       <td className="px-6 py-4 border border-slate-300">
         {proveedor?.registrado
@@ -1059,6 +1511,24 @@ function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
             />
           </>
         )}
+        {action === "VIEW" && (
+          <>
+            <button
+              onClick={() => {
+                setIsViewOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Mostrar proveedor
+            </button>
+            <ViewModal
+              proveedor={proveedor}
+              isOpen={isViewOpen}
+              closeModal={closeViewModal}
+              setOperationAsCompleted={() => null}
+            />
+          </>
+        )}
         {isDropup && (
           <IndividualDropup
             close={() => setIsDropup(false)}
@@ -1087,11 +1557,7 @@ function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
           >
             <More className="w-5 h-5 inline fill-black" />
           </button>
-        ) : (
-          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
-            Nada permitido
-          </button>
-        )}
+        ) : null}
       </td>
     </tr>
   );
@@ -1125,8 +1591,8 @@ function Dropup({ close, selectAction }: DropupProps) {
           bg-white
           text-base
           z-50
-          right-8
-          top-14
+          right-0
+          top-9
           py-2
           list-none
           text-left
@@ -1138,8 +1604,7 @@ function Dropup({ close, selectAction }: DropupProps) {
           border
         "
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.proveedor) && (
+      {permissions.find()?.crear.proveedor && (
         <li>
           <div
             onClick={() => {
@@ -1254,8 +1719,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
         "
       style={{ top: top }}
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.editar.proveedor) && (
+      {permissions.find()?.editar.proveedor && (
         <li>
           <div
             onClick={() => {
@@ -1280,8 +1744,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.eliminar.proveedor) && (
+      {permissions.find()?.eliminar.proveedor && (
         <li>
           <div
             onClick={() => {
@@ -1306,6 +1769,29 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
+      <li>
+        <div
+          onClick={() => {
+            selectAction("VIEW");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Mostrar proveedor
+        </div>
+      </li>
     </ul>
   );
 }
@@ -1319,10 +1805,7 @@ export default function ProvidersDataDisplay() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.crear.proveedor
-      ? "ADD"
-      : "SEARCH"
+    permissions.find()?.crear.proveedor ? "ADD" : "SEARCH"
   );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
@@ -1337,6 +1820,7 @@ export default function ProvidersDataDisplay() {
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
   const [isReport, setIsReport] = useState(false);
+  const size = 8;
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -1360,7 +1844,7 @@ export default function ProvidersDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0) {
-      ProviderService.getAll(page, 8).then((data) => {
+      ProviderService.getAll(page, size).then((data) => {
         if (data === false) {
           setNotFound(true);
           setProviders([]);
@@ -1379,7 +1863,7 @@ export default function ProvidersDataDisplay() {
     } else {
       if (isPrecise && wasSearch) {
         if (param === "NOMBRE") {
-          ProviderService.getByExactNombre(input, page, 8).then((data) => {
+          ProviderService.getByExactNombre(input, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setProviders([]);
@@ -1394,24 +1878,26 @@ export default function ProvidersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "DOCUMENTO") {
-          ProviderService.getByExactDocumento(input, page, 8).then((data) => {
-            if (data === false) {
-              setNotFound(true);
-              setProviders([]);
-              setLoading(false);
-            } else {
-              setProviders(data.rows);
-              setPages(data.pages);
-              setCurrent(data.current);
-              setLoading(false);
-              setNotFound(false);
+          ProviderService.getByExactDocumento(input, page, size).then(
+            (data) => {
+              if (data === false) {
+                setNotFound(true);
+                setProviders([]);
+                setLoading(false);
+              } else {
+                setProviders(data.rows);
+                setPages(data.pages);
+                setCurrent(data.current);
+                setLoading(false);
+                setNotFound(false);
+              }
+              setIsOperationCompleted(false);
             }
-            setIsOperationCompleted(false);
-          });
+          );
         }
       } else {
         if (param === "NOMBRE") {
-          ProviderService.getByNombre(input, page, 8).then((data) => {
+          ProviderService.getByNombre(input, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setProviders([]);
@@ -1426,7 +1912,7 @@ export default function ProvidersDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "DOCUMENTO") {
-          ProviderService.getByDocumento(input, page, 8).then((data) => {
+          ProviderService.getByDocumento(input, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setProviders([]);
@@ -1452,7 +1938,7 @@ export default function ProvidersDataDisplay() {
   return (
     <>
       <div className="absolute h-full w-full px-8 py-5">
-        <nav className="flex justify-between items-center select-none">
+        <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span
@@ -1462,7 +1948,7 @@ export default function ProvidersDataDisplay() {
               Proveedores
             </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative">
             {isDropup && (
               <Dropup
                 close={closeDropup}

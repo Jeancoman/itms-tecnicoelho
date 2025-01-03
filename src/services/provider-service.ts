@@ -1,4 +1,4 @@
-import { Proveedor, Response } from "../types";
+import { GenericResponse, Proveedor, Response } from "../types";
 import session from "../utils/session";
 
 export default class ProviderService {
@@ -337,13 +337,12 @@ export default class ProviderService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Proveedor;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El proveedor no pudo ser añadido.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -362,13 +361,12 @@ export default class ProviderService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El proveedor no pudo ser editado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -386,13 +384,12 @@ export default class ProviderService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El proveedor no pudo ser eliminado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 }

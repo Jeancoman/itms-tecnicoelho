@@ -16,8 +16,8 @@ import {
   Mensaje,
   Categoría,
   TicketPrioridad,
-  Servicio,
   ServicioTipo,
+  TicketEstado,
 } from "../../types";
 import ClientService from "../../services/client-service";
 import toast, { Toaster } from "react-hot-toast";
@@ -26,7 +26,6 @@ import SelectWithSearch from "../misc/select-with-search";
 import Select from "../misc/select";
 import { format } from "date-fns";
 import MessageService from "../../services/message-service";
-import session from "../../utils/session";
 import permissions from "../../utils/permissions";
 import MessageRender from "../../services/message-render-service";
 import options from "../../utils/options";
@@ -36,260 +35,7 @@ import CategoryService from "../../services/category-service";
 import MessageSenderService from "../../services/message-sender-service";
 import clsx from "clsx";
 import TicketService from "../../services/ticket-service";
-
-/*
-
-function EditModal({
-  isOpen,
-  closeModal,
-  setOperationAsCompleted,
-  ticket,
-}: ModalProps) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const [formData, setFormData] = useState<Ticket>(ticket!);
-  const [selectedClient] = useState<Selected>({
-    value: ticket?.cliente_id,
-    label:
-      (ticket?.cliente?.nombre ?? "") + " " + (ticket?.cliente?.apellido ?? ""), // Default to empty string if undefined
-  });
-  const [selectedState, setSelectedState] = useState<Selected>({
-    value: ticket?.estado,
-    label: ticket?.estado === "ABIERTO" ? "Abierto" : "Cerrado",
-  });
-
-  const resetFormData = () => {
-    setSelectedState({
-      value: ticket?.estado,
-      label: ticket?.estado === "ABIERTO" ? "Abierto" : "Cerrado",
-    });
-    setFormData(ticket!);
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-        }
-      });
-    } else {
-      closeModal();
-      ref.current?.close();
-    }
-  }, [closeModal, isOpen]);
-
-  return (
-    <dialog
-      ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect();
-        if (
-          dialogDimensions && // Check if dialogDimensions is defined
-          (e.clientX < dialogDimensions.left ||
-            e.clientX > dialogDimensions.right ||
-            e.clientY < dialogDimensions.top ||
-            e.clientY > dialogDimensions.bottom)
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-2/4 h-fit rounded shadow scrollbar-none text-base"
-    >
-      <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar ticket</h1>
-      </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Editando ticket...");
-          void TicketService.update(ticket?.id ?? 0, formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Ticket no pudo ser editado.");
-            } else {
-              toast.success("Ticket editado con exito.");
-              if (options.find()?.creación.siempre) {
-                const messageToast = toast.loading("Creando mensaje...");
-                void MessageRender.renderTicketModificationTemplate(
-                  ticket?.id!,
-                  ticket!
-                ).then((rendered) => {
-                  if (rendered) {
-                    if (rendered === "Plantilla desactivada") {
-                      toast.dismiss(messageToast);
-                      toast.error("La plantilla esta desactivada.");
-                      return;
-                    }
-
-                    const message: Mensaje = {
-                      contenido: rendered,
-                      ticket_id: ticket?.id!,
-                      estado: "NO_ENVIADO",
-                    };
-
-                    void MessageService.create(ticket?.id!, message).then(
-                      (mensaje) => {
-                        if (mensaje) {
-                          toast.dismiss(messageToast);
-                          toast.success("Mensaje creado exitosamente.");
-                          void TicketService.getById(ticket?.id!).then(
-                            (resTicket) => {
-                              if (resTicket) {
-                                if (resTicket.cliente?.enviarMensajes) {
-                                  if (options.find()?.envio.siempre) {
-                                    const sendingToast = toast.loading(
-                                      "Enviando mensaje..."
-                                    );
-                                    void MessageSenderService.send(
-                                      resTicket.cliente.telefono || "",
-                                      rendered
-                                    ).then((res) => {
-                                      if (res) {
-                                        toast.dismiss(sendingToast);
-                                        toast.success(
-                                          "Mensaje enviado exitosamente."
-                                        );
-                                        void MessageService.update(
-                                          ticket?.id!,
-                                          mensaje.id!,
-                                          //@ts-ignore
-                                          {
-                                            id: mensaje.id!,
-                                            estado: "ENVIADO",
-                                            ticket_id: ticket?.id,
-                                          }
-                                        );
-                                      } else {
-                                        toast.dismiss(sendingToast);
-                                        toast.error(
-                                          "Mensaje no pudo ser enviado."
-                                        );
-                                      }
-                                    });
-                                  }
-                                }
-                              }
-                            }
-                          );
-                        }
-                      }
-                    );
-                  } else {
-                    toast.dismiss(messageToast);
-                    toast.error("Mensaje no pudo ser creado.");
-                  }
-                });
-              }
-            }
-          });
-        }}
-      >
-        {ticket?.estado === "ABIERTO" ? (
-          <div className="relative">
-            <Select
-              onChange={() => {
-                setFormData({
-                  ...formData,
-                  estado: selectedState.value as TicketEstado,
-                });
-              }}
-              options={[
-                {
-                  value: "ABIERTO",
-                  label: "Abierto",
-                  onClick: (value, label) => {
-                    setSelectedState({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "CERRADO",
-                  label: "Cerrado",
-                  onClick: (value, label) => {
-                    setSelectedState({
-                      value,
-                      label,
-                    });
-                  },
-                },
-              ]}
-              selected={selectedState}
-            />
-          </div>
-        ) : null}
-        {ticket?.estado === "CERRADO" ? (
-          <div className="relative">
-            <select
-              className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-              value={0}
-              disabled={true}
-            >
-              <option value={0}>Cerrado</option>
-            </select>
-            <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-          </div>
-        ) : null}
-        <div className="relative">
-          <select
-            className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-            value={selectedClient.value}
-            disabled={true}
-          >
-            <option value={selectedClient.value}>{selectedClient.label}</option>
-          </select>
-          <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-        </div>
-
-        <div className="flex gap-4">
-          <div className="w-full">
-            <textarea
-              rows={4}
-              placeholder="Asunto"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  asunto: e.target.value,
-                });
-              }}
-              value={formData.asunto}
-              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              minLength={10}
-            />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 10 caracteres
-            </span>
-          </div>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              closeModal();
-              resetFormData();
-            }}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Cancelar
-          </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Completar
-          </button>
-        </div>
-      </form>
-    </dialog>
-  );
-}
-
-*/
+import { Editor } from "@tinymce/tinymce-react";
 
 function EditModal({
   isOpen,
@@ -297,8 +43,8 @@ function EditModal({
   setOperationAsCompleted,
   ticket,
 }: ModalProps) {
-  const ref = useRef<HTMLDialogElement>(null);
   const [loading, setLoading] = useState(true);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [clients, setClients] = useState<Cliente[]>([]);
   const [categories, setCategories] = useState<Categoría[]>([]);
   const [selectedClient, setSelectedClient] = useState<Selected>({
@@ -318,27 +64,25 @@ function EditModal({
   });
   const [ticketFormData, setTicketFormData] = useState<Ticket>(ticket!);
   const [selectedCategory, setSelectedCategory] = useState<Selected>({
-    value: ticket?.servicio?.categoría_id || -1,
-    label:
-      ticket?.servicio?.categoría?.nombre ||
-      "Selecciona la categoría del servicio",
+    value: ticket?.categoría_id || -1,
+    label: ticket?.categoría?.nombre || "Seleccionar categoría",
   });
   const [selectedType, setSelectedType] = useState<Selected>({
-    value: ticket?.servicio?.tipo || "",
-    label:
-      ticket?.servicio?.tipo === "DOMICILIO"
-        ? "Domicilio"
-        : ticket?.servicio?.tipo === "REMOTO"
-        ? "Remoto"
-        : "Tienda",
+    value: ticket?.tipo || "TIENDA",
+    label: {
+      DOMICILIO: "Domicilio",
+      REMOTO: "Remoto",
+      TIENDA: "Tienda",
+    }[ticket?.tipo || "TIENDA"],
   });
-  const [serviceFormData, setServiceFormData] = useState<Servicio>(
-    ticket?.servicio!
-  );
+  const [selectedState, setSelectedState] = useState<Selected>({
+    value: ticket?.estado,
+    label: ticket?.estado === "ABIERTO" ? "Abierto" : "Cerrado",
+  });
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   const resetFormData = () => {
     setTicketFormData(ticket!);
-    setServiceFormData(ticket?.servicio!);
     setSelectedClient({
       value: ticket?.cliente_id || -1,
       label: `${ticket?.cliente?.nombre ?? ""} ${
@@ -355,30 +99,43 @@ function EditModal({
           : "Baja",
     });
     setSelectedCategory({
-      value: ticket?.servicio?.categoría_id || -1,
+      value: ticket?.categoría_id || -1,
       label:
-        ticket?.servicio?.categoría?.nombre ||
-        "Selecciona la categoría del servicio",
+        ticket?.categoría?.nombre || "Selecciona la categoría del servicio",
     });
     setSelectedType({
-      value: ticket?.servicio?.tipo || "",
-      label:
-        ticket?.servicio?.tipo === "DOMICILIO"
-          ? "Domicilio"
-          : ticket?.servicio?.tipo === "REMOTO"
-          ? "Remoto"
-          : "Tienda",
+      value: ticket?.tipo || "TIENDA",
+      label: {
+        DOMICILIO: "Domicilio",
+        REMOTO: "Remoto",
+        TIENDA: "Tienda",
+      }[ticket?.tipo || "TIENDA"],
+    });
+    setSelectedState({
+      value: ticket?.estado,
+      label: ticket?.estado === "ABIERTO" ? "Abierto" : "Cerrado",
     });
   };
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleClose();
+      }
+    };
+
     if (isOpen) {
-      ref.current?.showModal();
       document.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden"; // Previene el scroll en el fondo
     } else {
-      handleClose();
+      document.body.style.overflow = "auto";
     }
-    return () => document.removeEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "auto";
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   useEffect(() => {
@@ -395,22 +152,17 @@ function EditModal({
     }
   }, [categories.length]);
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Escape") {
-      handleClose();
-    }
-  };
-
   const handleClose = () => {
     closeModal();
-    ref.current?.close();
+    resetFormData();
+    setIsConfirmationScreen(false);
   };
 
   const handleButtonClose = () => {
-    closeModal()
+    closeModal();
     resetFormData();
-    ref.current?.close()
-  }
+    setIsConfirmationScreen(false);
+  };
 
   const loadClients = async () => {
     const data = await ClientService.getAll(1, 100);
@@ -432,25 +184,31 @@ function EditModal({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    closeModal();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    handleClose();
 
     const loadingToast = toast.loading("Editando ticket...");
     const updatedTicket = await TicketService.update(
       ticketFormData.id!,
-      ticketFormData,
-      serviceFormData
+      ticketFormData
     );
+
     toast.dismiss(loadingToast);
     setOperationAsCompleted();
 
-    if (updatedTicket === false) {
-      toast.error("El ticket no pudo ser editado.");
+    if (updatedTicket.status === "error") {
+      toast.error(updatedTicket.message);
       return;
     }
 
-    toast.success("Ticket editado con éxito.");
+    toast.success(updatedTicket.message);
+
     if (options.find()?.creación.siempre) {
       await handleCreateMessage(ticket!);
     }
@@ -475,18 +233,19 @@ function EditModal({
 
     const message: Mensaje = {
       contenido: rendered,
-      ticket_id: ticket.id!,
+      servicio_id: ticket.id!,
       estado: "NO_ENVIADO",
     };
 
-    const mensaje = await MessageService.create(ticket.id!, message);
-    if (mensaje) {
+    const response = await MessageService.create(ticket.id!, message);
+
+    if (response.status === "success") {
       toast.dismiss(messageToast);
-      toast.success("Mensaje creado exitosamente.");
-      await handleSendMessage(ticket, rendered, mensaje);
+      toast.success(response.message);
+      await handleSendMessage(ticket, rendered, response.mensaje!);
     } else {
       toast.dismiss(messageToast);
-      toast.error("El mensaje no pudo ser creado.");
+      toast.error(response.message);
     }
   };
 
@@ -504,7 +263,7 @@ function EditModal({
 
       if (res) {
         toast.dismiss(sendingToast);
-        toast.success("Mensaje enviado exitosamente.");
+        toast.success("El mensaje fue enviado exitosamente.");
         await updateMessageStatus(ticket.id!, mensaje.id!, mensaje.contenido);
       } else {
         toast.dismiss(sendingToast);
@@ -522,314 +281,660 @@ function EditModal({
       id: messageId,
       estado: "ENVIADO",
       contenido,
-      ticket_id: ticketId,
+      servicio_id: ticketId,
     });
   };
 
-  return (
-    <dialog
-      ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect();
-        if (
-          dialogDimensions &&
-          (e.clientX < dialogDimensions.left ||
-            e.clientX > dialogDimensions.right ||
-            e.clientY < dialogDimensions.top ||
-            e.clientY > dialogDimensions.bottom)
-        ) {
-          handleClose();
-        }
-      }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none text-base"
-    >
-      <div className="bg-[#2096ed] py-3 md:py-4 px-6 md:px-8">
-        <h1 className="text-lg md:text-xl font-bold text-white">
-          Editar ticket
-        </h1>
-      </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={handleSubmit}
-      >
-        <div className="w-full">
-          <input
-            type="text"
-            onChange={(e) => {
-              setTicketFormData({
-                ...ticketFormData,
-                asunto: e.target.value,
-              });
-            }}
-            value={ticketFormData.asunto}
-            placeholder="Introduce el asunto del ticket"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^.{2,}$"
-            name="name"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Mínimo 2 caracteres
-          </span>
-        </div>
-        <div className="relative">
-          <Select
-            onChange={() => {
-              setTicketFormData({
-                ...ticketFormData,
-                prioridad: selectedPriority.value as TicketPrioridad,
-              });
-            }}
-            options={[
-              {
-                value: "BAJA",
-                label: "Baja",
-                onClick: (value, label) => {
-                  setSelectedPriority({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "MEDIA",
-                label: "Media",
-                onClick: (value, label) => {
-                  setSelectedPriority({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "ALTA",
-                label: "Alta",
-                onClick: (value, label) => {
-                  setSelectedPriority({
-                    value,
-                    label,
-                  });
-                },
-              },
-            ]}
-            selected={selectedPriority}
-          />
-        </div>
-        <div className="relative">
-          <select
-            className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-            value={selectedClient.value}
-            disabled={true}
-          >
-            <option value={selectedType.value}>{`${ticket?.cliente?.nombre} ${
-              ticket?.cliente?.apellido
-            }${ticket?.cliente?.documento ? "," : ""} ${
-              ticket?.cliente?.documento ? ticket?.cliente?.documento : ""
-            }`}</option>
-          </select>
-          <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-        </div>
-        <div className="flex gap-2">
-          <div className="relative w-2/4">
-            <Select
-              onChange={() => {
-                setServiceFormData({
-                  ...serviceFormData,
-                  tipo: selectedType.value as ServicioTipo,
-                });
-              }}
-              options={[
-                {
-                  value: "DOMICILIO",
-                  label: "Domicilio",
-                  onClick: (value, label) => {
-                    setSelectedType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "TIENDA",
-                  label: "Tienda",
-                  onClick: (value, label) => {
-                    setSelectedType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "REMOTO",
-                  label: "Remoto",
-                  onClick: (value, label) => {
-                    setSelectedType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-              ]}
-              selected={selectedType}
-            />
+  const capitalizeFirstLetter = (string: string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+  };
+
+  if (!isOpen) {
+    return null;
+  }
+
+  const renderConfirmationScreen = () => {
+    const toggleDescription = () => {
+      setShowFullDescription((prev) => !prev);
+    };
+
+    return (
+      <div className="p-8 pt-6">
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-8">
+            {/* Datos actuales */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                Datos actuales
+              </h3>
+              <div className="space-y-5">
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Estado
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {capitalizeFirstLetter(ticket?.estado || "")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Asunto
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {ticket?.asunto}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Prioridad
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {ticket?.prioridad
+                      ? capitalizeFirstLetter(ticket.prioridad)
+                      : ""}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Tipo
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {ticket?.tipo ? capitalizeFirstLetter(ticket.tipo) : ""}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Categoría
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {ticket?.categoría?.nombre}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Descripción
+                  </p>
+                  <div
+                    className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                      showFullDescription
+                        ? "max-h-80 overflow-y-auto"
+                        : "max-h-40 overflow-hidden"
+                    }`}
+                  >
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: ticket?.descripción ?? "",
+                      }}
+                    />
+                  </div>
+                  {(ticket?.descripción?.length ?? 0) > 200 && (
+                    <button
+                      type="button"
+                      onClick={toggleDescription}
+                      className="text-blue-500 mt-2"
+                    >
+                      {showFullDescription ? "Ver Menos" : "Ver Más"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Nuevos datos */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                Nuevos datos
+              </h3>
+              <div className="space-y-5">
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Estado
+                  </p>
+                  <p
+                    className={`text-base font-medium break-words ${
+                      selectedState.value !== ticket?.estado
+                        ? "text-blue-600 font-semibold"
+                        : "text-gray-900"
+                    }`}
+                  >
+                    {selectedState.label}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Asunto
+                  </p>
+                  <p
+                    className={`text-base font-medium break-words ${
+                      ticketFormData.asunto !== ticket?.asunto
+                        ? "text-blue-600 font-semibold"
+                        : "text-gray-900"
+                    }`}
+                  >
+                    {ticketFormData.asunto}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Prioridad
+                  </p>
+                  <p
+                    className={`text-base font-medium break-words ${
+                      ticketFormData.prioridad !== ticket?.prioridad
+                        ? "text-blue-600 font-semibold"
+                        : "text-gray-900"
+                    }`}
+                  >
+                    {selectedPriority.label}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Tipo
+                  </p>
+                  <p
+                    className={`text-base font-medium break-words ${
+                      ticketFormData.tipo !== ticket?.tipo
+                        ? "text-blue-600 font-semibold"
+                        : "text-gray-900"
+                    }`}
+                  >
+                    {selectedType.label}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Categoría
+                  </p>
+                  <p
+                    className={`text-base font-medium break-words ${
+                      ticketFormData.categoría_id !== ticket?.categoría_id
+                        ? "text-blue-600 font-semibold"
+                        : "text-gray-900"
+                    }`}
+                  >
+                    {selectedCategory.label}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Descripción
+                  </p>
+                  <div
+                    className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                      showFullDescription
+                        ? "max-h-80 overflow-y-auto"
+                        : "max-h-40 overflow-hidden"
+                    }`}
+                  >
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: ticketFormData.descripción ?? "",
+                      }}
+                    />
+                  </div>
+                  {(ticketFormData.descripción?.length ?? 0) > 200 && (
+                    <button
+                      type="button"
+                      onClick={toggleDescription}
+                      className="text-blue-500 mt-2"
+                    >
+                      {showFullDescription ? "Ver Menos" : "Ver Más"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="relative w-2/4">
-            {categories.length > 0 && (
-              <SelectWithSearch
-                options={categories
-                  .filter((category) => category.tipo === "SERVICIO")
-                  .map((category) => ({
-                    value: category.id,
-                    label: category.nombre,
-                    onClick: (value, label) => {
-                      setSelectedCategory({
-                        value,
-                        label,
-                      });
+        </div>
+
+        {/* Botones de Acción */}
+        <div className="flex gap-2 justify-end text-base">
+          <button
+            type="button"
+            onClick={() => setIsConfirmationScreen(false)}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Volver
+          </button>
+          <button
+            onClick={handleFinalSubmit}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Guardar Cambios
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-10"
+      onClick={handleClose}
+    >
+      <div
+        className="bg-white w-max max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow relative max-h-[650px] overflow-y-scroll scrollbar-thin"
+        onClick={(e) => e.stopPropagation()} // Evita que el clic dentro del modal cierre el mismo
+      >
+        <div className="bg-[#2096ed] py-3 md:py-4 px-6 md:px-8 rounded-t">
+          <h1 className="text-lg md:text-xl font-bold text-white">
+            Editar ticket
+          </h1>
+        </div>
+        {isConfirmationScreen ? (
+          renderConfirmationScreen()
+        ) : (
+          <form
+            className="flex flex-col p-8 pt-6 gap-4 group text-base"
+            autoComplete="off"
+            onSubmit={handleSubmit}
+          >
+            {ticket?.estado === "ABIERTO" ? (
+              <div className="relative">
+                <label className="block text-gray-600 text-base font-medium mb-2">
+                  Estado
+                </label>
+                <Select
+                  onChange={() => {
+                    setTicketFormData({
+                      ...ticketFormData,
+                      estado: selectedState.value as TicketEstado,
+                    });
+                  }}
+                  options={[
+                    {
+                      value: "ABIERTO",
+                      label: "Abierto",
+                      onClick: (value, label) => {
+                        setSelectedState({
+                          value,
+                          label,
+                        });
+                      },
                     },
-                  }))}
-                selected={selectedCategory}
-                onChange={() => {
-                  setServiceFormData({
-                    ...serviceFormData,
-                    categoría_id: selectedCategory.value! as number,
-                  });
-                }}
-              />
-            )}
-            {categories.length === 0 && loading === false && (
-              <>
+                    {
+                      value: "CERRADO",
+                      label: "Cerrado",
+                      onClick: (value, label) => {
+                        setSelectedState({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                  ]}
+                  selected={selectedState}
+                />
+              </div>
+            ) : null}
+            {ticket?.estado === "CERRADO" ? (
+              <div className="relative">
                 <select
                   className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
                   value={0}
                   disabled={true}
                 >
-                  <option value={0}>
-                    No se ha encontrado ninguna categoría
-                  </option>
+                  <option value={0}>Cerrado</option>
                 </select>
-                <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-              </>
-            )}
-            {categories.length === 0 && loading === true && (
-              <>
-                <select
-                  className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
-                  value={0}
-                  disabled={true}
-                >
-                  <option value={0}>Buscando categorías...</option>
-                </select>
-                {/* Agrega tu icono de carga aquí */}
-              </>
-            )}
-          </div>
-        </div>
-        <div className="w-full">
-          <textarea
-            rows={3}
-            placeholder="Introduce la descripción del servicio"
-            onChange={(e) => {
-              setServiceFormData({
-                ...serviceFormData,
-                descripción: e.target.value,
-              });
-            }}
-            value={serviceFormData.descripción || ""}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-            name="name"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Mínimo 10 caracteres
-          </span>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={handleButtonClose}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Cancelar
-          </button>
-          <button
-            className={clsx({
-              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                !selectedClient.label?.startsWith("Seleccionar"),
-              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                selectedClient.label?.startsWith("Seleccionar"),
-            })}
-          >
-            Completar
-          </button>
-        </div>
-      </form>
-    </dialog>
+                <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
+              </div>
+            ) : null}
+            <div className="w-full">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Asunto*
+              </label>
+              <input
+                type="text"
+                onChange={(e) => {
+                  setTicketFormData({
+                    ...ticketFormData,
+                    asunto: e.target.value,
+                  });
+                }}
+                value={ticketFormData.asunto}
+                placeholder="Introducir asunto"
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                required
+                pattern="^.{2,}$"
+                name="name"
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Mínimo 2 caracteres
+              </span>
+            </div>
+            <div className="relative">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Prioridad*
+              </label>
+              <Select
+                onChange={() => {
+                  setTicketFormData({
+                    ...ticketFormData,
+                    prioridad: selectedPriority.value as TicketPrioridad,
+                  });
+                }}
+                options={[
+                  {
+                    value: "BAJA",
+                    label: "Baja",
+                    onClick: (value, label) => {
+                      setSelectedPriority({
+                        value,
+                        label,
+                      });
+                    },
+                  },
+                  {
+                    value: "MEDIA",
+                    label: "Media",
+                    onClick: (value, label) => {
+                      setSelectedPriority({
+                        value,
+                        label,
+                      });
+                    },
+                  },
+                  {
+                    value: "ALTA",
+                    label: "Alta",
+                    onClick: (value, label) => {
+                      setSelectedPriority({
+                        value,
+                        label,
+                      });
+                    },
+                  },
+                ]}
+                selected={selectedPriority}
+              />
+            </div>
+            <div className="relative">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Cliente*
+              </label>
+              <select
+                className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                value={selectedClient.value}
+                disabled={true}
+              >
+                <option value={selectedType.value}>{`${
+                  ticket?.cliente?.nombre
+                } ${ticket?.cliente?.apellido}${
+                  ticket?.cliente?.documento ? "," : ""
+                } ${
+                  ticket?.cliente?.documento ? ticket?.cliente?.documento : ""
+                }`}</option>
+              </select>
+              <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
+            </div>
+            <div className="flex gap-2">
+              <div className="relative w-2/4">
+                <label className="block text-gray-600 text-base font-medium mb-2">
+                  Tipo*
+                </label>
+                <Select
+                  onChange={() => {
+                    setTicketFormData({
+                      ...ticketFormData,
+                      tipo: selectedType.value as ServicioTipo,
+                    });
+                  }}
+                  options={[
+                    {
+                      value: "DOMICILIO",
+                      label: "Domicilio",
+                      onClick: (value, label) => {
+                        setSelectedType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "TIENDA",
+                      label: "Tienda",
+                      onClick: (value, label) => {
+                        setSelectedType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "REMOTO",
+                      label: "Remoto",
+                      onClick: (value, label) => {
+                        setSelectedType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                  ]}
+                  selected={selectedType}
+                />
+              </div>
+              <div className="relative w-2/4">
+                <label className="block text-gray-600 text-base font-medium mb-2">
+                  Categoría*
+                </label>
+                {categories.length > 0 && (
+                  <SelectWithSearch
+                    options={categories
+                      .filter((category) => category.tipo === "SERVICIO")
+                      .map((category) => ({
+                        value: category.id,
+                        label: category.nombre,
+                        onClick: (value, label) => {
+                          setSelectedCategory({
+                            value,
+                            label,
+                          });
+                        },
+                      }))}
+                    selected={selectedCategory}
+                    onChange={() => {
+                      setTicketFormData({
+                        ...ticketFormData,
+                        categoría_id: selectedCategory.value! as number,
+                      });
+                    }}
+                  />
+                )}
+                {categories.length === 0 && loading === false && (
+                  <>
+                    <select
+                      className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                      value={0}
+                      disabled={true}
+                    >
+                      <option value={0}>
+                        No se ha encontrado ninguna categoría
+                      </option>
+                    </select>
+                    <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
+                  </>
+                )}
+                {categories.length === 0 && loading === true && (
+                  <>
+                    <select
+                      className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                      value={0}
+                      disabled={true}
+                    >
+                      <option value={0}>Buscando categorías...</option>
+                    </select>
+                    <svg
+                      aria-hidden="true"
+                      className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-11 right-4 absolute"
+                      viewBox="0 0 100 101"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                        fill="currentColor"
+                      />
+                      <path
+                        d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                        fill="currentFill"
+                      />
+                    </svg>
+                    <span className="sr-only">Cargando...</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="w-full">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Descripción
+              </label>
+              <div className="h-full">
+                <Editor
+                  tinymceScriptSrc={"/tinymce/tinymce.min.js"}
+                  onEditorChange={(_evt, editor) =>
+                    setTicketFormData({
+                      ...ticketFormData,
+                      descripción: editor.getContent(),
+                    })
+                  }
+                  initialValue={ticketFormData.descripción}
+                  value={ticketFormData.descripción}
+                  init={{
+                    menubar: true,
+                    promotion: false,
+                    plugins: [
+                      "advlist",
+                      "autolink",
+                      "lists",
+                      "link",
+                      "image",
+                      "charmap",
+                      "anchor",
+                      "visualblocks",
+                      "code",
+                      "media",
+                      "help",
+                      "wordcount",
+                    ],
+                    toolbar:
+                      "undo redo | blocks | " +
+                      "bold italic forecolor | alignleft aligncenter " +
+                      "alignright alignjustify | bullist numlist outdent indent | removeformat",
+                    content_style:
+                      "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                    language: "es",
+                    ui_mode: "split",
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={handleButtonClose}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className={clsx({
+                  ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    !selectedClient.label?.startsWith("Seleccionar"),
+                  ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    selectedClient.label?.startsWith("Seleccionar"),
+                })}
+              >
+                Completar
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
   );
 }
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
-  const ref = useRef<HTMLDialogElement>(null);
   const [loading, setLoading] = useState(true);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [clients, setClients] = useState<Cliente[]>([]);
   const [categories, setCategories] = useState<Categoría[]>([]);
   const [selectedClient, setSelectedClient] = useState<Selected>({
     value: -1,
-    label: "Selecciona el cliente",
+    label: "Seleccionar cliente",
   });
   const [selectedPriority, setSelectedPriority] = useState<Selected>({
     value: "",
-    label: "Selecciona la prioridad del ticket",
+    label: "Seleccionar prioridad",
   });
   const [ticketFormData, setTicketFormData] = useState<Ticket>({
     prioridad: "BAJA",
     estado: "ABIERTO",
     asunto: "",
+    tipo: "TIENDA",
+    descripción: "",
+    categoría_id: -1,
     cliente_id: -1,
   });
   const [selectedCategory, setSelectedCategory] = useState<Selected>({
     value: -1,
-    label: "Selecciona la categoría del servicio",
+    label: "Seleccionar categoría",
   });
   const [selectedType, setSelectedType] = useState<Selected>({
-    label: "Selecciona el tipo de servicio",
+    label: "Seleccionar tipo",
     value: "",
   });
-  const [serviceFormData, setServiceFormData] = useState<Servicio>({
-    tipo: "TIENDA",
-    descripción: "",
-    necesidades: "",
-    categoría_id: -1,
-  });
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   const resetFormData = () => {
     setTicketFormData({
       prioridad: "BAJA",
       estado: "ABIERTO",
-      cliente_id: -1,
-      asunto: "",
-    });
-    setServiceFormData({
       tipo: "TIENDA",
       descripción: "",
-      necesidades: "",
       categoría_id: -1,
+      cliente_id: -1,
+      asunto: "",
     });
     setSelectedClient({
       value: -1,
       label: "Selecciona el cliente",
     });
+    setSelectedPriority({
+      value: "",
+      label: "Seleccionar prioridad",
+    });
+    setSelectedCategory({
+      value: -1,
+      label: "Seleccionar categoría",
+    });
+    setSelectedType({
+      value: "",
+      label: "Seleccionar tipo",
+    });
   };
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleClose();
+      }
+    };
+
     if (isOpen) {
-      ref.current?.showModal();
       document.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden"; // Previene el scroll en el fondo
     } else {
-      handleClose();
+      document.body.style.overflow = "auto";
     }
-    return () => document.removeEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "auto";
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
@@ -847,16 +952,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     }
   }, [categories.length]);
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Escape") {
-      handleClose();
-    }
-  };
-
   const handleClose = () => {
     closeModal();
-    ref.current?.close();
     resetFormData();
+    setIsConfirmationScreen(false);
   };
 
   const loadClients = async () => {
@@ -879,23 +978,29 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    closeModal();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    handleClose();
 
     const loadingToast = toast.loading("Añadiendo ticket...");
-    const ticket = await TicketService.create(ticketFormData, serviceFormData);
+    const response = await TicketService.create(ticketFormData);
     toast.dismiss(loadingToast);
     setOperationAsCompleted();
 
-    if (ticket === false) {
-      toast.error("Ticket no pudo ser añadido.");
+    if (response.status === "error") {
+      toast.error(response.message);
       return;
     }
 
-    toast.success("Ticket añadido con éxito.");
+    toast.success(response.message);
+
     if (options.find()?.creación.siempre) {
-      await handleCreateMessage(ticket);
+      await handleCreateMessage(response.ticket!);
     }
   };
 
@@ -917,18 +1022,19 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
 
     const message: Mensaje = {
       contenido: rendered,
-      ticket_id: ticket.id!,
+      servicio_id: ticket.id!,
       estado: "NO_ENVIADO",
     };
 
-    const mensaje = await MessageService.create(ticket.id!, message);
-    if (mensaje) {
+    const response = await MessageService.create(ticket.id!, message);
+
+    if (response.status === "success") {
       toast.dismiss(messageToast);
-      toast.success("Mensaje creado exitosamente.");
-      await handleSendMessage(ticket, rendered, mensaje);
+      toast.success(response.message);
+      await handleSendMessage(ticket, rendered, response.mensaje!);
     } else {
       toast.dismiss(messageToast);
-      toast.error("Mensaje no pudo ser creado.");
+      toast.error(response.message);
     }
   };
 
@@ -964,8 +1070,583 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       id: messageId,
       estado: "ENVIADO",
       contenido,
-      ticket_id: ticketId,
+      servicio_id: ticketId,
     });
+  };
+
+  if (!isOpen) {
+    return null;
+  }
+
+  const renderConfirmationScreen = () => {
+    const toggleDescription = () => {
+      setShowFullDescription((prev) => !prev);
+    };
+
+    return (
+      <div className="p-8 pt-6">
+        <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* Asunto */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Asunto
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {ticketFormData.asunto}
+              </p>
+            </div>
+
+            {/* Prioridad */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Prioridad
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {selectedPriority.label}
+              </p>
+            </div>
+
+            {/* Cliente */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Cliente
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {selectedClient.label}
+              </p>
+            </div>
+
+            {/* Tipo */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Tipo
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {selectedType.label}
+              </p>
+            </div>
+
+            {/* Categoría */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Categoría
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {selectedCategory.label}
+              </p>
+            </div>
+
+            {/* Descripción */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Descripción
+              </p>
+              <div
+                className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                  showFullDescription
+                    ? "max-h-80 overflow-y-auto"
+                    : "max-h-40 overflow-hidden"
+                }`}
+              >
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: ticketFormData.descripción ?? "",
+                  }}
+                />
+              </div>
+              {(ticketFormData.descripción?.length ?? 0) > 200 && (
+                <button
+                  type="button"
+                  onClick={toggleDescription}
+                  className="text-blue-500 mt-2"
+                >
+                  {showFullDescription ? "Ver Menos" : "Ver Más"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => setIsConfirmationScreen(false)}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Volver
+          </button>
+          <button
+            onClick={handleFinalSubmit}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Guardar
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-10"
+      onClick={handleClose}
+    >
+      <div
+        className="bg-white w-max max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow relative max-h-[650px] overflow-y-scroll scrollbar-thin"
+        onClick={(e) => e.stopPropagation()} // Evita que el clic dentro del modal cierre el mismo
+      >
+        <div className="bg-[#2096ed] py-3 md:py-4 px-6 md:px-8 rounded-t">
+          <h1 className="text-lg md:text-xl font-bold text-white">
+            {isConfirmationScreen ? "Confirmar Ticket" : "Añadir ticket"}
+          </h1>
+        </div>
+        {isConfirmationScreen ? (
+          renderConfirmationScreen()
+        ) : (
+          <form
+            className="flex flex-col p-8 pt-6 gap-4 group"
+            autoComplete="off"
+            onSubmit={handleSubmit}
+          >
+            <div className="w-full">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Asunto*
+              </label>
+              <input
+                type="text"
+                onChange={(e) => {
+                  setTicketFormData({
+                    ...ticketFormData,
+                    asunto: e.target.value,
+                  });
+                }}
+                value={ticketFormData.asunto}
+                placeholder="Introducir asunto"
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                required
+                pattern="^.{2,}$"
+                name="name"
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Mínimo 2 caracteres
+              </span>
+            </div>
+            <div>
+              <div className="relative">
+                <label className="block text-gray-600 text-base font-medium mb-2">
+                  Prioridad*
+                </label>
+                <Select
+                  onChange={() => {
+                    setTicketFormData({
+                      ...ticketFormData,
+                      prioridad: selectedPriority.value as TicketPrioridad,
+                    });
+                  }}
+                  options={[
+                    {
+                      value: "BAJA",
+                      label: "Baja",
+                      onClick: (value, label) => {
+                        setSelectedPriority({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "MEDIA",
+                      label: "Media",
+                      onClick: (value, label) => {
+                        setSelectedPriority({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "ALTA",
+                      label: "Alta",
+                      onClick: (value, label) => {
+                        setSelectedPriority({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                  ]}
+                  selected={selectedPriority}
+                />
+              </div>
+            </div>
+            <div className="relative">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Cliente*
+              </label>
+              {clients.length > 0 && (
+                <SelectWithSearch
+                  options={clients.map((client) => ({
+                    value: client.id,
+                    label: `${client.nombre} ${client.apellido}${
+                      client.documento ? ", " : ""
+                    }${client.documento ? client.documento : ""}`,
+                    onClick: (value, label) => {
+                      setSelectedClient({
+                        value,
+                        label,
+                      });
+                    },
+                  }))}
+                  selected={selectedClient}
+                  onChange={() => {
+                    setTicketFormData({
+                      ...ticketFormData,
+                      cliente_id: selectedClient.value! as number,
+                    });
+                  }}
+                />
+              )}
+              {clients.length === 0 && loading === false && (
+                <>
+                  <select
+                    className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                    value={0}
+                    disabled={true}
+                  >
+                    <option value={0}>
+                      No se ha encontrado ningún cliente
+                    </option>
+                  </select>
+                  <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
+                </>
+              )}
+              {clients.length === 0 && loading === true && (
+                <>
+                  <select
+                    className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                    value={0}
+                    disabled={true}
+                  >
+                    <option value={0}>Buscando clientes...</option>
+                  </select>
+                  <svg
+                    aria-hidden="true"
+                    className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-11 right-4 absolute"
+                    viewBox="0 0 100 101"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                      fill="currentFill"
+                    />
+                  </svg>
+                  <span className="sr-only">Cargando...</span>
+                </>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <div className="relative w-2/4">
+                <label className="block text-gray-600 text-base font-medium mb-2">
+                  Tipo*
+                </label>
+                <Select
+                  onChange={() => {
+                    setTicketFormData({
+                      ...ticketFormData,
+                      tipo: selectedType.value as ServicioTipo,
+                    });
+                  }}
+                  options={[
+                    {
+                      value: "DOMICILIO",
+                      label: "Domicilio",
+                      onClick: (value, label) => {
+                        setSelectedType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "TIENDA",
+                      label: "Tienda",
+                      onClick: (value, label) => {
+                        setSelectedType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                    {
+                      value: "REMOTO",
+                      label: "Remoto",
+                      onClick: (value, label) => {
+                        setSelectedType({
+                          value,
+                          label,
+                        });
+                      },
+                    },
+                  ]}
+                  selected={selectedType}
+                />
+              </div>
+              <div className="relative w-2/4">
+                <label className="block text-gray-600 text-base font-medium mb-2">
+                  Categoría*
+                </label>
+                {categories.length > 0 && (
+                  <SelectWithSearch
+                    options={categories
+                      .filter((category) => category.tipo === "SERVICIO")
+                      .map((category) => ({
+                        value: category.id,
+                        label: category.nombre,
+                        onClick: (value, label) => {
+                          setSelectedCategory({
+                            value,
+                            label,
+                          });
+                        },
+                      }))}
+                    selected={selectedCategory}
+                    onChange={() => {
+                      setTicketFormData({
+                        ...ticketFormData,
+                        categoría_id: selectedCategory.value! as number,
+                      });
+                    }}
+                  />
+                )}
+                {categories.length === 0 && loading === false && (
+                  <>
+                    <select
+                      className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                      value={0}
+                      disabled={true}
+                    >
+                      <option value={0}>Seleccionar categoría</option>
+                    </select>
+                    <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
+                  </>
+                )}
+                {categories.length === 0 && loading === true && (
+                  <>
+                    <select
+                      className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
+                      value={0}
+                      disabled={true}
+                    >
+                      <option value={0}>Buscando categorías...</option>
+                    </select>
+                    <svg
+                      aria-hidden="true"
+                      className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-11 right-4 absolute"
+                      viewBox="0 0 100 101"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                        fill="currentColor"
+                      />
+                      <path
+                        d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                        fill="currentFill"
+                      />
+                    </svg>
+                    <span className="sr-only">Cargando...</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="w-full">
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Descripción
+              </label>
+              <div className="h-full">
+                <Editor
+                  tinymceScriptSrc={"/tinymce/tinymce.min.js"}
+                  onEditorChange={(_evt, editor) =>
+                    setTicketFormData({
+                      ...ticketFormData,
+                      descripción: editor.getContent(),
+                    })
+                  }
+                  initialValue={
+                    ticketFormData.descripción?.length! > 0
+                      ? ticketFormData.descripción
+                      : "<p>Escribe aquí la descripción de tu ticket.</p>"
+                  }
+                  value={ticketFormData.descripción}
+                  init={{
+                    menubar: true,
+                    promotion: false,
+                    plugins: [
+                      "advlist",
+                      "autolink",
+                      "lists",
+                      "link",
+                      "image",
+                      "charmap",
+                      "anchor",
+                      "visualblocks",
+                      "code",
+                      "media",
+                      "help",
+                      "wordcount",
+                    ],
+                    toolbar:
+                      "undo redo | blocks | " +
+                      "bold italic forecolor | alignleft aligncenter " +
+                      "alignright alignjustify | bullist numlist outdent indent | removeformat",
+                    content_style:
+                      "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                    language: "es",
+                    ui_mode: "split",
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className={clsx({
+                  ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    !selectedClient.label?.startsWith("Selecciona") ||
+                    !selectedCategory.label?.startsWith("Selecciona") ||
+                    !selectedPriority.label?.startsWith("Selecciona") ||
+                    !selectedType.label?.startsWith("Selecciona"),
+                  ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    true,
+                })}
+              >
+                Completar
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DeleteModal({
+  isOpen,
+  closeModal,
+  setOperationAsCompleted,
+  ticket,
+}: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", handleKeyDown);
+    } else {
+      handleClose();
+    }
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    closeModal();
+    ref.current?.close();
+  };
+
+  const handleDeleteTicket = async () => {
+    const loadingToast = toast.loading("Eliminando ticket...");
+
+    const data = await TicketService.delete(ticket?.id!);
+
+    if (data.status === "success") {
+      toast.success(data.message);
+      if (options.find()?.creación.siempre) {
+        await handleCreateMessage();
+      }
+    } else {
+      toast.error(data.message);
+    }
+
+    toast.dismiss(loadingToast);
+    setOperationAsCompleted();
+  };
+
+  const handleCreateMessage = async () => {
+    const messageToast = toast.loading("Creando mensaje...");
+
+    try {
+      const rendered = await MessageRender.renderTicketEliminationTemplate(
+        ticket!
+      );
+
+      if (!rendered || rendered === "Plantilla desactivada") {
+        toast.error(
+          rendered
+            ? "La plantilla está desactivada"
+            : "El mensaje no pudo ser creado."
+        );
+        toast.dismiss(messageToast);
+        return;
+      }
+
+      toast.dismiss(messageToast);
+      toast.success("Mensaje creado exitosamente.");
+
+      if (ticket?.cliente?.enviarMensajes && options.find()?.envio.siempre) {
+        await handleSendMessage(rendered);
+      }
+    } catch {
+      toast.dismiss(messageToast);
+      toast.error("Error inesperado al crear el mensaje.");
+    }
+  };
+
+  const handleSendMessage = async (rendered: string) => {
+    const sendingToast = toast.loading("Enviando mensaje...");
+
+    try {
+      const res = await MessageSenderService.send(
+        ticket?.cliente?.telefono || "",
+        rendered
+      );
+
+      if (!res) {
+        toast.error("El mensaje no pudo ser enviado.");
+        toast.dismiss(sendingToast);
+        return;
+      }
+
+      toast.dismiss(sendingToast);
+      toast.success("Mensaje enviado exitosamente.");
+    } catch {
+      toast.dismiss(sendingToast);
+      toast.error("Error inesperado al enviar el mensaje.");
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    handleClose();
+    await handleDeleteTicket();
   };
 
   return (
@@ -983,291 +1664,34 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           handleClose();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow scrollbar-none"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
-      <div className="bg-[#2096ed] py-3 md:py-4 px-6 md:px-8">
-        <h1 className="text-lg md:text-xl font-bold text-white">
-          Añadir ticket
-        </h1>
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Eliminar ticket</h1>
       </div>
       <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
+        className="flex flex-col p-8 pt-6 gap-4 justify-center"
         autoComplete="off"
         onSubmit={handleSubmit}
       >
-        <div className="w-full">
-          <input
-            type="text"
-            onChange={(e) => {
-              setTicketFormData({
-                ...ticketFormData,
-                asunto: e.target.value,
-              });
-            }}
-            value={ticketFormData.asunto}
-            placeholder="Asunto*"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^.{2,}$"
-            name="name"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 2 caracteres
-          </span>
+        <div className="place-self-center  flex flex-col items-center">
+          <Warning className="fill-red-400 h-16 w-16" />
+          <p className="font-bold text-lg text-center mt-2">
+            ¿Está seguro de que desea continuar?
+          </p>
+          <p className="font-medium text text-center mt-1">
+            Los cambios provocados por esta acción son irreversibles.
+          </p>
         </div>
-        <div className="relative">
-          <Select
-            onChange={() => {
-              setTicketFormData({
-                ...ticketFormData,
-                prioridad: selectedPriority.value as TicketPrioridad,
-              });
-            }}
-            options={[
-              {
-                value: "BAJA",
-                label: "Baja",
-                onClick: (value, label) => {
-                  setSelectedPriority({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "MEDIA",
-                label: "Media",
-                onClick: (value, label) => {
-                  setSelectedPriority({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "ALTA",
-                label: "Alta",
-                onClick: (value, label) => {
-                  setSelectedPriority({
-                    value,
-                    label,
-                  });
-                },
-              },
-            ]}
-            selected={selectedPriority}
-          />
-        </div>
-        <div className="relative">
-          {clients.length > 0 && (
-            <SelectWithSearch
-              options={clients.map((client) => ({
-                value: client.id,
-                label: `${client.nombre} ${client.apellido}${
-                  client.documento ? "," : ""
-                } ${client.documento ? client.documento : ""}`,
-                onClick: (value, label) => {
-                  setSelectedClient({
-                    value,
-                    label,
-                  });
-                },
-              }))}
-              selected={selectedClient}
-              onChange={() => {
-                setTicketFormData({
-                  ...ticketFormData,
-                  cliente_id: selectedClient.value! as number,
-                });
-              }}
-            />
-          )}
-          {clients.length === 0 && loading === false && (
-            <>
-              <select
-                className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-                value={0}
-                disabled={true}
-              >
-                <option value={0}>No se ha encontrado ningún cliente</option>
-              </select>
-              <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-            </>
-          )}
-          {clients.length === 0 && loading === true && (
-            <>
-              <select
-                className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
-                value={0}
-                disabled={true}
-              >
-                <option value={0}>Buscando clientes...</option>
-              </select>
-              <svg
-                aria-hidden="true"
-                className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
-                viewBox="0 0 100 101"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                  fill="currentFill"
-                />
-              </svg>
-              <span className="sr-only">Cargando...</span>
-            </>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <div className="relative w-2/4">
-            <Select
-              onChange={() => {
-                setServiceFormData({
-                  ...serviceFormData,
-                  tipo: selectedType.value as ServicioTipo,
-                });
-              }}
-              options={[
-                {
-                  value: "DOMICILIO",
-                  label: "Domicilio",
-                  onClick: (value, label) => {
-                    setSelectedType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "TIENDA",
-                  label: "Tienda",
-                  onClick: (value, label) => {
-                    setSelectedType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "REMOTO",
-                  label: "Remoto",
-                  onClick: (value, label) => {
-                    setSelectedType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-              ]}
-              selected={selectedType}
-            />
-          </div>
-          <div className="relative w-2/4">
-            {categories.length > 0 && (
-              <SelectWithSearch
-                options={categories
-                  .filter((category) => category.tipo === "SERVICIO")
-                  .map((category) => ({
-                    value: category.id,
-                    label: category.nombre,
-                    onClick: (value, label) => {
-                      setSelectedCategory({
-                        value,
-                        label,
-                      });
-                    },
-                  }))}
-                selected={selectedCategory}
-                onChange={() => {
-                  setServiceFormData({
-                    ...serviceFormData,
-                    categoría_id: selectedCategory.value! as number,
-                  });
-                }}
-              />
-            )}
-            {categories.length === 0 && loading === false && (
-              <>
-                <select
-                  className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-                  value={0}
-                  disabled={true}
-                >
-                  <option value={0}>Seleccionar categoría</option>
-                </select>
-                <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
-              </>
-            )}
-            {categories.length === 0 && loading === true && (
-              <>
-                <select
-                  className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
-                  value={0}
-                  disabled={true}
-                >
-                  <option value={0}>Buscando categorías...</option>
-                </select>
-                <svg
-                  aria-hidden="true"
-                  className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
-                  viewBox="0 0 100 101"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                    fill="currentFill"
-                  />
-                </svg>
-                <span className="sr-only">Cargando...</span>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="w-full">
-          <textarea
-            rows={3}
-            placeholder="Descripción del servicio"
-            onChange={(e) => {
-              setServiceFormData({
-                ...serviceFormData,
-                descripción: e.target.value,
-              });
-            }}
-            value={serviceFormData.descripción || ""}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-            name="name"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
-          </span>
-        </div>
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-2 justify-center">
           <button
             type="button"
-            onClick={closeModal}
+            onClick={handleClose}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
           </button>
-          <button
-            className={clsx({
-              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                !selectedClient.label?.startsWith("Seleccionar"),
-              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                selectedClient.label?.startsWith("Seleccionar"),
-            })}
-          >
+          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
             Completar
           </button>
         </div>
@@ -1276,13 +1700,17 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   );
 }
 
-function DeleteModal({
-  isOpen,
-  closeModal,
-  setOperationAsCompleted,
-  ticket,
-}: ModalProps) {
+function ViewModal({ isOpen, closeModal, ticket }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [showFullDescription, setShowFullDescription] = useState(false);
+
+  const capitalizeFirstLetter = (string: string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+  };
+
+  const toggleDescription = () => {
+    setShowFullDescription((prev) => !prev);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -1314,118 +1742,140 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-2/5 h-fit rounded-xl shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Eliminando ticket...");
-          TicketService.delete(ticket?.id!).then((data) => {
-            toast.dismiss(loadingToast);
-            if (data) {
-              toast.success("Ticket eliminado con exito.");
-              if (options.find()?.creación.siempre) {
-                const messageToast = toast.loading("Creando mensaje...");
-                MessageRender.renderTicketEliminationTemplate(ticket!).then(
-                  (rendered) => {
-                    if (rendered) {
-                      if (rendered === "Plantilla desactivada") {
-                        toast.dismiss(messageToast);
-                        toast.error("La plantilla esta desactivada");
-                        return;
-                      }
-                      toast.dismiss(messageToast);
-                      toast.success("Mensaje creado exitosamente.");
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Datos del ticket</h1>
+      </div>
+      <div className="p-8 pt-6">
+        <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* Asunto */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Asunto
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {ticket?.asunto}
+              </p>
+            </div>
 
-                      if (ticket?.cliente?.enviarMensajes) {
-                        if (options.find()?.envio.siempre) {
-                          const sendingToast = toast.loading(
-                            "Enviando mensaje..."
-                          );
-                          MessageSenderService.send(
-                            ticket?.cliente.telefono || "",
-                            rendered
-                          ).then((res) => {
-                            if (res) {
-                              toast.dismiss(sendingToast);
-                              toast.success("Mensaje enviado exitosamente.");
-                            } else {
-                              toast.dismiss(sendingToast);
-                              toast.error("Mensaje no pudo ser enviado.");
-                            }
-                          });
-                        }
-                      }
-                    } else {
-                      toast.dismiss(messageToast);
-                      toast.error("Mensaje no pudo ser creado.");
-                    }
-                  }
-                );
-              }
-            } else {
-              toast.error("Ticket no pudo ser eliminado.");
-            }
-            setOperationAsCompleted();
-          });
-        }}
-      >
-        <div className="place-self-center  flex flex-col items-center">
-          <Warning className="fill-red-400 h-16 w-16" />
-          <p className="font-bold text-lg text-center mt-2">
-            ¿Está seguro de que desea continuar?
-          </p>
-          <p className="font-medium text text-center mt-1">
-            Los cambios provocados por esta acción son irreversibles.
-          </p>
+            {/* Prioridad */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Prioridad
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {capitalizeFirstLetter(ticket?.prioridad!)}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Estado
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {capitalizeFirstLetter(ticket?.estado || "")}
+              </p>
+            </div>
+
+            {/* Cliente */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Cliente
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {ticket?.cliente?.nombre || ""}{" "}
+                {ticket?.cliente?.apellido || ""}
+                {ticket?.cliente?.documento
+                  ? `, ${ticket?.cliente?.documento}`
+                  : ""}
+              </p>
+            </div>
+
+            {/* Tipo */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Tipo
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {capitalizeFirstLetter(ticket?.prioridad!)}
+              </p>
+            </div>
+
+            {/* Categoría */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Categoría
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {ticket?.categoría?.nombre}
+              </p>
+            </div>
+
+            {/* Descripción */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Descripción
+              </p>
+              <div
+                className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                  showFullDescription
+                    ? "max-h-80 overflow-y-auto"
+                    : "max-h-40 overflow-hidden"
+                }`}
+              >
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: ticket?.descripción ?? "",
+                  }}
+                />
+              </div>
+              {(ticket?.descripción?.length ?? 0) > 200 && (
+                <button
+                  type="button"
+                  onClick={toggleDescription}
+                  className="text-blue-500 mt-2"
+                >
+                  {showFullDescription ? "Ver Menos" : "Ver Más"}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="flex gap-2 justify-center">
+        <div className="flex gap-2 justify-end">
           <button
-            type="button"
             onClick={closeModal}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
           >
-            Cancelar
-          </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Completar
+            Cerrar
           </button>
         </div>
-      </form>
+      </div>
     </dialog>
   );
 }
 
 function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const navigate = useNavigate();
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.editar.ticket
+    permissions.find()?.editar.ticket
       ? "EDIT"
       : permissions.find()?.eliminar.ticket
       ? "DELETE"
       : permissions.find()?.ver.mensaje
       ? "VIEW_MESSAGES"
-      : "NONE"
+      : "VIEW"
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
   const anyAction =
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-    permissions.find()?.editar.ticket
-      ? true
-      : permissions.find()?.eliminar.ticket
-      ? true
-      : permissions.find()?.ver.ticket
-      ? true
-      : permissions.find()?.ver.mensaje
-      ? true
-      : false;
+    permissions.find()?.editar.ticket ||
+    permissions.find()?.eliminar.ticket ||
+    permissions.find()?.ver.mensaje;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -1433,6 +1883,10 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const closeViewModal = () => {
+    setIsViewOpen(false);
   };
 
   const selectAction = (action: `${Action}`) => {
@@ -1443,7 +1897,7 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
     <tr>
       <th
         scope="row"
-        className="px-6 py-3 font-medium text-[#2096ed] whitespace-nowrap border border-slate-300"
+        className="px-6 py-3 font-medium text-[#2096ed] whitespace-nowrap border border-slate-300 w-[50px]"
       >
         {ticket?.id}
       </th>
@@ -1478,16 +1932,16 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
       </td>
       <td className="px-6 py-3 border border-slate-300">{ticket?.asunto}</td>
       <td className="px-6 py-3 border border-slate-300">
-        {format(new Date(ticket?.creado!), "dd/MM/yyyy")}
+        {format(new Date(ticket?.creado!), "dd/MM/yyyy hh:mm a")}
       </td>
       <td className="px-6 py-3 border border-slate-300">
         {ticket?.cerrado
-          ? format(new Date(ticket?.cerrado!), "dd/MM/yyyy")
+          ? format(new Date(ticket?.cerrado!), "dd/MM/yyyy hh:mm a")
           : "Nunca"}
       </td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+        className="px-6 py-3 border border-slate-300 min-w-[500px] relative"
       >
         {action === "EDIT" && (
           <>
@@ -1522,6 +1976,24 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
               isOpen={isDeleteOpen}
               closeModal={closeDeleteModal}
               setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
+        )}
+        {action === "VIEW" && (
+          <>
+            <button
+              onClick={() => {
+                setIsViewOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Mostrar ticket
+            </button>
+            <ViewModal
+              ticket={ticket}
+              isOpen={isViewOpen}
+              closeModal={closeViewModal}
+              setOperationAsCompleted={() => null}
             />
           </>
         )}
@@ -1563,11 +2035,7 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
           >
             <More className="w-5 h-5 inline fill-black" />
           </button>
-        ) : (
-          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
-            Nada permitido
-          </button>
-        )}
+        ) : null}
       </td>
     </tr>
   );
@@ -1614,8 +2082,7 @@ function Dropup({ close, selectAction }: DropupProps) {
           border
         "
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.crear.ticket) && (
+      {permissions.find()?.crear.ticket && (
         <li>
           <div
             onClick={() => {
@@ -1707,8 +2174,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
         "
       style={{ top: top }}
     >
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.editar.ticket) && (
+      {permissions.find()?.editar.ticket && (
         <li>
           <div
             onClick={() => {
@@ -1733,8 +2199,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.eliminar.ticket) && (
+      {permissions.find()?.eliminar.ticket && (
         <li>
           <div
             onClick={() => {
@@ -1759,13 +2224,34 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        (permissions.find()?.editar.ticket &&
-          permissions.find()?.eliminar.ticket)) && (
-        <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
-      )}
-      {(session.find()?.usuario.rol === "ADMINISTRADOR" ||
-        permissions.find()?.ver.mensaje) && (
+      <li>
+        <div
+          onClick={() => {
+            selectAction("VIEW");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Mostrar ticket
+        </div>
+      </li>
+      {permissions.find()?.editar.ticket &&
+        permissions.find()?.eliminar.ticket && (
+          <hr className="my-1 h-0 border border-t-0 border-solid border-neutral-700 opacity-25 dark:border-neutral-200" />
+        )}
+      {permissions.find()?.ver.mensaje && (
         <li>
           <div
             onClick={() => {
@@ -1925,7 +2411,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-1/3 min-h-[200px] h-fit rounded-md shadow text-base"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar ticket</h1>
@@ -1950,16 +2436,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               setParam(selectedSearchType.value as string);
             }}
             options={[
-              {
-                value: "ID",
-                label: "ID",
-                onClick: (value, label) => {
-                  setSelectedSearchType({
-                    value,
-                    label,
-                  });
-                },
-              },
               {
                 value: "ABIERTO",
                 label: "Fecha de apertura",
@@ -1993,16 +2469,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               {
                 value: "ESTADO",
                 label: "Estado",
-                onClick: (value, label) => {
-                  setSelectedSearchType({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "CATEGORÍA",
-                label: "Categoría de elemento",
                 onClick: (value, label) => {
                   setSelectedSearchType({
                     value,
@@ -2091,7 +2557,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                   >
                     <option value={0}>Seleccionar categoría</option>
                   </select>
-                  <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+                  <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
                 </>
               )}
               {categories.length === 0 && loading === true && (
@@ -2157,7 +2623,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                   >
                     <option value={0}>Seleccionar cliente</option>
                   </select>
-                  <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+                  <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
                 </>
               )}
               {clients.length === 0 && loading === true && (
@@ -2322,7 +2788,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                   >
                     <option value={0}>Seleccionar cliente</option>
                   </select>
-                  <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
+                  <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
                 </>
               )}
               {clients.length === 0 && loading === true && (
@@ -2336,7 +2802,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                   </select>
                   <svg
                     aria-hidden="true"
-                    className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-3 right-4 absolute"
+                    className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-11 right-4 absolute"
                     viewBox="0 0 100 101"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
@@ -2400,10 +2866,7 @@ export default function TicketDataDisplay() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    session.find()?.usuario.rol === "ADMINISTRADOR" ||
-      permissions.find()?.crear.ticket
-      ? "ADD"
-      : "SEARCH"
+    permissions.find()?.crear.ticket ? "ADD" : "SEARCH"
   );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
@@ -2420,6 +2883,7 @@ export default function TicketDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const size = 8;
 
   const openAddModal = () => {
     setIsAddOpen(true);
@@ -2443,7 +2907,7 @@ export default function TicketDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0) {
-      void TicketService.getAll(page, 8).then((data) => {
+      void TicketService.getAll(page, size).then((data) => {
         if (data === false) {
           setNotFound(true);
           setLoading(false);
@@ -2465,7 +2929,7 @@ export default function TicketDataDisplay() {
       if (param === "CERRADO" || (param === "ABIERTO" && wasSearch)) {
         const loadingToast = toast.loading("Buscando...");
         if (secondParam === "HOY") {
-          void TicketService.getToday(param, page, 8).then((data) => {
+          void TicketService.getToday(param, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2481,7 +2945,7 @@ export default function TicketDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "RECIENTEMENTE") {
-          void TicketService.getRecent(param, page, 8).then((data) => {
+          void TicketService.getRecent(param, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2497,7 +2961,7 @@ export default function TicketDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "ESTA_SEMANA") {
-          void TicketService.getThisWeek(param, page, 8).then((data) => {
+          void TicketService.getThisWeek(param, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2513,7 +2977,7 @@ export default function TicketDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "ESTE_MES") {
-          void TicketService.getThisMonth(param, page, 8).then((data) => {
+          void TicketService.getThisMonth(param, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2529,7 +2993,7 @@ export default function TicketDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "ESTE_AÑO") {
-          void TicketService.getThisYear(param, page, 8).then((data) => {
+          void TicketService.getThisYear(param, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -2549,7 +3013,7 @@ export default function TicketDataDisplay() {
               new Date(input).toISOString().split("T")[0],
               new Date(secondInput).toISOString().split("T")[0],
               page,
-              8
+              size
             ).then((data) => {
               if (data === false) {
                 setNotFound(true);
@@ -2570,7 +3034,7 @@ export default function TicketDataDisplay() {
               new Date(input).toISOString().split("T")[0],
               new Date(secondInput).toISOString().split("T")[0],
               page,
-              8
+              size
             ).then((data) => {
               if (data === false) {
                 setNotFound(true);
@@ -2590,7 +3054,7 @@ export default function TicketDataDisplay() {
         }
       } else if (param === "CLIENTE" && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
-        void TicketService.getByClient(searchId, page, 8).then((data) => {
+        void TicketService.getByClient(searchId, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setLoading(false);
@@ -2607,7 +3071,7 @@ export default function TicketDataDisplay() {
         });
       } else if (param === "CATEGORÍA" && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
-        void TicketService.getByCategory(searchId, page, 8).then((data) => {
+        void TicketService.getByCategory(searchId, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setLoading(false);
@@ -2624,7 +3088,7 @@ export default function TicketDataDisplay() {
         });
       } else if (param === "ESTADO" && wasSearch) {
         const loadingToast = toast.loading("Buscando...");
-        void TicketService.getByState(input, page, 8).then((data) => {
+        void TicketService.getByState(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setLoading(false);

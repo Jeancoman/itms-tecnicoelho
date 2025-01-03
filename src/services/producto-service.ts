@@ -1,4 +1,10 @@
-import { Imagen, Producto, Response, Selected } from "../types";
+import {
+  GenericResponse,
+  Imagen,
+  Producto,
+  Response,
+  Selected,
+} from "../types";
 import session from "../utils/session";
 
 export default class ProductService {
@@ -287,7 +293,7 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/productos/mas-vendidos?page=1&size=1000000`,
+        }/api/reportes/productos/mas-comprados?page=1&size=1000000`,
         {
           method: "GET",
           headers: {
@@ -407,7 +413,7 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/productos/vendidos-en?page=1&size=1000000&fecha_inicial=${fecha_inicial}&fecha_final=${fecha_final}`,
+        }/api/reportes/productos/vendidos-en?page=1&size=1000000&fecha_inicial=${fecha_inicial}&fecha_final=${fecha_final}&tipo=ENTRE_FECHAS`,
         {
           method: "GET",
           headers: {
@@ -442,7 +448,7 @@ export default class ProductService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/reportes/productos/comprados-en?page=1&size=1000000&fecha_inicial=${fecha_inicial}&fecha_final=${fecha_final}`,
+        }/api/reportes/productos/comprados-en?page=1&size=1000000&fecha_inicial=${fecha_inicial}&fecha_final=${fecha_final}&tipo=ENTRE_FECHAS`,
         {
           method: "GET",
           headers: {
@@ -491,13 +497,12 @@ export default class ProductService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "Las imagenes no pudieron ser editadas.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -519,13 +524,12 @@ export default class ProductService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Producto;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El producto no pudo ser añadido.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -551,13 +555,12 @@ export default class ProductService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El producto no pudo ser editado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -575,13 +578,12 @@ export default class ProductService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El producto no pudo ser eliminado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 }

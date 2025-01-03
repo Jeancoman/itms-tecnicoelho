@@ -1,4 +1,4 @@
-import { Mensaje, Response } from "../types";
+import { GenericResponse, Mensaje, Response } from "../types";
 import session from "../utils/session";
 
 export default class MessageService {
@@ -150,13 +150,17 @@ export default class MessageService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as Mensaje;
+      return (await response.json()) as {
+        message: string;
+        status: "success" | "error",
+        mensaje: Mensaje
+      };
     } catch {
-      return false;
+      return {
+        message: "El mensaje no pudo ser añadido.",
+        status: "error",
+        mensaje: undefined
+      }
     }
   }
 
@@ -177,13 +181,12 @@ export default class MessageService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El mensaje no pudo ser editado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 
@@ -203,13 +206,12 @@ export default class MessageService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "El mensaje no pudo ser eliminado.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 }

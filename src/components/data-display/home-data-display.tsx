@@ -111,7 +111,7 @@ export default function HomeDataDisplay() {
   return (
     <>
       <div className="absolute container mx-auto h-full overflow-y-auto w-full px-8 py-5">
-        <nav className="flex justify-between items-center select-none">
+        <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span className="text-[#2096ed]">Inicio</span>
@@ -120,18 +120,16 @@ export default function HomeDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         <div className="mb-10 text-xl font-medium text-slate-600 text-end">
-          Sesión activa como: {" "}
+          Sesión activa como:{" "}
           <span className="text-[#2096ed]">
-            {session.find()?.usuario.rol.toLocaleLowerCase()}
+            {session.find()?.usuario.rol?.nombre}
           </span>{" "}
           {(session.find()?.usuario.nombre ?? "") +
             " " +
             (session.find()?.usuario.apellido ?? "")}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-10">
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.venta ? (
+          {permissions.find()?.ver.venta ? (
             <div className="bg-green-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <div>
                 <p className="text-white text-lg font-medium">{ventasHoy}</p>
@@ -147,9 +145,7 @@ export default function HomeDataDisplay() {
               </div>
             </div>
           )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.compra ? (
+          {permissions.find()?.ver.compra ? (
             <div className="bg-violet-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <div>
                 <p className="text-white text-lg font-medium">{comprasHoy}</p>
@@ -165,9 +161,7 @@ export default function HomeDataDisplay() {
               </div>
             </div>
           )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.producto ? (
+          {permissions.find()?.ver.producto ? (
             <div className="bg-orange-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <div>
                 <p className="text-white text-lg font-medium">{stockBajo}</p>
@@ -183,9 +177,7 @@ export default function HomeDataDisplay() {
               </div>
             </div>
           )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.producto ? (
+          {permissions.find()?.ver.producto ? (
             <div className="bg-red-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <div>
                 <p className="text-white text-lg font-medium">{sinStock}</p>
@@ -203,9 +195,7 @@ export default function HomeDataDisplay() {
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.cliente ? (
+          {permissions.find()?.ver.cliente ? (
             <div
               onClick={() => {
                 navigate("/clientes");
@@ -226,9 +216,7 @@ export default function HomeDataDisplay() {
               </div>
             </div>
           )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.ticket ? (
+          {permissions.find()?.ver.ticket ? (
             <div
               onClick={() => {
                 navigate("/tickets");
@@ -249,9 +237,7 @@ export default function HomeDataDisplay() {
               </div>
             </div>
           )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.categoría ? (
+          {permissions.find()?.ver.categoría ? (
             <div
               onClick={() => {
                 navigate("/categorias");
@@ -272,9 +258,7 @@ export default function HomeDataDisplay() {
               </div>
             </div>
           )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.publicación ? (
+          {permissions.find()?.ver.publicación ? (
             <div
               onClick={() => {
                 navigate("/publicaciones");
@@ -297,9 +281,7 @@ export default function HomeDataDisplay() {
               </div>
             </div>
           )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.producto ? (
+          {permissions.find()?.ver.producto ? (
             <div
               onClick={() => {
                 navigate("/productos");
@@ -320,9 +302,7 @@ export default function HomeDataDisplay() {
               </div>
             </div>
           )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.proveedor ? (
+          {permissions.find()?.ver.proveedor ? (
             <div
               onClick={() => {
                 navigate("/proveedores");
@@ -343,9 +323,7 @@ export default function HomeDataDisplay() {
               </div>
             </div>
           )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.venta ? (
+          {permissions.find()?.ver.venta ? (
             <div
               onClick={() => {
                 navigate("/ventas");
@@ -366,9 +344,7 @@ export default function HomeDataDisplay() {
               </div>
             </div>
           )}
-          {session.find()?.usuario.rol === "ADMINISTRADOR" ||
-          session.find()?.usuario.rol === "SUPERADMINISTRADOR" ||
-          permissions.find()?.ver.compra ? (
+          {permissions.find()?.ver.compra ? (
             <div
               onClick={() => {
                 navigate("/compras");
