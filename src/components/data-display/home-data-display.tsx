@@ -165,7 +165,7 @@ export default function HomeDataDisplay() {
             <div className="bg-orange-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <div>
                 <p className="text-white text-lg font-medium">{stockBajo}</p>
-                <p className="text-white text-lg font-medium">Stock bajo</p>
+                <p className="text-white text-lg font-medium">Existencias bajas</p>
               </div>
               <Warning className="h-10 w-10 fill-white" />
             </div>
@@ -181,7 +181,7 @@ export default function HomeDataDisplay() {
             <div className="bg-red-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <div>
                 <p className="text-white text-lg font-medium">{sinStock}</p>
-                <p className="text-white text-lg font-medium">Cero stock</p>
+                <p className="text-white text-lg font-medium">Cero existencias</p>
               </div>
               <Warning className="h-10 w-10 fill-white" />
             </div>

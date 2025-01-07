@@ -44,7 +44,9 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
     portada: "",
     descripcionPortada: "",
     usuario_id: session.find()?.usuario.id,
-    autor: `${session.find()?.usuario.nombre} ${session.find()?.usuario.apellido}, ${session.find()?.usuario.documento}`
+    autor: `${session.find()?.usuario.nombre} ${
+      session.find()?.usuario.apellido
+    }, ${session.find()?.usuario.documento}`,
   });
 
   const resetFormData = () => {
@@ -199,7 +201,6 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
                   value={formData.portada}
                   className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                   required
-                  pattern="^(https?:\/\/[\w\.\-\/]+)(\.(jpg|jpeg|gif|png))?$"
                   name="url"
                 />
                 <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
@@ -329,8 +330,11 @@ function AddConfirmationModal({
   handleFinalSubmit: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
-  const [showFullDescripcionPortada, setShowFullDescripcionPortada] = useState(false);
-  const [view, setView] = useState<"confirmation" | "contenidoDetail">("confirmation");
+  const [showFullDescripcionPortada, setShowFullDescripcionPortada] =
+    useState(false);
+  const [view, setView] = useState<"confirmation" | "contenidoDetail">(
+    "confirmation"
+  );
 
   const toggleDescripcionPortada = () => {
     setShowFullDescripcionPortada((prev) => !prev);
@@ -382,12 +386,14 @@ function AddConfirmationModal({
           handleClose();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       {view === "confirmation" && (
         <>
           <div className="bg-[#2096ed] py-4 px-8">
-            <h1 className="text-xl font-bold text-white">Confirmar publicación</h1>
+            <h1 className="text-xl font-bold text-white">
+              Confirmar publicación
+            </h1>
           </div>
           <div className="p-8 pt-6">
             <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
@@ -468,7 +474,8 @@ function AddConfirmationModal({
                   </p>
                   <div
                     className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
-                      publicación?.contenido?.length && publicación.contenido.length > 200
+                      publicación?.contenido?.length &&
+                      publicación.contenido.length > 200
                         ? "max-h-40 overflow-hidden"
                         : ""
                     }`}
@@ -513,7 +520,9 @@ function AddConfirmationModal({
       {view === "contenidoDetail" && (
         <>
           <div className="bg-[#2096ed] py-4 px-8">
-            <h1 className="text-xl font-bold text-white">Confirmar publicación</h1>
+            <h1 className="text-xl font-bold text-white">
+              Confirmar publicación
+            </h1>
           </div>
           <div className="p-8 pt-6">
             <div className="bg-white rounded-lg mb-6">
@@ -699,7 +708,6 @@ function EditSection({
                   value={formData.portada}
                   className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                   required
-                  pattern="^(https?:\/\/[\w\.\-\/]+)(\.(jpg|jpeg|gif|png))?$"
                   name="url"
                 />
                 <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
@@ -833,8 +841,11 @@ function EditConfirmationModal({
 }) {
   const publication = publicación;
   const ref = useRef<HTMLDialogElement>(null);
-  const [showFullDescripcionPortada, setShowFullDescripcionPortada] = useState(false);
-  const [view, setView] = useState<"confirmation" | "contenidoDetail" | "contenidoDetailNew">("confirmation");
+  const [showFullDescripcionPortada, setShowFullDescripcionPortada] =
+    useState(false);
+  const [view, setView] = useState<
+    "confirmation" | "contenidoDetail" | "contenidoDetailNew"
+  >("confirmation");
 
   const toggleDescripcionPortada = () => {
     setShowFullDescripcionPortada((prev) => !prev);
@@ -890,7 +901,7 @@ function EditConfirmationModal({
           handleClose();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       {view === "confirmation" && (
         <>
@@ -980,9 +991,7 @@ function EditConfirmationModal({
                       <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                         Contenido
                       </p>
-                      <div
-                        className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-40 overflow-hidden"
-                      >
+                      <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-40 overflow-hidden">
                         <div
                           dangerouslySetInnerHTML={{
                             __html: publication?.contenido ?? "",
@@ -1106,9 +1115,7 @@ function EditConfirmationModal({
                       <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                         Contenido
                       </p>
-                      <div
-                        className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-40 overflow-hidden"
-                      >
+                      <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-40 overflow-hidden">
                         <div
                           dangerouslySetInnerHTML={{
                             __html: formData.contenido ?? "",
@@ -1153,14 +1160,19 @@ function EditConfirmationModal({
       {(view === "contenidoDetail" || view === "contenidoDetailNew") && (
         <>
           <div className="bg-[#2096ed] py-4 px-8">
-            <h1 className="text-xl font-bold text-white">Confirmar publicación</h1>
+            <h1 className="text-xl font-bold text-white">
+              Confirmar publicación
+            </h1>
           </div>
           <div className="p-8 pt-6">
             <div className="bg-white rounded-lg mb-6">
               <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-80 overflow-y-auto">
                 <div
                   dangerouslySetInnerHTML={{
-                    __html: view === "contenidoDetailNew" ? formData.contenido ?? "" : publication?.contenido ?? "",
+                    __html:
+                      view === "contenidoDetailNew"
+                        ? formData.contenido ?? ""
+                        : publication?.contenido ?? "",
                   }}
                 />
               </div>
@@ -1217,7 +1229,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar publicación</h1>
@@ -1281,11 +1293,9 @@ function DataRow({
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
-  const anyAction = permissions.find()?.editar.publicación
-    ? true
-    : permissions.find()?.eliminar.publicación
-    ? true
-    : false;
+  const anyAction =
+    permissions.find()?.editar.publicación ||
+    permissions.find()?.eliminar.publicación;
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
@@ -1306,8 +1316,8 @@ function DataRow({
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {publicación?.título}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
-        {format(new Date(publicación?.creada!), "dd/MM/yyyy")}
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-fit">
+        {format(new Date(publicación?.creada!), "dd/MM/yyyy hh:mm a")}
       </td>
       <td className="px-6 py-2 border border-slate-300">
         {publicación?.esPública === true ? (
@@ -1320,17 +1330,14 @@ function DataRow({
           </div>
         )}
       </td>
-      <td className="px-6 py-2 border border-slate-300">
-        <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg">
-          {publicación?.usuario?.nombreUsuario}{" "}
-          {session.find()?.usuario?.id === publicación?.usuario?.id
-            ? "(Tu usuario)"
-            : null}
-        </div>
+      <td className="px-6 py-2 border border-slate-300 truncate">
+        {publicación?.usuario
+          ? `${publicación.usuario.nombre} ${publicación.usuario.apellido}`
+          : ""}
       </td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[220px] relative"
+        className="px-6 py-3 border border-slate-300 min-w-[220px] w-[220px] relative"
       >
         {action === "EDIT" && (
           <>
@@ -1655,7 +1662,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar publicaciones</h1>
@@ -1879,49 +1886,64 @@ export default function PublicationsDataDisplay() {
             ) : null}
           </div>
           <div className="flex gap-2 relative">
-            {isDropup && (
-              <Dropup
-                close={closeDropup}
-                selectAction={selectAction}
-                openAddModal={() => null}
-              />
-            )}
-            {action === "ADD" ? (
-              <button
-                onClick={openAddModal}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Añadir publicación
-              </button>
-            ) : null}
-            {action === "SEARCH" ? (
+            {!toAdd && !toEdit ? (
               <>
-                {searchCount > 0 ? (
+                {isDropup && (
+                  <Dropup
+                    close={closeDropup}
+                    selectAction={selectAction}
+                    openAddModal={() => null}
+                  />
+                )}
+                {action === "ADD" ? (
                   <button
-                    type="button"
-                    onClick={resetSearchCount}
-                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                    onClick={openAddModal}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
                   >
-                    Cancelar busqueda
+                    Añadir publicación
                   </button>
                 ) : null}
+                {action === "SEARCH" ? (
+                  <>
+                    {searchCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={resetSearchCount}
+                        className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                      >
+                        Cancelar busqueda
+                      </button>
+                    ) : null}
+                    <button
+                      onClick={() => setIsSearch(true)}
+                      className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                    >
+                      Buscar publicación
+                    </button>
+                  </>
+                ) : null}
                 <button
-                  onClick={() => setIsSearch(true)}
-                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  id="acciones-btn"
+                  onClick={() => {
+                    setIsDropup(!isDropup);
+                  }}
+                  className="bg-gray-300 border hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
                 >
-                  Buscar publicación
+                  <More className="w-5 h-5 inline fill-black" />
                 </button>
               </>
-            ) : null}
-            <button
-              id="acciones-btn"
-              onClick={() => {
-                setIsDropup(!isDropup);
-              }}
-              className="bg-gray-300 border hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-            >
-              <More className="w-5 h-5 inline fill-black" />
-            </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setToAdd(false);
+                  setToEdit(false);
+                }}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Volver
+              </button>
+            )}
           </div>
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
@@ -1966,7 +1988,7 @@ export default function PublicationsDataDisplay() {
                         scope="col"
                         className="px-6 py-3 border border-slate-300"
                       >
-                        Creada
+                        Fecha
                       </th>
                       <th
                         scope="col"

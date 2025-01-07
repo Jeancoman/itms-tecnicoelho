@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
@@ -20,6 +20,7 @@ import { useImpuestoSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import clsx from "clsx";
 import ImpuestoService from "../../services/impuesto-service";
+import debounce from "lodash.debounce";
 
 function EditModal({
   isOpen,
@@ -30,7 +31,7 @@ function EditModal({
   const ref = useRef<HTMLDialogElement>(null);
   const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [selectedAplica] = useState<Selected>({
-    label: impuesto?.aplicaA === "PRODUCTO" ? "Productos" : "Ventas",
+    label: impuesto?.aplicaA === "PRODUCTO" ? "Productos" : "Ventas y compras",
     value: impuesto?.aplicaA,
   });
   const [selectedCondicion] = useState<Selected>({
@@ -42,6 +43,8 @@ function EditModal({
     value: impuesto?.tipoMoneda ?? "NULL",
   });
   const [formData, setFormData] = useState<Impuesto>(impuesto!);
+  const [codigoExist, setCodigoExist] = useState(false);
+  const [stillWritingCodigo, setStillWritingCodigo] = useState(false);
 
   const resetFormData = () => {
     setFormData(impuesto!);
@@ -66,6 +69,26 @@ function EditModal({
       }
     });
   };
+
+  const checkCodigo = useCallback(
+    debounce(async (codigo) => {
+      if (codigo.length >= 2) {
+        const exist = await ImpuestoService.getByExactCódigo(codigo, 1, 100);
+        if (exist) {
+          setCodigoExist(true);
+          setStillWritingCodigo(false);
+        } else {
+          setCodigoExist(false);
+          setStillWritingCodigo(false);
+        }
+      }
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    checkCodigo(formData.codigo);
+  }, [formData.codigo]);
 
   useEffect(() => {
     if (isOpen) {
@@ -122,6 +145,45 @@ function EditModal({
                     : "No especificado"}
                 </p>
               </div>
+              {/* Aplica a */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Aplica a
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {impuesto?.aplicaA === "VENTA"
+                    ? "Ventas y compras"
+                    : "Producto"}
+                </p>
+              </div>
+              {impuesto?.aplicaA === "VENTA" && (
+                <>
+                  {impuesto.condicionPago && (
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Condición de pago
+                      </p>
+                      <p className="text-gray-900 font-medium text-base break-words">
+                        {impuesto.condicionPago === "CONTADO"
+                          ? "Contado"
+                          : "Credito"}
+                      </p>
+                    </div>
+                  )}
+                  {impuesto.tipoMoneda && (
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Moneda de pago
+                      </p>
+                      <p className="text-gray-900 font-medium text-base break-words">
+                        {impuesto?.tipoMoneda === "BOLIVAR"
+                          ? "Bolívar"
+                          : "Divisa"}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
 
@@ -178,6 +240,57 @@ function EditModal({
                     : "No especificado"}
                 </p>
               </div>
+              {/* Aplica a */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Aplica a
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    selectedAplica.value !== impuesto?.aplicaA
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {selectedAplica.label || "No especificado"}
+                </p>
+              </div>
+              {selectedAplica.value === "VENTA" && (
+                <>
+                  {selectedCondicion.value !== "NULL" && (
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Condición de pago
+                      </p>
+                      <p
+                        className={`text-base font-medium break-words ${
+                          selectedCondicion.value !== impuesto?.condicionPago
+                            ? "text-blue-600 font-semibold"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {selectedCondicion.label || "No especificado"}
+                      </p>
+                    </div>
+                  )}
+                  {selectedMoneda.value !== "NULL" && (
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Moneda de pago
+                      </p>
+                      <p
+                        className={`text-base font-medium break-words ${
+                          selectedMoneda.value !== impuesto?.tipoMoneda
+                            ? "text-blue-600 font-semibold"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {selectedMoneda.label || "No especificado"}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -218,7 +331,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -267,16 +380,30 @@ function EditModal({
                   ...formData,
                   codigo: e.target.value.toUpperCase(),
                 });
+                setStillWritingCodigo(true);
               }}
               value={formData.codigo}
               placeholder="Introducir código*"
-              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              className={clsx({
+                ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                  !codigoExist,
+                ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                  codigoExist,
+              })}
               required
               pattern="^[A-Z0-9]{2,10}$"
               name="codigo"
             />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Solo letras mayúsculas y números (2-10 caracteres)
+            <span
+              className={clsx({
+                ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                  !codigoExist,
+                ["mt-2 text-sm text-red-500 block"]: codigoExist,
+              })}
+            >
+              {codigoExist
+                ? "Este código ya está registrado"
+                : "Solo letras mayúsculas y números (2-10 caracteres)"}
             </span>
           </div>
           <div>
@@ -368,7 +495,14 @@ function EditModal({
             >
               Cancelar
             </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  !codigoExist,
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  codigoExist || stillWritingCodigo,
+              })}
+            >
               Completar
             </button>
           </div>
@@ -401,6 +535,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     tipoMoneda: null,
     condicionPago: null,
   });
+  const [codigoExist, setCodigoExist] = useState(false);
+  const [stillWritingCodigo, setStillWritingCodigo] = useState(false);
 
   const resetFormData = () => {
     setFormData({
@@ -412,7 +548,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       condicionPago: null,
     });
     setSelectedAplica({
-      label: "Producto",
+      label: "Productos",
       value: "PRODUCTO",
     });
     setSelectedCondicion({
@@ -445,6 +581,26 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     });
   };
 
+  const checkCodigo = useCallback(
+    debounce(async (codigo) => {
+      if (codigo.length >= 2) {
+        const exist = await ImpuestoService.getByExactCódigo(codigo, 1, 100);
+        if (exist) {
+          setCodigoExist(true);
+          setStillWritingCodigo(false);
+        } else {
+          setCodigoExist(false);
+          setStillWritingCodigo(false);
+        }
+      }
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    checkCodigo(formData.codigo);
+  }, [formData.codigo]);
+
   useEffect(() => {
     if (isOpen) {
       ref.current?.showModal();
@@ -468,7 +624,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
         <div className="grid grid-cols-2 gap-6">
           {/* NOMBRE */}
-          <div className="col-span-2">
+          <div>
             <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
               Nombre
             </p>
@@ -478,7 +634,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           </div>
 
           {/* CÓDIGO */}
-          <div className="col-span-2">
+          <div>
             <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
               Código
             </p>
@@ -498,6 +654,41 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 : "No especificado"}
             </p>
           </div>
+
+          {/* PORCENTAJE */}
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Aplica a
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {selectedAplica.label}
+            </p>
+          </div>
+
+          {selectedAplica.value === "VENTA" && (
+            <>
+              {selectedCondicion.value !== "" && (
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Condición de pago
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {selectedCondicion.label || "No especificado"}
+                  </p>
+                </div>
+              )}
+              {selectedMoneda.value !== "" && (
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Moneda de pago
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {selectedMoneda.label || "No especificado"}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
@@ -514,7 +705,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           onClick={handleFinalSubmit} // Confirmación final
           className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
         >
-          Crear impuesto
+          Guardar
         </button>
       </div>
     </div>
@@ -535,7 +726,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -584,16 +775,30 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   ...formData,
                   codigo: e.target.value.toUpperCase(),
                 });
+                setStillWritingCodigo(true);
               }}
               value={formData.codigo}
               placeholder="Introducir código*"
-              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              className={clsx({
+                ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                  !codigoExist,
+                ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                  codigoExist,
+              })}
               required
               pattern="^[A-Z0-9]{2,10}$"
               name="codigo"
             />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Solo letras mayúsculas y números (2-10 caracteres)
+            <span
+              className={clsx({
+                ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                  !codigoExist,
+                ["mt-2 text-sm text-red-500 block"]: codigoExist,
+              })}
+            >
+              {codigoExist
+                ? "Este código ya está registrado"
+                : "Solo letras mayúsculas y números (2-10 caracteres)"}
             </span>
           </div>
           <div>
@@ -639,7 +844,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 },
                 {
                   value: "VENTA",
-                  label: "Ventas",
+                  label: "Ventas y compras",
                   onClick: (value, label) => {
                     setSelectedAplica({
                       value,
@@ -745,7 +950,16 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             >
               Cancelar
             </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  !codigoExist,
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  codigoExist ||
+                  stillWritingCodigo ||
+                  selectedAplica.label?.startsWith("Selecciona"),
+              })}
+            >
               Completar
             </button>
           </div>
@@ -788,7 +1002,7 @@ function ViewModal({ isOpen, closeModal, impuesto }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del impuesto</h1>
@@ -880,7 +1094,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar impuesto</h1>
@@ -997,7 +1211,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar impuesto</h1>
@@ -1150,7 +1364,7 @@ function DataRow({ impuesto, setOperationAsCompleted }: DataRowProps) {
       >
         {impuesto?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">{impuesto?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[250px]">{impuesto?.nombre}</td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">
         {impuesto?.codigo}
       </td>
@@ -1159,7 +1373,7 @@ function DataRow({ impuesto, setOperationAsCompleted }: DataRowProps) {
       </td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+        className="px-6 py-3 border border-slate-300 min-w-[200px] w-[200px] relative"
       >
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
@@ -1606,7 +1820,7 @@ export default function ImpuestosDataDisplay() {
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-5">
+      <div className="absolute h-full w-full px-12 py-5">
         <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}

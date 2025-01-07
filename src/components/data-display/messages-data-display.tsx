@@ -73,7 +73,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir mensaje</h1>
@@ -187,7 +187,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar mensaje</h1>
@@ -330,7 +330,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar mensaje</h1>
@@ -391,11 +391,7 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
-  const anyAction = permissions.find()?.editar.mensaje
-    ? true
-    : permissions.find()?.eliminar.mensaje
-    ? true
-    : false;
+  const anyAction = permissions.find()?.editar.mensaje || permissions.find()?.eliminar.mensaje
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -466,11 +462,11 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
         )}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {format(new Date(mensaje?.creado!), "dd/MM/yyyy")}
+        {format(new Date(mensaje?.creado!), "dd/MM/yyyy hh:mm a")}
       </td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+        className="px-6 py-3 border border-slate-300 min-w-[200px] w-[200px] relative"
       >
         {action === "EDIT" && (
           <>
@@ -621,7 +617,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar Messagen</h1>
@@ -1029,7 +1025,7 @@ export default function MessagesDataDisplay() {
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-5">
+      <div className="absolute h-full w-full px-12 py-5">
         <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}

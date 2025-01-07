@@ -337,7 +337,7 @@ export default function NavPanel() {
         </div>
 
         <hr className="my-5 mx-5" />
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto scrollbar-thin">
           <div className="text-white font-semibold flex flex-col gap-0.5 px-5">
             <NavLink
               to="/"

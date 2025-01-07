@@ -33,7 +33,7 @@ export default function PurchasesPage() {
   return (
     <>
       <div
-        className={`h-screen bg-white grid md:grid-cols-[1fr,_5fr] ${
+        className={`h-screen bg-white grid md:grid-cols-[1fr,_6.5fr] ${
           isConfirmationScreen ? "filter blur-sm" : ""
         }`}
       >

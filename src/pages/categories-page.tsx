@@ -28,9 +28,9 @@ export default function CategoriesPage() {
 
   return (
     <>
-      <div className="h-screen bg-white md:grid md:grid-cols-[1fr,_5fr]">
+      <div className="h-screen bg-white md:grid md:grid-cols-[1fr,_6.5fr]">
         <NavPanel />
-        <main className="flex-grow bg-white relative max-h-screen">
+        <main className="flex-grow bg-white md:relative max-h-screen">
           <CategoriesDataDisplay />
         </main>
       </div>

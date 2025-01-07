@@ -456,7 +456,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
                 Fecha de compra*
               </label>
               <input
-                type="date"
+                type="datetime-local"
                 placeholder="Introducir fecha de vencimiento"
                 onChange={(e) => {
                   setFormData({
@@ -465,6 +465,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
                   });
                 }}
                 value={formData.emisionFactura as any}
+                required
                 className="border p-2 border-slate-300 rounded outline-none focus:border-[#2096ed] w-full"
               />
             </div>
@@ -651,28 +652,17 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
             onChange={(detalles) => {
               let subtotal = 0;
               if (detalles) {
-                for (let detalle of detalles) {
+                detalles.forEach((detalle) => {
                   subtotal += detalle.subtotal;
-                }
+                });
               }
-              setFormData({
-                ...formData,
+
+              setFormData((prevFormData) => ({
+                ...prevFormData,
                 subtotal: subtotal,
-                total: detalles.reduce((acc, detalle) => {
-                  const productoImpuestos = detalle.producto?.impuestos || [];
-                  const impuestosTotales = productoImpuestos.reduce(
-                    (impuestoAcc, impuesto) => {
-                      return (
-                        impuestoAcc +
-                        detalle.subtotal * (impuesto.porcentaje / 100)
-                      );
-                    },
-                    0
-                  );
-                  return acc + detalle.subtotal + impuestosTotales;
-                }, 0),
                 detalles: detalles,
-              });
+                // El total se recalculará en el useEffect que combina los impuestos
+              }));
             }}
             setPages={(pages) => {
               setPages(pages);
@@ -798,7 +788,7 @@ function ConfirmationModal({
           handleClose();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Confirmar compra</h1>
@@ -1002,11 +992,12 @@ function DataRow({ compra, setOperationAsCompleted }: DataRowProps) {
       >
         {compra?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300 max-w-[100px] truncate">
+      <td className="px-6 py-4 border border-slate-300 min-w-[60px] truncate">
         {format(new Date(compra?.fecha ?? 0), "dd/MM/yyyy hh:mm a")}
       </td>
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
-        {compra?.historico_compra?.proveedor_nombre}, {compra?.historico_compra?.proveedor_documento}
+        {compra?.historico_compra?.proveedor_nombre},{" "}
+        {compra?.historico_compra?.proveedor_documento}
       </td>
       <td className="px-6 py-2 border border-slate-300">
         {formatter.format(compra?.subtotal || 0)}
@@ -1027,7 +1018,7 @@ function DataRow({ compra, setOperationAsCompleted }: DataRowProps) {
       </td>
       <td
         ref={ref}
-        className="px-6 py-2 border border-slate-300 w-[210px] relative"
+        className="px-6 py-2 border border-slate-300 min-w-[210px] w-[210px] relative"
       >
         {action === "DELETE" && !compra?.anulada && (
           <>
@@ -1047,7 +1038,7 @@ function DataRow({ compra, setOperationAsCompleted }: DataRowProps) {
             />
           </>
         )}
-        {action === "VIEW" && (
+        {(action === "VIEW" || compra?.anulada) && (
           <>
             <button
               onClick={() => {
@@ -1085,7 +1076,6 @@ function DataRow({ compra, setOperationAsCompleted }: DataRowProps) {
             }
           />
         )}
-
         {!compra?.anulada && (
           <button
             id={`acciones-btn-${compra?.id}`}
@@ -1137,7 +1127,7 @@ function ViewModal({ isOpen, closeModal, compra }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos de la compra</h1>
@@ -1237,7 +1227,7 @@ function ViewModal({ isOpen, closeModal, compra }: ModalProps) {
               <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                 Productos
               </p>
-              <div className="text-gray-900 font-medium text-base break-words">
+              <div className="text-gray-900 font-medium text-base break-words overflow-x-auto">
                 <table className="w-full text-sm font-medium text-slate-600 text-left">
                   <thead className="text-xs bg-[#2096ed] uppercase text-white">
                     <tr>
@@ -1432,7 +1422,7 @@ function EmbeddedTable({
   const size = 8;
 
   useEffect(() => {
-    if (typeof products === "undefined" && searchTerm === "") {
+    if (typeof products === "undefined" || searchTerm === "") {
       void ProductService.getAll(page!, size).then((data) => {
         if (data === false) {
           setNotFound(true);
@@ -1814,7 +1804,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Anular compra</h1>
@@ -1970,7 +1960,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar compra</h1>
@@ -2389,7 +2379,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
           }
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Generar reporte</h1>
@@ -3183,16 +3173,27 @@ export default function PurchaseDataDisplay() {
               </>
             ) : null}
             {toAdd || toEdit ? (
-              <button
-                id="acciones-btn"
-                onClick={() => {
-                  setIsDropup(!isDropup);
-                }}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Acciones
-                <Down className="ml-2 mb-0.5 w-3 h-3 inline fill-white" />
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setToAdd(false);
+                  }}
+                  className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                >
+                  Volver
+                </button>
+                <button
+                  id="acciones-btn"
+                  onClick={() => {
+                    setIsDropup(!isDropup);
+                  }}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Acciones
+                  <Down className="ml-2 mb-0.5 w-3 h-3 inline fill-white" />
+                </button>
+              </>
             ) : (
               <button
                 id="acciones-btn"

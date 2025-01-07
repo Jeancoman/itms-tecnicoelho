@@ -231,7 +231,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -848,7 +848,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -1177,7 +1177,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar cliente</h1>
@@ -1259,7 +1259,7 @@ function ViewModal({ isOpen, closeModal, cliente }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del cliente</h1>
@@ -1408,7 +1408,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar cliente</h1>
@@ -1584,7 +1584,7 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
       >
         {cliente?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
+      <td className="px-6 py-4 border border-slate-300 truncate min-w-[180px]">
         {cliente?.nombre} {cliente?.apellido}
       </td>
       <td className="px-6 py-4 border border-slate-300">
@@ -1601,7 +1601,7 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
       </td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+        className="px-6 py-3 border border-slate-300 min-w-[200px] w-[200px] relative"
       >
         {action === "EDIT" && (
           <>
@@ -2119,7 +2119,7 @@ export default function ClientsDataDisplay() {
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-5">
+      <div className="absolute h-full w-full px-12 py-5">
         <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}

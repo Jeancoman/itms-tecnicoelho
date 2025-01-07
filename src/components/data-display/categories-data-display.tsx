@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
@@ -21,6 +21,7 @@ import permissions from "../../utils/permissions";
 import { useCategorySearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import clsx from "clsx";
+import debounce from "lodash.debounce";
 
 function EditModal({
   isOpen,
@@ -35,6 +36,8 @@ function EditModal({
     label: categoría?.tipo === "PRODUCTO" ? "Producto" : "Servicio",
     value: categoría?.tipo,
   });
+  const [nameExist, setNameExist] = useState(false);
+  const [stillWritingName, setStillWritingName] = useState(false);
 
   const resetFormData = () => {
     setFormData(categoría!);
@@ -59,6 +62,31 @@ function EditModal({
       }
     });
   };
+
+  const checkName = useCallback(
+    debounce(async (nombre, tipo) => {
+      if (nombre.length >= 1 && tipo) {
+        const exist = await CategoryService.getByExactNombre(
+          nombre,
+          1,
+          100,
+          tipo
+        );
+        if (exist) {
+          setNameExist(true);
+          setStillWritingName(false);
+        } else {
+          setNameExist(false);
+          setStillWritingName(false);
+        }
+      }
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    checkName(formData.nombre, selectedType.value);
+  }, [formData.nombre]);
 
   useEffect(() => {
     if (isOpen) {
@@ -102,7 +130,7 @@ function EditModal({
                 <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                   Descripción
                 </p>
-                <p className="text-gray-900 font-medium text-base whitespace-pre-wrap">
+                <p className="text-gray-900 font-medium text-base break-words whitespace-pre-wrap">
                   {categoría?.descripción || "No especificada"}
                 </p>
               </div>
@@ -154,7 +182,7 @@ function EditModal({
                   Descripción
                 </p>
                 <p
-                  className={`text-base font-medium whitespace-pre-wrap ${
+                  className={`text-base font-medium break-words whitespace-pre-wrap ${
                     formData.descripción !== categoría?.descripción
                       ? "text-blue-600 font-semibold"
                       : "text-gray-900"
@@ -233,7 +261,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -259,16 +287,30 @@ function EditModal({
                   ...formData,
                   nombre: e.target.value,
                 });
+                setStillWritingName(true);
               }}
               value={formData.nombre}
               placeholder="Introducir nombre"
-              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              className={clsx({
+                ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                  !nameExist,
+                ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                  nameExist,
+              })}
               required
               pattern="^.{1,100}$"
               name="name"
             />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 1 carácter, máximo 100
+            <span
+              className={clsx({
+                ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                  !nameExist,
+                ["mt-2 text-sm text-red-500 block"]: nameExist,
+              })}
+            >
+              {nameExist
+                ? "Esta categoría ya está registrada"
+                : "Minimo 1 carácter, máximo 100"}
             </span>
           </div>
           <div>
@@ -338,7 +380,14 @@ function EditModal({
               >
                 Cancelar
               </button>
-              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              <button
+                className={clsx({
+                  ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    !nameExist,
+                  ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    nameExist || stillWritingName,
+                })}
+              >
                 Completar
               </button>
             </div>
@@ -362,6 +411,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     tipo: "PRODUCTO",
     esDigital: false,
   });
+  const [nameExist, setNameExist] = useState(false);
+  const [stillWritingName, setStillWritingName] = useState(false);
+  const [fetch, setFetch] = useState(false);
 
   const resetFormData = () => {
     setFormData({
@@ -395,6 +447,32 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       }
     });
   };
+
+  const checkName = useCallback(
+    debounce(async (nombre, tipo) => {
+      if (nombre.length >= 1 && tipo) {
+        const exist = await CategoryService.getByExactNombre(
+          nombre,
+          1,
+          100,
+          tipo
+        );
+        if (exist) {
+          setNameExist(true);
+          setStillWritingName(false);
+        } else {
+          setNameExist(false);
+          setStillWritingName(false);
+        }
+      }
+      setFetch(false);
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    checkName(formData.nombre, selectedType.value);
+  }, [formData.nombre, selectedType.value]);
 
   useEffect(() => {
     if (isOpen) {
@@ -433,7 +511,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
               Descripción
             </p>
-            <p className="text-gray-900 font-medium text-base whitespace-pre-wrap">
+            <p className="text-gray-900 font-medium text-base break-words whitespace-pre-wrap">
               {formData.descripción || "No especificada"}
             </p>
           </div>
@@ -473,7 +551,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           onClick={handleFinalSubmit} // Confirmación final
           className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
         >
-          Crear categoría
+          Guardar
         </button>
       </div>
     </div>
@@ -494,7 +572,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -520,16 +598,30 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   ...formData,
                   nombre: e.target.value,
                 });
+                setStillWritingName(true);
               }}
               value={formData.nombre}
               placeholder="Introducir nombre"
-              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              className={clsx({
+                ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                  !nameExist,
+                ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                  nameExist,
+              })}
               required
               pattern="^.{1,100}$"
               name="name"
             />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 1 carácter, máximo 100
+            <span
+              className={clsx({
+                ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                  !nameExist,
+                ["mt-2 text-sm text-red-500 block"]: nameExist,
+              })}
+            >
+              {nameExist
+                ? "Esta categoría ya está registrada"
+                : "Minimo 1 carácter, máximo 100"}
             </span>
           </div>
           <div>
@@ -564,6 +656,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   ...formData,
                   tipo: selectedType.value as CategoríaTipo,
                 });
+                setFetch(true);
               }}
               options={[
                 {
@@ -619,7 +712,17 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               >
                 Cancelar
               </button>
-              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              <button
+                className={clsx({
+                  ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    !nameExist,
+                  ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    nameExist ||
+                    stillWritingName ||
+                    selectedType.label?.startsWith("Selecciona") ||
+                    fetch,
+                })}
+              >
                 Completar
               </button>
             </div>
@@ -668,7 +771,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar cliente</h1>
@@ -754,7 +857,7 @@ function ViewModal({ isOpen, closeModal, categoría }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos de la categoría</h1>
@@ -777,7 +880,7 @@ function ViewModal({ isOpen, closeModal, categoría }: ModalProps) {
               <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                 Descripción
               </p>
-              <p className="text-gray-900 font-medium text-base whitespace-pre-wrap">
+              <p className="text-gray-900 font-medium text-base break-words whitespace-pre-wrap">
                 {categoría?.descripción || "No especificada"}
               </p>
             </div>
@@ -893,7 +996,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar categoría</h1>
@@ -1081,14 +1184,14 @@ function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
       >
         {categoría?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">{categoría?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate">{categoría?.nombre}</td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">
         {categoría?.descripción || "No especificada"}
       </td>
       <td className="px-6 py-4 border border-slate-300">{categoría?.tipo}</td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+        className="px-6 py-3 border border-slate-300 min-w-[210px] w-[210px] relative"
       >
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
@@ -1524,7 +1627,7 @@ export default function CategoriesDataDisplay() {
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-5">
+      <div className="absolute h-full w-full px-12 py-5">
         <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}

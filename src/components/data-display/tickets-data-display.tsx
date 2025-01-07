@@ -1664,7 +1664,7 @@ function DeleteModal({
           handleClose();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar ticket</h1>
@@ -1742,7 +1742,7 @@ function ViewModal({ isOpen, closeModal, ticket }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del ticket</h1>
@@ -1927,21 +1927,21 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
           </div>
         )}
       </td>
-      <td className="px-6 py-3 border border-slate-300">
-        {ticket?.cliente?.nombre} {ticket?.cliente?.apellido}
+      <td className="px-6 py-3 border border-slate-300 truncate">
+        {ticket?.cliente?.nombre} {ticket?.cliente?.apellido}, {ticket?.cliente?.documento}
       </td>
-      <td className="px-6 py-3 border border-slate-300">{ticket?.asunto}</td>
-      <td className="px-6 py-3 border border-slate-300">
+      <td className="px-6 py-3 border border-slate-300 truncate max-w-[200px]">{ticket?.asunto}</td>
+      <td className="px-6 py-3 border border-slate-300 truncate">
         {format(new Date(ticket?.creado!), "dd/MM/yyyy hh:mm a")}
       </td>
-      <td className="px-6 py-3 border border-slate-300">
+      <td className="px-6 py-3 border border-slate-300 truncate">
         {ticket?.cerrado
           ? format(new Date(ticket?.cerrado!), "dd/MM/yyyy hh:mm a")
           : "Nunca"}
       </td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 min-w-[500px] relative"
+        className="px-6 py-3 border border-slate-300 relative min-w-[200px] w-[200px]"
       >
         {action === "EDIT" && (
           <>
@@ -2411,7 +2411,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar ticket</h1>

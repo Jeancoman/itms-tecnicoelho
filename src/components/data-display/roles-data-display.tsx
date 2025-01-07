@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
@@ -20,6 +20,7 @@ import { useSearchedStore } from "../../store/searchedStore";
 import clsx from "clsx";
 import RolService from "../../services/rol-service";
 import { INICIALES } from "../../utils/data";
+import debounce from "lodash.debounce";
 
 type PermissionPanelProps = {
   onChange: (rol: Partial<Rol>) => void;
@@ -51,9 +52,11 @@ const customConfig: Record<
   { actions?: string[]; actionLabels?: Record<string, string> }
 > = {
   compra: {
+    actions: ["ver", "crear", "eliminar"],
     actionLabels: { eliminar: "anular" },
   },
   venta: {
+    actions: ["ver", "crear", "eliminar"],
     actionLabels: { eliminar: "anular" },
   },
   restauracion: {
@@ -73,6 +76,8 @@ function EditModal({
   const ref = useRef<HTMLDialogElement>(null);
   const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [formData, setFormData] = useState<Rol>(rol!);
+  const [nameExist, setNameExist] = useState(false);
+  const [stillWritingName, setStillWritingName] = useState(false);
 
   const resetFormData = () => {
     setFormData(rol!);
@@ -85,6 +90,26 @@ function EditModal({
       ...updatedPermissions,
     }));
   };
+
+  const checkName = useCallback(
+    debounce(async (nombre) => {
+      if (nombre.length >= 1) {
+        const exist = await RolService.getByExactNombre(nombre, 1, 100);
+        if (exist) {
+          setNameExist(true);
+          setStillWritingName(false);
+        } else {
+          setNameExist(false);
+          setStillWritingName(false);
+        }
+      }
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    checkName(formData.nombre);
+  }, [formData.nombre]);
 
   useEffect(() => {
     if (isOpen) {
@@ -281,7 +306,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar rol</h1>
@@ -305,16 +330,30 @@ function EditModal({
                   ...formData,
                   nombre: e.target.value,
                 });
+                setStillWritingName(true);
               }}
               value={formData.nombre}
               placeholder="Introducir nombre"
-              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              className={clsx({
+                ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                  !nameExist,
+                ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                  nameExist,
+              })}
               required
-              pattern="^.{2,}$"
-              name="name"
+              pattern="^.{1,100}$"
+              name="nombre"
             />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 2 caracteres
+            <span
+              className={clsx({
+                ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                  !nameExist,
+                ["mt-2 text-sm text-red-500 block"]: nameExist,
+              })}
+            >
+              {nameExist
+                ? "Este rol ya está registrado"
+                : "Minimo 1 carácter, máximo 100"}
             </span>
           </div>
           <PermissionPanel
@@ -334,7 +373,14 @@ function EditModal({
             >
               Cancelar
             </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  !nameExist,
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  nameExist || stillWritingName,
+              })}
+            >
               Completar
             </button>
           </div>
@@ -354,6 +400,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     editar: INICIALES.editar,
     eliminar: INICIALES.eliminar,
   });
+  const [nameExist, setNameExist] = useState(false);
+  const [stillWritingName, setStillWritingName] = useState(false);
 
   const resetFormData = () => {
     setFormData({
@@ -372,6 +420,26 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       ...updatedPermissions,
     }));
   };
+
+  const checkName = useCallback(
+    debounce(async (nombre) => {
+      if (nombre.length >= 1) {
+        const exist = await RolService.getByExactNombre(nombre, 1, 100);
+        if (exist) {
+          setNameExist(true);
+          setStillWritingName(false);
+        } else {
+          setNameExist(false);
+          setStillWritingName(false);
+        }
+      }
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    checkName(formData.nombre);
+  }, [formData.nombre]);
 
   useEffect(() => {
     if (isOpen) {
@@ -498,7 +566,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -524,16 +592,30 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   ...formData,
                   nombre: e.target.value,
                 });
+                setStillWritingName(true);
               }}
               value={formData.nombre}
               placeholder="Introducir nombre"
-              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              className={clsx({
+                ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                  !nameExist,
+                ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                  nameExist,
+              })}
               required
-              pattern="^.{2,}$"
+              pattern="^.{1,100}$"
               name="nombre"
             />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Mínimo 2 caracteres
+            <span
+              className={clsx({
+                ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                  !nameExist,
+                ["mt-2 text-sm text-red-500 block"]: nameExist,
+              })}
+            >
+              {nameExist
+                ? "Este rol ya está registrado"
+                : "Minimo 1 carácter, máximo 100"}
             </span>
           </div>
           <PermissionPanel
@@ -550,7 +632,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             >
               Cancelar
             </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  !nameExist,
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  nameExist || stillWritingName,
+              })}
+            >
               Completar
             </button>
           </div>
@@ -564,7 +653,7 @@ function DeleteModal({
   isOpen,
   closeModal,
   setOperationAsCompleted,
-  categoría,
+  rol,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -598,7 +687,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar rol</h1>
@@ -610,7 +699,7 @@ function DeleteModal({
           e.preventDefault();
           closeModal();
           const loadingToast = toast.loading("Eliminando rol...");
-          RolService.delete(categoría?.id!).then((data) => {
+          RolService.delete(rol?.id!).then((data) => {
             toast.dismiss(loadingToast);
             if (data.status === "success") {
               toast.success(data.message);
@@ -708,7 +797,7 @@ function ViewModal({ isOpen, closeModal, rol }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del rol</h1>
@@ -778,7 +867,7 @@ function PermissionPanel({ onChange, rol: initialRol }: PermissionPanelProps) {
   };
 
   return (
-    <div className="max-h-[500px] overflow-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100 scrollbar-rounded-xl text-sm">
+    <div className="max-h-[300px] overflow-auto scrollbar-thin scrollbar-rounded-xl text-sm">
       {categories.map((category) => {
         const config = customConfig[category.key] || {};
         const availableActions = config.actions || actions;
@@ -889,7 +978,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar rol</h1>
@@ -1000,7 +1089,7 @@ function DataRow({ rol, setOperationAsCompleted }: DataRowProps) {
       ? "EDIT"
       : permissions.find()?.eliminar.rol
       ? "DELETE"
-      : "NONE"
+      : "VIEW"
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
@@ -1034,7 +1123,7 @@ function DataRow({ rol, setOperationAsCompleted }: DataRowProps) {
       <td className="px-6 py-4 border border-slate-300">{rol?.nombre}</td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+        className="px-6 py-3 border border-slate-300 min-w-[200px] w-[200px] relative"
       >
         {action === "NONE" && (
           <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
@@ -1451,11 +1540,16 @@ export default function RolsDataDisplay() {
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-5">
+      <div className="absolute h-full w-full px-12 py-5">
         <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
-            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]">Roles</span>
+            Menú <Right className="w-3 h-3 inline fill-600" />{" "}
+            <span
+              onClick={resetSearchCount}
+              className="text-[#2096ed] cursor-pointer"
+            >
+              Roles
+            </span>
           </div>
           <div className="flex gap-2 relative">
             {isDropup && (
@@ -1463,7 +1557,6 @@ export default function RolsDataDisplay() {
                 close={closeDropup}
                 selectAction={selectAction}
                 openAddModal={() => {}}
-                openSearchModal={() => {}}
               />
             )}
             {action === "ADD" ? (
@@ -1546,7 +1639,7 @@ export default function RolsDataDisplay() {
               <p className="font-medium text text-center mt-1">
                 {searchCount === 0
                   ? "Esto puede deberse a un error del servidor, o a que no hay ningún rol registrado."
-                  : "Esto puede deberse a un error del servidor, o a que ningún rol concuerda con tu busqueda"}
+                  : "Esto puede deberse a un error del servidor, o a que ningún rol concuerda con tu busqueda."}
               </p>
             </div>
           </div>

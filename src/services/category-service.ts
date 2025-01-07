@@ -58,13 +58,19 @@ export default class CategoryService {
     }
   }
 
-  
-  static async getByNombre(nombre: string, page: number, size: number) {
+  static async getByNombre(
+    nombre: string,
+    page: number,
+    size: number,
+    tipo?: string
+  ) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/categorias/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        }/api/categorias/busqueda?exactitud=INEXACTA&nombre=${nombre}&page=${page}&size=${size}${
+          tipo ? "&tipo=" + tipo : ""
+        }`,
         {
           method: "GET",
           headers: {
@@ -91,12 +97,19 @@ export default class CategoryService {
     }
   }
 
-  static async getByExactNombre(nombre: string, page: number, size: number) {
+  static async getByExactNombre(
+    nombre: string,
+    page: number,
+    size: number,
+    tipo?: string
+  ) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/categorias/busqueda?tipo=EXACTA&nombre=${nombre}&page=${page}&size=${size}`,
+        }/api/categorias/busqueda?exactitud=EXACTA&nombre=${nombre}&page=${page}&size=${size}${
+          tipo ? "&tipo=" + tipo : ""
+        }`,
         {
           method: "GET",
           headers: {
@@ -174,7 +187,7 @@ export default class CategoryService {
     } catch {
       return {
         message: "Categoría no pudo ser añadida.",
-        status: "error"
+        status: "error",
       } as GenericResponse;
     }
   }
@@ -198,7 +211,7 @@ export default class CategoryService {
     } catch {
       return {
         message: "Categoría no pudo ser editada.",
-        status: "error"
+        status: "error",
       } as GenericResponse;
     }
   }
@@ -221,7 +234,7 @@ export default class CategoryService {
     } catch {
       return {
         message: "Categoría no pudo ser eliminada.",
-        status: "error"
+        status: "error",
       } as GenericResponse;
     }
   }

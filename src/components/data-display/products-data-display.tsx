@@ -231,7 +231,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
               Descripción
             </p>
-            <p className="text-gray-900 font-medium text-base break-words">
+            <p className="text-gray-900 font-medium text-base break-words whitespace-pre-wrap">
               {formData.descripción || "No especificada"}
             </p>
           </div>
@@ -312,7 +312,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -854,7 +854,7 @@ function EditModal({
                 <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                   Descripción
                 </p>
-                <p className="text-gray-900 font-medium text-base break-words">
+                <p className="text-gray-900 font-medium text-base break-words whitespace-pre-wrap">
                   {producto?.descripción || "No especificada"}
                 </p>
               </div>
@@ -1026,7 +1026,7 @@ function EditModal({
                   Descripción
                 </p>
                 <p
-                  className={`text-base font-medium break-words ${
+                  className={`text-base font-medium break-words whitespace-pre-wrap ${
                     formData.descripción !== producto?.descripción
                       ? "text-blue-600 font-semibold"
                       : "text-gray-900"
@@ -1136,7 +1136,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -1615,7 +1615,7 @@ function ImagesModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar imagenes</h1>
@@ -1660,7 +1660,6 @@ function ImagesModal({
                   placeholder="Enlace de imagen*"
                   className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                   required
-                  pattern="^(https?:\/\/[\w\.\-\/]+)(\.(jpg|jpeg|gif|png))?$"
                 />
                 <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
                   Enlace de imagen invalido
@@ -1729,7 +1728,6 @@ function ImagesModal({
                   placeholder="Enlace de imagen*"
                   className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                   required
-                  pattern="^(https?:\/\/[\w\.\-\/]+)(\.(jpg|jpeg|gif|png))?$"
                 />
                 <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
                   Enlace de imagen invalido
@@ -1848,7 +1846,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar producto</h1>
@@ -1930,7 +1928,7 @@ function ViewModal({ isOpen, closeModal, producto }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del producto</h1>
@@ -2028,7 +2026,7 @@ function ViewModal({ isOpen, closeModal, producto }: ModalProps) {
               <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                 Descripción
               </p>
-              <p className="text-gray-900 font-medium text-base break-words">
+              <p className="text-gray-900 font-medium text-base break-words whitespace-pre-wrap">
                 {producto?.descripción || "No especificada"}
               </p>
             </div>
@@ -2155,7 +2153,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar producto</h1>
@@ -2318,10 +2316,10 @@ function DataRow({ producto, setOperationAsCompleted }: DataRowProps) {
       >
         {producto?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
+      <td className="px-6 py-4 border border-slate-300 truncate w-[50px]">
         {producto?.código}
       </td>
-      <td className="px-6 py-4 border border-slate-300 truncate">
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[250px]">
         {producto?.nombre}
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
@@ -2338,7 +2336,7 @@ function DataRow({ producto, setOperationAsCompleted }: DataRowProps) {
       </td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[200px] relative"
+        className="px-6 py-3 border border-slate-300 min-w-[200px] w-[200px] relative"
       >
         {action === "EDIT" && (
           <>
@@ -2674,7 +2672,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
           }
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Generar reporte</h1>
@@ -3285,7 +3283,7 @@ export default function ProductsDataDisplay() {
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-5">
+      <div className="absolute h-full w-full px-12 py-5">
         <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-600" />{" "}

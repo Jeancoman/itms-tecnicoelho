@@ -1,4 +1,4 @@
-import { HashRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/home-page";
 import ClientsPage from "./pages/clients-page";
 import TicketsPage from "./pages/tickets-page";
@@ -23,7 +23,7 @@ import AccesoPage from "./pages/acceso-page";
 
 export default function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/clientes" element={<ClientsPage />} />
@@ -50,6 +50,6 @@ export default function App() {
         />
         <Route path="/restablecer-contraseña" element={<PasswordResetPage />} />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }

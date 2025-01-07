@@ -142,8 +142,11 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Configurar mensajero</h1>
+      </div>
       <div className="flex flex-col p-8 pt-6 gap-4">
         {isOn === false ? (
           <div className="flex flex-col items-center gap-2">
@@ -183,7 +186,7 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
           </div>
         ) : status === "DESCONECTADO" ? (
           <div className="flex flex-col items-center gap-2">
-            <div className="grid w-full h-4/5">
+            <div className="grid w-fit h-4/5">
               {QRCode !== "" ? (
                 <img src={QRCode} className="place-self-center h-68 w-80" />
               ) : (
@@ -266,7 +269,7 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Configurar mensajería</h1>
@@ -465,7 +468,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar plantilla</h1>
@@ -568,9 +571,6 @@ function DataRow({ plantilla, setOperationAsCompleted }: DataRowProps) {
         {plantilla?.id}
       </th>
       <td className="px-6 py-4 border border-slate-300 capitalize">
-        {plantilla?.esDe}
-      </td>
-      <td className="px-6 py-4 border border-slate-300 capitalize">
         {plantilla?.evento}
       </td>
       <td className="px-6 py-2 border border-slate-300">
@@ -584,7 +584,7 @@ function DataRow({ plantilla, setOperationAsCompleted }: DataRowProps) {
           </div>
         )}
       </td>
-      <td className="px-6 py-3 border border-slate-300 w-[200px]">
+      <td className="px-6 py-3 border border-slate-300 w-[200px] min-w-[200px] truncate">
         {permissions.find()?.editar.mensajería && (
           <>
             <button
@@ -679,7 +679,7 @@ function Dropup({ close, selectAction }: DropupProps) {
         <li>
           <div
             onClick={() => {
-              selectAction("OPTIONS");
+              selectAction("MESSAGING");
               close();
             }}
             className="
@@ -769,7 +769,7 @@ export default function MessagingDataDisplay() {
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-5">
+      <div className="absolute h-full w-full px-12 py-5">
         <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
@@ -820,9 +820,6 @@ export default function MessagingDataDisplay() {
                 <tr className="border-2 border-[#2096ed]">
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     #
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Entidad
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Evento

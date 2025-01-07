@@ -117,7 +117,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Ajustar inventario</h1>
@@ -356,7 +356,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -480,7 +480,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar categoría</h1>
@@ -648,7 +648,7 @@ function DataRow({ historico }: DataRowProps) {
       >
         {historico?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 truncate">
         {historico?.tipoCambio}
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">
@@ -660,8 +660,8 @@ function DataRow({ historico }: DataRowProps) {
             (historico?.existenciasAnterior || 0)
         )}
       </td>
-      <td className="px-6 py-4 border border-slate-300">{`${historico?.producto?.nombre}`}</td>
-      <td className="px-6 py-4 border border-slate-300">{`${historico?.usuario?.nombre} ${historico?.usuario?.apellido}, ${historico?.usuario?.documento}`}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate">{`${historico?.producto?.nombre}`}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate">{`${historico?.usuario?.nombre} ${historico?.usuario?.apellido}, ${historico?.usuario?.documento}`}</td>
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {format(new Date(historico?.fechaCambio!), "dd/MM/yyyy hh:mm a")}
       </td>
@@ -960,7 +960,7 @@ export default function HistoricoDataDisplay() {
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-5">
+      <div className="absolute h-full w-full px-12 py-5">
         <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}

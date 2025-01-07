@@ -215,7 +215,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           onClick={handleFinalSubmit}
           className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
         >
-          Crear
+          Guardar
         </button>
       </div>
     </div>
@@ -225,7 +225,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     <dialog
       ref={ref}
       onClick={handleClickOutside}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -677,7 +677,7 @@ function EditModal({
     <dialog
       ref={ref}
       onClick={handleClickOutside}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -879,7 +879,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar proveedor</h1>
@@ -961,7 +961,7 @@ function ViewModal({ isOpen, closeModal, proveedor }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del proveedor</h1>
@@ -1094,7 +1094,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar proveedor</h1>
@@ -1338,7 +1338,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
     <dialog
       ref={ref}
       onClick={handleClickOutside}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Generar reporte</h1>
@@ -1457,23 +1457,18 @@ function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
         {proveedor?.id}
       </th>
       <td className="px-6 py-4 border border-slate-300">{proveedor?.nombre}</td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 truncate min-w-[100px]">
         {proveedor?.documento || "No especificado"}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
         {proveedor?.descripción || "No especificada"}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 truncate">
         {proveedor?.telefono || "No especificado"}
-      </td>
-      <td className="px-6 py-4 border border-slate-300">
-        {proveedor?.registrado
-          ? format(new Date(proveedor.registrado), "dd/MM/yyyy")
-          : "Formateando..."}
       </td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[210px] relative"
+        className="px-6 py-3 border border-slate-300 min-w-[200px] w-[200px] relative"
       >
         {action === "EDIT" && (
           <>
@@ -1937,7 +1932,7 @@ export default function ProvidersDataDisplay() {
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-5">
+      <div className="absolute h-full w-full px-12 py-5">
         <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
@@ -2023,9 +2018,6 @@ export default function ProvidersDataDisplay() {
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Teléfono
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Registrado
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción

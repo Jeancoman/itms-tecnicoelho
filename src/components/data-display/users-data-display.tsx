@@ -295,7 +295,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -1193,12 +1193,12 @@ function EditModal({
             {visible ? (
               <On
                 onClick={() => setVisible(false)}
-                className="absolute top-2 right-4 fill-[#2096ed]"
+                className="absolute top-10 right-4 fill-[#2096ed]"
               />
             ) : (
               <Off
                 onClick={() => setVisible(true)}
-                className="absolute top-2 right-4 fill-[#2096ed]"
+                className="absolute top-10 right-4 fill-[#2096ed]"
               />
             )}
           </div>
@@ -1271,7 +1271,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar usuario</h1>
@@ -1353,7 +1353,7 @@ function ViewModal({ isOpen, closeModal, usuario }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del usuario</h1>
@@ -1440,7 +1440,7 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
       ? "EDIT"
       : permissions.find()?.eliminar.usuario
       ? "DELETE"
-      : "NONE"
+      : "VIEW"
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
@@ -1470,10 +1470,10 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
       >
         {usuario?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 truncate min-w-[180px]">
         {usuario?.nombre} {usuario?.apellido}
       </td>
-      <td className="px-6 py-2 border border-slate-300">
+      <td className="px-6 py-2 border border-slate-300 truncate">
         <div className="bg-gray-200 text-center text-gray-600 text-xs py-2 font-bold rounded-lg">
           {usuario?.nombreUsuario}{" "}
           {session.find()?.usuario?.id === usuario?.id ? "(Tu usuario)" : null}
@@ -1488,7 +1488,7 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
           Administrador
         </div>
       </td>
-      <td ref={ref} className="px-6 py-3 w-52 border border-slate-300 relative">
+      <td ref={ref} className="px-6 py-3 border border-slate-300 min-w-[210px] w-[210px] relative">
         {action === "EDIT" && (
           <>
             {
@@ -1530,7 +1530,7 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
               }}
               className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
             >
-              Actividad
+              Mostrar actividad
             </button>
           </>
         )}
@@ -1677,7 +1677,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-scroll scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar usuario</h1>
@@ -1934,7 +1934,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
               cursor-pointer
             "
         >
-          Actividad
+          Mostrar actividad
         </div>
       </li>
     </ul>
@@ -2240,7 +2240,7 @@ export default function UsersDataDisplay() {
 
   return (
     <>
-      <div className="absolute h-full w-full px-8 py-5">
+      <div className="absolute h-full w-full px-12 py-5">
         <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}

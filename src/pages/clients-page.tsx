@@ -28,7 +28,7 @@ export default function ClientsPage() {
 
   return (
     <>
-      <div className="h-screen bg-white grid md:grid-cols-[1fr,_5fr]">
+      <div className="h-screen bg-white grid md:grid-cols-[1fr,_6.5fr]">
         <NavPanel />
         <main className="flex-grow bg-white relative max-h-screen">
           <ClientsDataDisplay />
