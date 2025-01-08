@@ -1,8 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  impuestoCalculado,
-  Venta,
-} from "../types";
+import { impuestoCalculado, Venta } from "../types";
 import SaleService from "../services/sales-service";
 import { useEffect, useState } from "react";
 import { usePDF } from "react-to-pdf";
@@ -105,11 +102,9 @@ export default function SalePDFPage() {
             </div>
             <div className="font-mono text-right mt-5">
               <h3 className="font-bold capitalize text-xl">TECNICOELHO</h3>
-              <h5 className="font-mono">J-80065323-0</h5>
+              <h5 className="font-mono">J-80065323-2</h5>
               <h5 className="font-mono">TELF: +58 0426-2452374</h5>
-              <h5 className="font-mono">
-                Calle Retumbo, Valle de la Pascua
-              </h5>
+              <h5 className="font-mono">Calle Retumbo, Valle de la Pascua</h5>
               <h5 className="mt-8 font-mono">
                 FACTURA: {convertirIdA4Digitos(venta?.id || 0)}
               </h5>
@@ -132,23 +127,11 @@ export default function SalePDFPage() {
           </tr>
           {venta?.detalles
             ?.filter((detalle) => detalle.cantidad > 0)
-            .map((detalle) => {
+            .map((detalle, index) => {
               return (
-                <tr>
-                  <td>
-                    {
-                      venta.productos?.find(
-                        (producto) => producto.id === detalle.producto_id
-                      )?.código
-                    }
-                  </td>
-                  <td>
-                    {
-                      venta.productos?.find(
-                        (producto) => producto.id === detalle.producto_id
-                      )?.nombre
-                    }
-                  </td>
+                <tr key={index}>
+                  <td>{detalle.producto_codigo}</td>
+                  <td>{detalle.producto_nombre}</td>
                   <td>{detalle.cantidad}</td>
                   <td className="text-right">
                     {formatter.format(
@@ -208,7 +191,13 @@ export default function SalePDFPage() {
         <p className="mt-4 font-mono text-sm text-right">
           Conversión a tasa de cambio del BCV,{" "}
           {formatter.format(venta?.historico_ventum?.tasa_cambio ?? 0)},
-          actualizado el {venta?.historico_ventum?.fecha_tasa_cambio ? format(new Date(Number(venta?.historico_ventum?.fecha_tasa_cambio)), "dd/MM/yyyy 'a las' hh:mm a") : ""} 
+          actualizado el{" "}
+          {venta?.historico_ventum?.fecha_tasa_cambio
+            ? format(
+                new Date(Number(venta?.historico_ventum?.fecha_tasa_cambio)),
+                "dd/MM/yyyy 'a las' hh:mm a"
+              )
+            : ""}
         </p>
       </main>
     </>

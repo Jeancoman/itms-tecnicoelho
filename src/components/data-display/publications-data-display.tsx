@@ -104,7 +104,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
   return (
     <>
       <form
-        className="h-fit grid grid-cols-2 gap-5 py-4 group"
+        className="h-fit grid grid-cols-1 sm:grid-cols-2 gap-5 py-4 group"
         autoComplete="off"
         onSubmit={handleSubmit}
       >
@@ -269,7 +269,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
               Minimo 1 carácter, máximo 500
             </span>
           </div>
-          <div className="flex h-full items-end">
+          <div className="flex flex-col gap-4 w-full lg:flex-row lg:justify-between lg:items-center">
             <div className="flex w-full justify-between items-center">
               <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
                 <input
@@ -374,18 +374,6 @@ function AddConfirmationModal({
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect();
-        if (
-          dialogDimensions &&
-          (e.clientX < dialogDimensions.left ||
-            e.clientX > dialogDimensions.right ||
-            e.clientY < dialogDimensions.top ||
-            e.clientY > dialogDimensions.bottom)
-        ) {
-          handleClose();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       {view === "confirmation" && (
@@ -549,6 +537,221 @@ function AddConfirmationModal({
   );
 }
 
+function ViewModal({ isOpen, closeModal, publicación }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [showFullDescripcionPortada, setShowFullDescripcionPortada] =
+    useState(false);
+  const [view, setView] = useState<"confirmation" | "contenidoDetail">(
+    "confirmation"
+  );
+
+  const toggleDescripcionPortada = () => {
+    setShowFullDescripcionPortada((prev) => !prev);
+  };
+
+  const navigateToContenidoDetail = () => {
+    setView("contenidoDetail");
+  };
+
+  const navigateToConfirmation = () => {
+    setView("confirmation");
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", handleKeyDown);
+    } else {
+      handleClose();
+    }
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    closeModal();
+    ref.current?.close();
+    setView("confirmation"); // Resetear la vista al cerrar
+    setShowFullDescripcionPortada(false); // Opcional: Resetear descripción
+  };
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect();
+        if (
+          dialogDimensions &&
+          (e.clientX < dialogDimensions.left ||
+            e.clientX > dialogDimensions.right ||
+            e.clientY < dialogDimensions.top ||
+            e.clientY > dialogDimensions.bottom)
+        ) {
+          handleClose();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+    >
+      {view === "confirmation" && (
+        <>
+          <div className="bg-[#2096ed] py-4 px-8">
+            <h1 className="text-xl font-bold text-white">
+              Datos de la publicación
+            </h1>
+          </div>
+          <div className="p-8 pt-6">
+            <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
+              <div className="grid grid-cols-2 gap-6">
+                {/* Título */}
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Título
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {publicación?.título}
+                  </p>
+                </div>
+
+                {/* URL Slug */}
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    URL Slug
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {publicación?.slug}
+                  </p>
+                </div>
+
+                {/* Enlace de portada */}
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Enlace de portada
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {publicación?.portada}
+                  </p>
+                </div>
+
+                {/* Descripción de portada */}
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Descripción de portada
+                  </p>
+                  <div
+                    className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                      showFullDescripcionPortada
+                        ? "max-h-80 overflow-y-auto"
+                        : "max-h-40 overflow-hidden"
+                    }`}
+                  >
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: publicación?.descripcionPortada ?? "",
+                      }}
+                    />
+                  </div>
+                  {(publicación?.descripcionPortada?.length ?? 0) > 200 && (
+                    <button
+                      type="button"
+                      onClick={toggleDescripcionPortada}
+                      className="text-blue-500 mt-2"
+                    >
+                      {showFullDescripcionPortada ? "Ver menos" : "Ver más"}
+                    </button>
+                  )}
+                </div>
+
+                {/* Pública */}
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Pública
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {publicación?.esPública ? "Sí" : "No"}
+                  </p>
+                </div>
+
+                {/* Contenido */}
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Contenido
+                  </p>
+                  <div
+                    className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                      publicación?.contenido?.length &&
+                      publicación.contenido.length > 200
+                        ? "max-h-40 overflow-hidden"
+                        : ""
+                    }`}
+                  >
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: publicación?.contenido ?? "",
+                      }}
+                    />
+                  </div>
+                  {(publicación?.contenido?.length ?? 0) > 200 && (
+                    <button
+                      type="button"
+                      onClick={navigateToContenidoDetail}
+                      className="text-blue-500 mt-2"
+                    >
+                      Ver más
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {view === "contenidoDetail" && (
+        <>
+          <div className="bg-[#2096ed] py-4 px-8">
+            <h1 className="text-xl font-bold text-white">
+              Datos de la publicación
+            </h1>
+          </div>
+          <div className="p-8 pt-6">
+            <div className="bg-white rounded-lg mb-6">
+              <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-80 overflow-y-auto">
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: publicación?.contenido ?? "",
+                  }}
+                />
+              </div>
+              {/* Botón para regresar a la confirmación */}
+              <button
+                type="button"
+                onClick={navigateToConfirmation}
+                className="text-blue-500 mt-4"
+              >
+                Ver menos
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </dialog>
+  );
+}
+
 function EditSection({
   close,
   setOperationAsCompleted,
@@ -611,7 +814,7 @@ function EditSection({
   return (
     <>
       <form
-        className="h-fit grid grid-cols-2 gap-5 py-4 group"
+        className="h-fit grid grid-cols-1 sm:grid-cols-2 gap-5 py-4 group"
         autoComplete="off"
         onSubmit={handleSubmit}
       >
@@ -776,7 +979,7 @@ function EditSection({
               Minimo 1 carácter, máximo 500
             </span>
           </div>
-          <div className="flex h-full items-end">
+          <div className="flex flex-col gap-4 w-full lg:flex-row lg:justify-between lg:items-center">
             <div className="flex w-full justify-between items-center">
               <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
                 <input
@@ -889,18 +1092,6 @@ function EditConfirmationModal({
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect();
-        if (
-          dialogDimensions &&
-          (e.clientX < dialogDimensions.left ||
-            e.clientX > dialogDimensions.right ||
-            e.clientY < dialogDimensions.top ||
-            e.clientY > dialogDimensions.bottom)
-        ) {
-          handleClose();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       {view === "confirmation" && (
@@ -1264,7 +1455,7 @@ function DeleteModal({
         <div className="flex gap-2 justify-center">
           <button
             type="button"
-            onClick={close}
+            onClick={closeModal}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
@@ -1283,13 +1474,14 @@ function DataRow({
   setOperationAsCompleted,
   onClick,
 }: DataRowProps) {
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
     permissions.find()?.editar.publicación
       ? "EDIT"
       : permissions.find()?.eliminar.publicación
       ? "DELETE"
-      : "NONE"
+      : "VIEW"
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
@@ -1299,6 +1491,10 @@ function DataRow({
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const closeViewModal = () => {
+    setIsViewOpen(false);
   };
 
   const selectAction = (action: `${Action}`) => {
@@ -1364,6 +1560,24 @@ function DataRow({
               isOpen={isDeleteOpen}
               closeModal={closeDeleteModal}
               setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
+        )}
+        {action === "VIEW" && (
+          <>
+            <button
+              onClick={() => {
+                setIsViewOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Mostrar publicación
+            </button>
+            <ViewModal
+              publicación={publicación}
+              isOpen={isViewOpen}
+              closeModal={closeViewModal}
+              setOperationAsCompleted={() => null}
             />
           </>
         )}
@@ -1497,7 +1711,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top, left}: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -1535,7 +1749,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           bg-clip-padding
           border
         "
-      style={{ top: top }}
+      style={{ top: top, left }}
     >
       {permissions.find()?.editar.publicación && (
         <li>
@@ -1587,6 +1801,29 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
+      <li>
+        <div
+          onClick={() => {
+            selectAction("VIEW");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Mostrar publicación
+        </div>
+      </li>
     </ul>
   );
 }
@@ -1783,6 +2020,9 @@ export default function PublicationsDataDisplay() {
   );
   const input = usePublicationSearchParamStore((state) => state.input);
   const isPrecise = usePublicationSearchParamStore((state) => state.isPrecise);
+  const setIsPrecise = usePublicationSearchParamStore(
+    (state) => state.setIsPrecise
+  );
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
@@ -1826,7 +2066,7 @@ export default function PublicationsDataDisplay() {
       });
     } else {
       if (isPrecise && wasSearch) {
-        PublicationService.getByTitulo(input, page, size).then((data) => {
+        PublicationService.getByExactTitulo(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setLoading(false);
@@ -1837,10 +2077,11 @@ export default function PublicationsDataDisplay() {
             setCurrent(data.current);
             setLoading(false);
           }
+          setIsPrecise(false);
           setIsOperationCompleted(false);
         });
-      } else if (!isPrecise && wasSearch) {
-        PublicationService.getByExactTitulo(input, page, size).then((data) => {
+      } else if (wasSearch) {
+        PublicationService.getByTitulo(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setLoading(false);
@@ -1968,7 +2209,7 @@ export default function PublicationsDataDisplay() {
         ) : (
           <>
             {publications.length > 0 && loading == false && (
-              <div className="relative overflow-x-auto">
+              <div className="relative overflow-x-auto scrollbar-thin">
                 <table className="w-full text-sm font-medium text-slate-600 text-left">
                   <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                     <tr className="border-2 border-[#2096ed]">

@@ -456,18 +456,6 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -814,7 +802,7 @@ export default function MessagingDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         {template.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto scrollbar-thin">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">

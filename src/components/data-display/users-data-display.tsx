@@ -283,18 +283,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -929,18 +917,6 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
       className="w-2/5 h-fit rounded-md shadow-md text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -1485,7 +1461,7 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
       <td className="px-6 py-4 border border-slate-300">{usuario?.correo}</td>
       <td className="px-6 py-2 border border-slate-300">
         <div className="bg-blue-200 text-center text-blue-600 text-xs py-2 font-bold rounded-lg">
-          Administrador
+          {usuario?.rol?.nombre}
         </div>
       </td>
       <td ref={ref} className="px-6 py-3 border border-slate-300 min-w-[210px] w-[210px] relative">
@@ -1599,7 +1575,7 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
               10
             }
             left={
-              (ref?.current?.getBoundingClientRect().left ?? 0) + window.scrollX
+              (ref?.current?.getBoundingClientRect().left ?? 0) + window.scrollX + 25
             }
           />
         )}
@@ -1801,7 +1777,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
-function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top, left }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -1839,7 +1815,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           bg-clip-padding
           border
         "
-      style={{ top: top }}
+      style={{ top: top, left }}
     >
       {permissions.find()?.editar.usuario && (
         <li>
@@ -2054,6 +2030,9 @@ export default function UsersDataDisplay() {
   const input = useUserSearchParamStore((state) => state.input);
   const param = useUserSearchParamStore((state) => state.param);
   const isPrecise = useUserSearchParamStore((state) => state.isPrecise);
+    const setIsPrecise = useUserSearchParamStore(
+      (state) => state.setIsPrecise
+    );
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
   const size = 7;
@@ -2138,6 +2117,7 @@ export default function UsersDataDisplay() {
               setNotFound(false);
             }
             toast.dismiss(loadingToast);
+            setIsPrecise(false)
             setIsOperationCompleted(false);
           });
         } else if (param === "APELLIDO") {
@@ -2155,6 +2135,7 @@ export default function UsersDataDisplay() {
                 setNotFound(false);
               }
               toast.dismiss(loadingToast);
+              setIsPrecise(false)
               setIsOperationCompleted(false);
             }
           );
@@ -2173,6 +2154,7 @@ export default function UsersDataDisplay() {
                 setNotFound(false);
               }
               toast.dismiss(loadingToast);
+              setIsPrecise(false)
               setIsOperationCompleted(false);
             }
           );
@@ -2300,7 +2282,7 @@ export default function UsersDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         {users.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto scrollbar-thin">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">

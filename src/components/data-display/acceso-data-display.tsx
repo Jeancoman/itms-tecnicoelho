@@ -993,7 +993,7 @@ export default function AccesoDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         {accesos.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto scrollbar-thin">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">

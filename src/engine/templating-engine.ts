@@ -120,9 +120,6 @@ export default class TemplatingEngine {
       case "ticket":
         object = this.options.ticket;
         break;
-      case "servicio":
-        object = this.options.servicio;
-        break;
       case "previamente":
         object = this.options.previamente;
         break;
@@ -175,19 +172,6 @@ export default class TemplatingEngine {
             isTrue: equalNow && !equalBefore,
             logicalOperator: operation.logicalOperator,
           };
-        } else if (
-          this.event === "MODIFICACIÓN" &&
-          this.entity === "SERVICIO"
-        ) {
-          const equalNow = leftSideValue === rightSideValue;
-          const equalBefore = Object.values(
-            this.options.previamente?.servicio || {}
-          ).includes(rightSideValue);
-
-          return {
-            isTrue: equalNow && !equalBefore,
-            logicalOperator: operation.logicalOperator,
-          };
         } else {
           return {
             isTrue: false,
@@ -198,18 +182,6 @@ export default class TemplatingEngine {
         if (this.event === "MODIFICACIÓN" && this.entity === "TICKET") {
           const equalBefore = Object.values(
             this.options.previamente?.ticket || {}
-          ).includes(leftSideValue);
-
-          return {
-            isTrue: rightSideValue === !equalBefore,
-            logicalOperator: operation.logicalOperator,
-          };
-        } else if (
-          this.event === "MODIFICACIÓN" &&
-          this.entity === "SERVICIO"
-        ) {
-          const equalBefore = Object.values(
-            this.options.previamente?.servicio || {}
           ).includes(leftSideValue);
 
           return {

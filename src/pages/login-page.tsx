@@ -38,10 +38,19 @@ export default function LoginPage() {
       toast.success("Credenciales válidas.");
 
       const usuario = TokenDecoder.decodeAndReturnUser(token);
-      const userSession = { usuario, token };
 
+      const fetchedUser = await UserService.getById(usuario.id!, token)
+
+      if(!fetchedUser){
+        toast.error(
+          "El usuario no pudo ser obtenido."
+        );
+        return;
+      }
+
+      const userSession = { usuario: fetchedUser, token };
       session.set(userSession);
-      permissions.set(usuario.rol!);
+      permissions.set(fetchedUser.rol!);
 
       toast.success("Sesión iniciada exitosamente.");
       navigate("/");

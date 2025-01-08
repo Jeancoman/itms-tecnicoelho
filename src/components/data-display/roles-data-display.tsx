@@ -293,19 +293,6 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect();
-        if (
-          dialogDimensions && // Check if dialogDimensions is defined
-          (e.clientX < dialogDimensions.left ||
-            e.clientX > dialogDimensions.right ||
-            e.clientY < dialogDimensions.top ||
-            e.clientY > dialogDimensions.bottom)
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -554,18 +541,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      onClick={(e: any) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -1200,7 +1175,7 @@ function DataRow({ rol, setOperationAsCompleted }: DataRowProps) {
             left={
               (ref?.current?.getBoundingClientRect().left ?? 0) +
               window.scrollX +
-              25
+              70
             }
           />
         )}
@@ -1311,7 +1286,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top, left }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -1349,7 +1324,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           bg-clip-padding
           border
         "
-      style={{ top: top }}
+      style={{ top: top, left }}
     >
       {permissions.find()?.editar.rol && (
         <li>
@@ -1448,6 +1423,7 @@ export default function RolsDataDisplay() {
   const input = useRolSearchParamStore((state) => state.input);
   const param = useRolSearchParamStore((state) => state.param);
   const isPrecise = useRolSearchParamStore((state) => state.isPrecise);
+  const setIsPrecise = useRolSearchParamStore((state) => state.setIsPrecise);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
   const [isSearch, setIsSearch] = useState(false);
@@ -1509,6 +1485,7 @@ export default function RolsDataDisplay() {
               setCurrent(data.current);
               setLoading(false);
             }
+            setIsPrecise(false)
             setIsOperationCompleted(false);
           });
         }
@@ -1599,7 +1576,7 @@ export default function RolsDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         {roles.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto scrollbar-thin">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">

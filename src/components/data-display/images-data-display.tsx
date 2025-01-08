@@ -15,7 +15,6 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import ImageService from "../../services/image-service";
 import permissions from "../../utils/permissions";
-import { format } from "date-fns";
 import { useImageSearchParamStore } from "../../store/searchParamStore";
 import Select from "../misc/select";
 import { useSearchedStore } from "../../store/searchedStore";
@@ -776,9 +775,6 @@ function DataRow({ imagen, setOperationAsCompleted }: DataRowProps) {
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
         {imagen?.descripción}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
-        {format(new Date(imagen?.añadida!), "dd/MM/yyyy")}
-      </td>
       <td
         ref={ref}
         className="px-6 py-3 border border-slate-300 min-w-[200px] w-[200px] relative"
@@ -1125,7 +1121,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top, left }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -1163,7 +1159,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           bg-clip-padding
           border
         "
-      style={{ top: top }}
+      style={{ top: top, left }}
     >
       {permissions.find()?.editar.imagen && (
         <li>
@@ -1270,16 +1266,14 @@ export default function ImagesDataDisplay() {
         if (data === false) {
           setNotFound(true);
           setImages([]);
-          setLoading(false);
-          resetSearchCount();
+          setLoading(false)
           setWasSearch(false);
         } else {
           setImages(data.rows);
           setPages(data.pages);
           setCurrent(data.current);
           setLoading(false);
-          setNotFound(false);
-          resetSearchCount();
+          setNotFound(false)
           setWasSearch(false);
         }
         setIsOperationCompleted(false);
@@ -1292,7 +1286,6 @@ export default function ImagesDataDisplay() {
             setNotFound(true);
             setImages([]);
             setLoading(false);
-            resetSearchCount();
             setWasSearch(false);
           } else {
             setImages(data.rows);
@@ -1300,7 +1293,6 @@ export default function ImagesDataDisplay() {
             setCurrent(data.current);
             setLoading(false);
             setNotFound(false);
-            resetSearchCount();
             setWasSearch(false);
           }
           toast.dismiss(loadingToast);
@@ -1312,7 +1304,6 @@ export default function ImagesDataDisplay() {
             setNotFound(true);
             setImages([]);
             setLoading(false);
-            resetSearchCount();
             setWasSearch(false);
           } else {
             setImages(data.rows);
@@ -1320,7 +1311,6 @@ export default function ImagesDataDisplay() {
             setCurrent(data.current);
             setLoading(false);
             setNotFound(false);
-            resetSearchCount();
             setWasSearch(false);
           }
           toast.dismiss(loadingToast);
@@ -1343,7 +1333,6 @@ export default function ImagesDataDisplay() {
             setCurrent(data.current);
             setLoading(false);
             setNotFound(false);
-            resetSearchCount();
             setWasSearch(false);
           }
           toast.dismiss(loadingToast);
@@ -1355,7 +1344,6 @@ export default function ImagesDataDisplay() {
             setNotFound(true);
             setImages([]);
             setLoading(false);
-            resetSearchCount();
             setWasSearch(false);
           } else {
             setImages(data.rows);
@@ -1363,7 +1351,6 @@ export default function ImagesDataDisplay() {
             setCurrent(data.current);
             setLoading(false);
             setNotFound(false);
-            resetSearchCount();
             setWasSearch(false);
           }
           toast.dismiss(loadingToast);
@@ -1438,7 +1425,7 @@ export default function ImagesDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         {images.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto scrollbar-thin">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">
@@ -1450,9 +1437,6 @@ export default function ImagesDataDisplay() {
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Descripción
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Añadida
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción

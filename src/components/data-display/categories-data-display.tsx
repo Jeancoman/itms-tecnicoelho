@@ -33,7 +33,7 @@ function EditModal({
   const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [formData, setFormData] = useState<Categoría>(categoría!);
   const [selectedType] = useState<Selected>({
-    label: categoría?.tipo === "PRODUCTO" ? "Producto" : "Servicio",
+    label: categoría?.tipo === "PRODUCTO" ? "Producto" : "Ticket",
     value: categoría?.tipo,
   });
   const [nameExist, setNameExist] = useState(false);
@@ -140,7 +140,7 @@ function EditModal({
                   Tipo
                 </p>
                 <p className="text-gray-900 font-medium text-base break-words">
-                  {categoría?.tipo || "No especificado"}
+                  {categoría?.tipo === "PRODUCTO" ? "Producto" : "Ticket"}
                 </p>
               </div>
               {/* Es digital */}
@@ -248,19 +248,6 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect();
-        if (
-          dialogDimensions && // Check if dialogDimensions is defined
-          (e.clientX < dialogDimensions.left ||
-            e.clientX > dialogDimensions.right ||
-            e.clientY < dialogDimensions.top ||
-            e.clientY > dialogDimensions.bottom)
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -402,8 +389,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [selectedType, setSelectedType] = useState<Selected>({
-    label: "Seleccionar tipo",
-    value: "",
+    label: "Producto",
+    value: "PRODUCTO",
   });
   const [formData, setFormData] = useState<Categoría>({
     nombre: "",
@@ -423,8 +410,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       esDigital: false,
     });
     setSelectedType({
-      label: "Seleccionar tipo",
-      value: "",
+      label: "Producto",
+      value: "PRODUCTO",
     });
     setIsConfirmationScreen(false);
   };
@@ -560,18 +547,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      onClick={(e: any) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -671,7 +646,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 },
                 {
                   value: "SERVICIO",
-                  label: "Servicio",
+                  label: "Ticket",
                   onClick: (value, label) => {
                     setSelectedType({
                       value,
@@ -823,10 +798,6 @@ function DeleteModal({
 function ViewModal({ isOpen, closeModal, categoría }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
-  const capitalizeFirstLetter = (string: string) => {
-    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
-  };
-
   useEffect(() => {
     if (isOpen) {
       ref.current?.showModal();
@@ -891,8 +862,7 @@ function ViewModal({ isOpen, closeModal, categoría }: ModalProps) {
                 Tipo
               </p>
               <p className="text-gray-900 font-medium text-base break-words">
-                {capitalizeFirstLetter(categoría?.tipo || "") ||
-                  "No especificado"}
+                {categoría?.tipo === "PRODUCTO" ? "Producto" : "Ticket"}
               </p>
             </div>
 
@@ -1049,7 +1019,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             type="text"
             placeholder={
               selectedSearchType.value === "NOMBRE"
-                ? "Introduzca nombre del usuario"
+                ? "Introduzca el nombre"
                 : ""
             }
             value={tempInput}
@@ -1070,7 +1040,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               options={[
                 {
                   value: "SERVICIO",
-                  label: "Servicio",
+                  label: "Ticket",
                   onClick: (value, label) => {
                     setSelectedType({
                       value,
@@ -1184,11 +1154,15 @@ function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
       >
         {categoría?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300 truncate">{categoría?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate">
+        {categoría?.nombre}
+      </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">
         {categoría?.descripción || "No especificada"}
       </td>
-      <td className="px-6 py-4 border border-slate-300">{categoría?.tipo}</td>
+      <td className="px-6 py-4 border border-slate-300">
+        {categoría?.tipo === "PRODUCTO" ? "Producto" : "Ticket"}
+      </td>
       <td
         ref={ref}
         className="px-6 py-3 border border-slate-300 min-w-[210px] w-[210px] relative"
@@ -1379,7 +1353,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top, left }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -1417,7 +1391,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           bg-clip-padding
           border
         "
-      style={{ top: top }}
+      style={{ top: top, left }}
     >
       {permissions.find()?.editar.categoría && (
         <li>
@@ -1515,6 +1489,9 @@ export default function CategoriesDataDisplay() {
   );
   const input = useCategorySearchParamStore((state) => state.input);
   const param = useCategorySearchParamStore((state) => state.param);
+  const setIsPrecise = useCategorySearchParamStore(
+    (state) => state.setIsPrecise
+  );
   const isPrecise = useCategorySearchParamStore((state) => state.isPrecise);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
@@ -1579,10 +1556,27 @@ export default function CategoriesDataDisplay() {
           toast.dismiss(loadingToast);
           setIsOperationCompleted(false);
         });
-      } else if (isPrecise && wasSearch) {
+      } else if (param === "NOMBRE") {
         const loadingToast = toast.loading("Buscando...");
-        if (param === "NOMBRE") {
+        if (isPrecise && wasSearch) {
           CategoryService.getByExactNombre(input, page, size).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setCategories([]);
+            } else {
+              setCategories(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsPrecise(false)
+            setIsOperationCompleted(false);
+          });
+        } else {
+          CategoryService.getByNombre(input, page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
@@ -1597,25 +1591,6 @@ export default function CategoriesDataDisplay() {
             toast.dismiss(loadingToast);
             setIsOperationCompleted(false);
           });
-        } else if (!isPrecise && wasSearch) {
-          const loadingToast = toast.loading("Buscando...");
-          if (param === "NOMBRE") {
-            CategoryService.getByNombre(input, page, size).then((data) => {
-              if (data === false) {
-                setNotFound(true);
-                setLoading(false);
-                setCategories([]);
-              } else {
-                setCategories(data.rows);
-                setPages(data.pages);
-                setCurrent(data.current);
-                setLoading(false);
-                setNotFound(false);
-              }
-              toast.dismiss(loadingToast);
-              setIsOperationCompleted(false);
-            });
-          }
         }
       }
     }
@@ -1682,7 +1657,7 @@ export default function CategoriesDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         {categories.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto scrollbar-thin">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">

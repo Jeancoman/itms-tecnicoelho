@@ -62,19 +62,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     resetFormData();
   }, [closeModal, resetFormData]);
 
-  const handleClickOutside = (e: React.MouseEvent) => {
-    const dialogDimensions = ref.current?.getBoundingClientRect();
-    if (
-      dialogDimensions &&
-      (e.clientX < dialogDimensions.left ||
-        e.clientX > dialogDimensions.right ||
-        e.clientY < dialogDimensions.top ||
-        e.clientY > dialogDimensions.bottom)
-    ) {
-      handleClose();
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsConfirmationScreen(true);
@@ -224,7 +211,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      onClick={handleClickOutside}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -440,19 +426,6 @@ function EditModal({
     ref.current?.close();
     resetFormData();
   }, [closeModal]);
-
-  const handleClickOutside = (e: React.MouseEvent) => {
-    const dialogDimensions = ref.current?.getBoundingClientRect();
-    if (
-      dialogDimensions &&
-      (e.clientX < dialogDimensions.left ||
-        e.clientX > dialogDimensions.right ||
-        e.clientY < dialogDimensions.top ||
-        e.clientY > dialogDimensions.bottom)
-    ) {
-      handleClose();
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -676,7 +649,6 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      onClick={handleClickOutside}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -817,7 +789,7 @@ function EditModal({
               onChange={handleInputChange("telefono")}
               value={formData.telefono}
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              pattern="^\+?(\d{1,3})?[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$"
+              pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
               Formato de teléfono invalido
@@ -894,9 +866,9 @@ function DeleteModal({
           ProviderService.delete(proveedor?.id!).then((data) => {
             toast.dismiss(loadingToast);
             if (data.status === "error") {
-              toast.success(data.message);
-            } else {
               toast.error(data.message);
+            } else {
+              toast.success(data.message);
             }
             setOperationAsCompleted();
           });
@@ -1298,7 +1270,10 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
             "Nombre del proveedor": proveedor?.nombre,
             "Documento del proveedor": proveedor?.documento,
             "Telefono del proveedor": proveedor?.telefono,
-            "Fecha de registro": format(new Date(proveedor?.registrado), "dd/MM/yyyy"),
+            "Fecha de registro": format(
+              new Date(proveedor?.registrado),
+              "dd/MM/yyyy"
+            ),
           })
         );
         break;
@@ -1310,7 +1285,10 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
             "Nombre del proveedor": proveedor?.nombre,
             "Documento del proveedor": proveedor?.documento,
             "Telefono del proveedor": proveedor?.telefono,
-            "Fecha de registro": format(new Date(proveedor?.registrado), "dd/MM/yyyy"),
+            "Fecha de registro": format(
+              new Date(proveedor?.registrado),
+              "dd/MM/yyyy"
+            ),
             "Total de compras": proveedor?.total_compras,
           })
         );
@@ -1323,7 +1301,10 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
             "Nombre del proveedor": proveedor?.nombre,
             "Documento del proveedor": proveedor?.documento,
             "Telefono del proveedor": proveedor?.telefono,
-            "Fecha de registro": format(new Date(proveedor?.registrado), "dd/MM/yyyy"),
+            "Fecha de registro": format(
+              new Date(proveedor?.registrado),
+              "dd/MM/yyyy"
+            ),
             "Cantidad de compras": proveedor?.cantidad_compras,
           })
         );
@@ -1456,7 +1437,7 @@ function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
       >
         {proveedor?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300">{proveedor?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate">{proveedor?.nombre}</td>
       <td className="px-6 py-4 border border-slate-300 truncate min-w-[100px]">
         {proveedor?.documento || "No especificado"}
       </td>
@@ -1468,7 +1449,7 @@ function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
       </td>
       <td
         ref={ref}
-        className="px-6 py-3 border border-slate-300 min-w-[200px] w-[200px] relative"
+        className="px-6 py-3 border border-slate-300 min-w-[210px] w-[210px] relative"
       >
         {action === "EDIT" && (
           <>
@@ -1674,7 +1655,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top, left }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -1712,7 +1693,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           bg-clip-padding
           border
         "
-      style={{ top: top }}
+      style={{ top: top, left }}
     >
       {permissions.find()?.editar.proveedor && (
         <li>
@@ -1813,6 +1794,9 @@ export default function ProvidersDataDisplay() {
   const param = useProviderSearchParamStore((state) => state.param);
   const isPrecise = useProviderSearchParamStore((state) => state.isPrecise);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
+  const setIsPrecise = useProviderSearchParamStore(
+    (state) => state.setIsPrecise
+  );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
   const [isReport, setIsReport] = useState(false);
   const size = 8;
@@ -1870,6 +1854,7 @@ export default function ProvidersDataDisplay() {
               setLoading(false);
               setNotFound(false);
             }
+            setIsPrecise(false);
             setIsOperationCompleted(false);
           });
         } else if (param === "DOCUMENTO") {
@@ -1886,11 +1871,12 @@ export default function ProvidersDataDisplay() {
                 setLoading(false);
                 setNotFound(false);
               }
+              setIsPrecise(false);
               setIsOperationCompleted(false);
             }
           );
         }
-      } else {
+      } else if (wasSearch) {
         if (param === "NOMBRE") {
           ProviderService.getByNombre(input, page, size).then((data) => {
             if (data === false) {
@@ -1924,7 +1910,7 @@ export default function ProvidersDataDisplay() {
         }
       }
     }
-  }, [isOperationCompleted, page]);
+  }, [isOperationCompleted, searchCount, page]);
 
   useEffect(() => {
     setPage(1);
@@ -2000,7 +1986,7 @@ export default function ProvidersDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         {providers.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto scrollbar-thin">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">

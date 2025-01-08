@@ -4,7 +4,6 @@ import { ReactComponent as Down } from "/src/assets/chevron-down-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import { ReactComponent as More } from "/src/assets/more_vert.svg";
-import { ReactComponent as Search } from "/src/assets/search.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -209,7 +208,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   useEffect(() => {
     if (clients.length === 0) {
       setLoading(true);
-      ClientService.getAll(1, 100000000).then((data) => {
+      ClientService.getAll(1, 10000).then((data) => {
         if (data === false) {
           setLoading(false);
         } else {
@@ -220,7 +219,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
     }
 
     if (impuestosVenta.length === 0) {
-      ImpuestoService.getAll(0, 1000000).then((data) => {
+      ImpuestoService.getAll(1, 10000).then((data) => {
         if (data) {
           setImpuestosVenta(
             data.rows.filter((impuesto) => impuesto.aplicaA === "VENTA")
@@ -285,8 +284,19 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   const handleFinalSubmit = async () => {
     close();
     setIsConfirmationScreen(false);
+
+    let updatedFormData = {
+      ...formData,
+      detalles: formData?.detalles
+        ?.filter((detalle) => detalle.cantidad > 0)
+        .map((detalle) => ({
+          ...detalle,
+          producto: undefined, // Omite la propiedad o ponle un valor nulo
+        })),
+    };
+
     const loadingToast = toast.loading("Añadiendo venta...");
-    SaleService.create(formData, impuestosCalculados).then((data) => {
+    SaleService.create(updatedFormData, impuestosCalculados).then((data) => {
       toast.dismiss(loadingToast);
       setOperationAsCompleted();
       resetFormData();
@@ -302,13 +312,13 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   return (
     <>
       <form
-        className="grid grid-cols-[2fr,_1fr] gap-5 h-fit w-full group"
+        className="flex flex-col gap-5 h-fit max-w-5xl group"
         autoComplete="off"
         onSubmit={handleSubmit}
       >
         <div className="flex flex-col gap-4">
-          <div className="flex gap-4">
-            <div className="relative w-1/3">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative w-1/3 min-w-60">
               <label className="block text-gray-600 text-base font-medium mb-2">
                 Cliente*
               </label>
@@ -316,9 +326,9 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
                 <SelectWithSearch
                   options={clients.map((client) => ({
                     value: client.id,
-                    label: `${client.nombre} ${client.apellido}${
-                      client.documento ? "," : ""
-                    } ${client.documento ? client.documento : ""}`,
+                    label: `${client.nombre}${
+                      client.apellido ? " " + client.apellido : ""
+                    }, ${client.documento}`,
                     onClick: (value, label) => {
                       setSelectedClient({
                         value,
@@ -586,7 +596,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
               <h2 className="text-xl font-medium">Impuestos aplicados</h2>
               <hr className="my-4 w-[61%] border-[#2096ed]" />
 
-              <div className="relative overflow-x-auto">
+              <div className="relative overflow-x-auto scrollbar-thin">
                 <table className="w-full text-sm font-medium text-slate-600 text-left">
                   <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                     <tr className="border-2 border-[#2096ed]">
@@ -661,7 +671,6 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
               }}
               name="search"
             />
-            <Search className="absolute top-2 left-96 fill-slate-400" />
           </div>
           <EmbeddedTable
             onChange={(detalles) => {
@@ -690,7 +699,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
             searchTerm={searchTerm}
             detalles_venta={formData?.detalles}
           />
-          <div className="flex h-full items-self-end items-end justify-end pb-5">
+          <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center pb-5">
             <div className="justify-self-start">
               <Pagination
                 pages={pages}
@@ -705,7 +714,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
                     setPage(page - 1);
                   }
                 }}
-                className="absolute bottom-5 left-0 flex items-center gap-4"
+                className="flex items-center gap-4"
                 customText="Mostrando página de productos"
               />
             </div>
@@ -791,18 +800,6 @@ function ConfirmationModal({
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect();
-        if (
-          dialogDimensions &&
-          (e.clientX < dialogDimensions.left ||
-            e.clientX > dialogDimensions.right ||
-            e.clientY < dialogDimensions.top ||
-            e.clientY > dialogDimensions.bottom)
-        ) {
-          handleClose();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -899,7 +896,7 @@ function ConfirmationModal({
               <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                 Productos
               </p>
-              <div className="text-gray-900 font-medium text-base break-words">
+              <div className="text-gray-900 font-medium text-base break-words overflow-x-auto">
                 <table className="w-full text-sm font-medium text-slate-600 text-left">
                   <thead className="text-xs bg-[#2096ed] uppercase text-white">
                     <tr>
@@ -1174,9 +1171,11 @@ function ViewModal({ isOpen, closeModal, venta }: ModalProps) {
                 Cliente
               </p>
               <p className="text-gray-900 font-medium text-base break-words">
-                {venta?.historico_ventum?.cliente_nombre}{" "}
-                {venta?.historico_ventum?.cliente_apellido},{" "}
-                {venta?.historico_ventum?.cliente_documento}
+                {venta?.historico_ventum?.cliente_nombre}
+                {venta?.historico_ventum?.cliente_apellido
+                  ? " " + venta?.historico_ventum?.cliente_apellido
+                  : ""}
+                , {venta?.historico_ventum?.cliente_documento}
               </p>
             </div>
 
@@ -1382,9 +1381,6 @@ function DataRow({ venta, setOperationAsCompleted }: DataRowProps) {
         {formatter.format(venta?.total || 0)}
       </td>
       <td className="px-6 py-2 border border-slate-300">
-        {venta?.tipoPago === "CONTADO" ? "Contado" : "Credito"}
-      </td>
-      <td className="px-6 py-2 border border-slate-300">
         {!venta?.anulada ? (
           <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
             Concretada
@@ -1397,7 +1393,7 @@ function DataRow({ venta, setOperationAsCompleted }: DataRowProps) {
       </td>
       <td
         ref={ref}
-        className="px-6 py-2 border border-slate-300 min-w-[210px] w-[210px] relative"
+        className="px-6 py-2 border border-slate-300 min-w-[180px] w-[180px] relative"
       >
         {(action === "VIEW_AS_PDF" || venta?.anulada) && (
           <>
@@ -1484,7 +1480,7 @@ function DataRow({ venta, setOperationAsCompleted }: DataRowProps) {
             left={
               (ref?.current?.getBoundingClientRect().left ?? 0) +
               window.scrollX +
-              80
+              35
             }
           />
         )}
@@ -1791,7 +1787,7 @@ function EmbeddedTable({
       {typeof productos !== "undefined" &&
         productos?.length > 0 &&
         loading == false && (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto scrollbar-thin">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">
@@ -1917,7 +1913,7 @@ function EmbeddedDetailsTable({
   return (
     <div>
       {typeof detalles_venta !== "undefined" && detalles_venta?.length > 0 && (
-        <div className="relative overflow-x-auto">
+        <div className="relative overflow-x-auto scrollbar-thin">
           <table className="w-full text-sm font-medium text-slate-600 text-left">
             <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
               <tr className="border-2 border-[#2096ed]">
@@ -2047,7 +2043,7 @@ function DeleteModal({
         <div className="flex gap-2 justify-center">
           <button
             type="button"
-            onClick={close}
+            onClick={closeModal}
             className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
           >
             Cancelar
@@ -2139,7 +2135,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       console.log("AQUI");
       if (clients.length === 0) {
         setLoading(true);
-        void ClientService.getAll(1, 100).then((data) => {
+        void ClientService.getAll(1, 10000).then((data) => {
           if (data === false) {
             setLoading(false);
           } else {
@@ -2221,9 +2217,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 <SelectWithSearch
                   options={clients.map((client) => ({
                     value: client.id,
-                    label: `${client.nombre} ${client.apellido}${
-                      client.documento ? "," : ""
-                    } ${client.documento ? client.documento : ""}`,
+                    label: `${client.nombre}${
+                      client.apellido ? " " + client.apellido : ""
+                    }, ${client.documento}`,
                     onClick: (value, label) => {
                       setSelectedClient({
                         value,
@@ -2477,7 +2473,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
   useEffect(() => {
     const fetchClients = async () => {
       setLoading(true);
-      const data = await ClientService.getAll(1, 100);
+      const data = await ClientService.getAll(1, 10000);
       if (data) {
         setClients(data.rows);
       }
@@ -3472,7 +3468,7 @@ export default function SalesDataDisplay() {
         ) : (
           <>
             {sales.length > 0 && loading == false && (
-              <div className="relative overflow-x-auto">
+              <div className="relative overflow-x-auto scrollbar-thin">
                 <table className="w-full text-sm font-medium text-slate-600 text-left">
                   <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                     <tr className="border-2 border-[#2096ed]">
@@ -3505,12 +3501,6 @@ export default function SalesDataDisplay() {
                         className="px-6 py-3 border border-slate-300"
                       >
                         Total
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 border border-slate-300"
-                      >
-                        Condición de pago
                       </th>
                       <th
                         scope="col"

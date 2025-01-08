@@ -147,7 +147,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               Apellido
             </p>
             <p className="text-gray-900 font-medium text-base break-words">
-              {formData.apellido}
+              {formData.apellido || "No especificado"}
             </p>
           </div>
           <div>
@@ -219,25 +219,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
-          {isConfirmationScreen
-            ? "Confirmar datos del cliente"
-            : "Añadir cliente"}
+          {isConfirmationScreen ? "Confirmar cliente" : "Añadir cliente"}
         </h1>
       </div>
       {isConfirmationScreen ? (
@@ -266,15 +252,19 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 value={formData.nombre}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 required
-                pattern="^.{1,50}$"
+                pattern={
+                  formData.apellido.length > 0 ? "^.{1,50}$" : "^.{1,150}$"
+                }
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Minimo 1 carácter, máximo 50
+                {formData.apellido.length > 0
+                  ? "Minimo 1 carácter, máximo 50"
+                  : "Minimo 1 carácter, máximo 150"}
               </span>
             </div>
             <div className="w-2/4">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Apellido*
+                Apellido
               </label>
               <input
                 type="text"
@@ -288,7 +278,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 value={formData.apellido}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 pattern="^.{1,50}$"
-                required
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
                 Minimo 1 carácter, máximo 50
@@ -449,7 +438,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           </div>
           <div className="relative w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Contraseña*
+              Contraseña
             </label>
             <input
               type={visible ? "text" : "password"}
@@ -465,7 +454,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               name="password"
               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
               autoComplete="new-password"
-              required
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
               La contraseña debe tener mínimo 8 caracteres, contener una letra
@@ -662,7 +650,7 @@ function EditModal({
                   Apellido
                 </p>
                 <p className="text-gray-900 font-medium text-base break-words">
-                  {cliente?.apellido}
+                  {cliente?.apellido || "No especificado"}
                 </p>
               </div>
               <div>
@@ -737,7 +725,7 @@ function EditModal({
                       : "text-gray-900"
                   }`}
                 >
-                  {formData.apellido}
+                  {formData.apellido || "No especificado"}
                 </p>
               </div>
               <div>
@@ -836,18 +824,6 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -880,15 +856,19 @@ function EditModal({
                 value={formData.nombre}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 required
-                pattern="^.{1,50}$"
+                pattern={
+                  formData.apellido.length > 0 ? "^.{1,50}$" : "^.{1,150}$"
+                }
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Minimo 1 carácter, máximo 50
+                {formData.apellido.length > 0
+                  ? "Minimo 1 carácter, máximo 50"
+                  : "Minimo 1 carácter, máximo 150"}
               </span>
             </div>
             <div className="w-2/4">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Apellido*
+                Apellido
               </label>
               <input
                 type="text"
@@ -902,7 +882,6 @@ function EditModal({
                 value={formData.apellido}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 pattern="^.{1,50}$"
-                required
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
                 Minimo 1 carácter, máximo 50
@@ -1280,7 +1259,7 @@ function ViewModal({ isOpen, closeModal, cliente }: ModalProps) {
                 Apellido
               </p>
               <p className="text-gray-900 font-medium text-base break-words">
-                {cliente?.apellido}
+                {cliente?.apellido || "No especificado"}
               </p>
             </div>
             <div>
@@ -1585,10 +1564,10 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
         {cliente?.id}
       </th>
       <td className="px-6 py-4 border border-slate-300 truncate min-w-[180px]">
-        {cliente?.nombre} {cliente?.apellido}
+        {cliente?.nombre} {cliente?.apellido || ""}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {cliente?.documento ||  "No especificado"}
+        {cliente?.documento || "No especificado"}
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[150px]">
         {cliente?.email || "No especificado"}
@@ -1673,7 +1652,7 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
             left={
               (ref?.current?.getBoundingClientRect().left ?? 0) +
               window.scrollX +
-              25
+              32
             }
           />
         )}
@@ -1784,7 +1763,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top, left }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -1822,7 +1801,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           bg-clip-padding
           border
         "
-      style={{ top: top }}
+      style={{ top: top, left }}
     >
       {permissions.find()?.editar.cliente && (
         <li>
@@ -1920,6 +1899,7 @@ export default function ClientsDataDisplay() {
   );
   const input = useClientSearchParamStore((state) => state.input);
   const param = useClientSearchParamStore((state) => state.param);
+  const setIsPrecise = useClientSearchParamStore((state) => state.setIsPrecise);
   const isPrecise = useClientSearchParamStore((state) => state.isPrecise);
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
@@ -1984,6 +1964,7 @@ export default function ClientsDataDisplay() {
                 setLoading(false);
                 setNotFound(false);
               }
+              setIsPrecise(false);
               setIsOperationCompleted(false);
             }
           );
@@ -2002,6 +1983,7 @@ export default function ClientsDataDisplay() {
                 setLoading(false);
                 setNotFound(false);
               }
+              setIsPrecise(false);
               setIsOperationCompleted(false);
             }
           );
@@ -2020,6 +2002,7 @@ export default function ClientsDataDisplay() {
                 setLoading(false);
                 setNotFound(false);
               }
+              setIsPrecise(false);
               setIsOperationCompleted(false);
             }
           );
@@ -2038,6 +2021,7 @@ export default function ClientsDataDisplay() {
                 setLoading(false);
                 setNotFound(false);
               }
+              setIsPrecise(false);
               setIsOperationCompleted(false);
             }
           );
@@ -2174,7 +2158,7 @@ export default function ClientsDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         {clientes.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto scrollbar-thin">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">

@@ -49,9 +49,9 @@ function EditModal({
   const [categories, setCategories] = useState<Categoría[]>([]);
   const [selectedClient, setSelectedClient] = useState<Selected>({
     value: ticket?.cliente_id || -1,
-    label: `${ticket?.cliente?.nombre ?? ""} ${
-      ticket?.cliente?.apellido ?? ""
-    }${ticket?.cliente?.documento ? `, ${ticket?.cliente?.documento}` : ""}`,
+    label: `${ticket?.cliente?.nombre}${
+      ticket?.cliente?.apellido ? " " + ticket?.cliente?.apellido : ""
+    }, ${ticket?.cliente?.documento}`,
   });
   const [selectedPriority, setSelectedPriority] = useState<Selected>({
     value: ticket?.prioridad || "BAJA",
@@ -85,9 +85,9 @@ function EditModal({
     setTicketFormData(ticket!);
     setSelectedClient({
       value: ticket?.cliente_id || -1,
-      label: `${ticket?.cliente?.nombre ?? ""} ${
-        ticket?.cliente?.apellido ?? ""
-      }${ticket?.cliente?.documento ? `, ${ticket?.cliente?.documento}` : ""}`,
+      label: `${ticket?.cliente?.nombre}${
+        ticket?.cliente?.apellido ? " " + ticket?.cliente?.apellido : ""
+      }, ${ticket?.cliente?.documento}`,
     });
     setSelectedPriority({
       value: ticket?.prioridad || "BAJA",
@@ -501,7 +501,7 @@ function EditModal({
             onClick={handleFinalSubmit}
             className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
           >
-            Guardar Cambios
+            Guardar
           </button>
         </div>
       </div>
@@ -509,14 +509,8 @@ function EditModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-10"
-      onClick={handleClose}
-    >
-      <div
-        className="bg-white w-max max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow relative max-h-[650px] overflow-y-scroll scrollbar-thin"
-        onClick={(e) => e.stopPropagation()} // Evita que el clic dentro del modal cierre el mismo
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-10">
+      <div className="bg-white w-max max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow relative max-h-[650px] overflow-y-scroll scrollbar-thin">
         <div className="bg-[#2096ed] py-3 md:py-4 px-6 md:px-8 rounded-t">
           <h1 className="text-lg md:text-xl font-bold text-white">
             Editar ticket
@@ -799,7 +793,6 @@ function EditModal({
                       descripción: editor.getContent(),
                     })
                   }
-                  initialValue={ticketFormData.descripción}
                   value={ticketFormData.descripción}
                   init={{
                     menubar: true,
@@ -959,7 +952,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   };
 
   const loadClients = async () => {
-    const data = await ClientService.getAll(1, 100);
+    const data = await ClientService.getAll(1, 10000);
     if (data === false) {
       setLoading(false);
     } else {
@@ -969,7 +962,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   };
 
   const loadCategories = async () => {
-    const data = await CategoryService.getAll(1, 100);
+    const data = await CategoryService.getAll(1, 10000);
     if (data === false) {
       setLoading(false);
     } else {
@@ -1187,14 +1180,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-10"
-      onClick={handleClose}
-    >
-      <div
-        className="bg-white w-max max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow relative max-h-[650px] overflow-y-scroll scrollbar-thin"
-        onClick={(e) => e.stopPropagation()} // Evita que el clic dentro del modal cierre el mismo
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-10">
+      <div className="bg-white w-max max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow relative max-h-[650px] overflow-y-scroll scrollbar-thin">
         <div className="bg-[#2096ed] py-3 md:py-4 px-6 md:px-8 rounded-t">
           <h1 className="text-lg md:text-xl font-bold text-white">
             {isConfirmationScreen ? "Confirmar Ticket" : "Añadir ticket"}
@@ -1287,9 +1274,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 <SelectWithSearch
                   options={clients.map((client) => ({
                     value: client.id,
-                    label: `${client.nombre} ${client.apellido}${
-                      client.documento ? ", " : ""
-                    }${client.documento ? client.documento : ""}`,
+                    label: `${client.nombre}${
+                      client.apellido ? " " + client.apellido : ""
+                    }, ${client.documento}`,
                     onClick: (value, label) => {
                       setSelectedClient({
                         value,
@@ -1478,11 +1465,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                       descripción: editor.getContent(),
                     })
                   }
-                  initialValue={
-                    ticketFormData.descripción?.length! > 0
-                      ? ticketFormData.descripción
-                      : "<p>Escribe aquí la descripción de tu ticket.</p>"
-                  }
                   value={ticketFormData.descripción}
                   init={{
                     menubar: true,
@@ -1524,12 +1506,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               <button
                 type="submit"
                 className={clsx({
-                  ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                    !selectedClient.label?.startsWith("Selecciona") ||
-                    !selectedCategory.label?.startsWith("Selecciona") ||
-                    !selectedPriority.label?.startsWith("Selecciona") ||
-                    !selectedType.label?.startsWith("Selecciona"),
                   ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    
+                      selectedClient.label?.startsWith("Selecciona") ||
+                      selectedCategory.label?.startsWith("Selecciona") ||
+                      selectedPriority.label?.startsWith("Selecciona") ||
+                      selectedType.label?.startsWith("Selecciona")
+                    ,
+                  ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
                     true,
                 })}
               >
@@ -1928,9 +1912,13 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
         )}
       </td>
       <td className="px-6 py-3 border border-slate-300 truncate">
-        {ticket?.cliente?.nombre} {ticket?.cliente?.apellido}, {ticket?.cliente?.documento}
+        {ticket?.cliente?.nombre}
+        {ticket?.cliente?.apellido ? " " + ticket?.cliente.apellido : ""},{" "}
+        {ticket?.cliente?.documento}
       </td>
-      <td className="px-6 py-3 border border-slate-300 truncate max-w-[200px]">{ticket?.asunto}</td>
+      <td className="px-6 py-3 border border-slate-300 truncate max-w-[200px]">
+        {ticket?.asunto}
+      </td>
       <td className="px-6 py-3 border border-slate-300 truncate">
         {format(new Date(ticket?.creado!), "dd/MM/yyyy hh:mm a")}
       </td>
@@ -2023,7 +2011,7 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
             left={
               (ref?.current?.getBoundingClientRect().left ?? 0) +
               window.scrollX +
-              25
+              40
             }
           />
         )}
@@ -2134,7 +2122,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top, left }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -2172,7 +2160,7 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           bg-clip-padding
           border
         "
-      style={{ top: top }}
+      style={{ top: top, left }}
     >
       {permissions.find()?.editar.ticket && (
         <li>
@@ -2372,7 +2360,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     if (selectedSearchType.value === "CLIENTE") {
       if (clients.length === 0) {
         setLoading(true);
-        ClientService.getAll(1, 100).then((data) => {
+        ClientService.getAll(1, 10000).then((data) => {
           if (data === false) {
             setLoading(false);
           } else {
@@ -2384,7 +2372,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     } else if (selectedSearchType.value === "CATEGORÍA") {
       if (categories.length === 0) {
         setLoading(true);
-        CategoryService.getByTipo("ELEMENTO", 1, 100).then((data) => {
+        CategoryService.getByTipo("SERVICIO", 1, 10000).then((data) => {
           if (data === false) {
             setLoading(false);
           } else {
@@ -2598,9 +2586,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 <SelectWithSearch
                   options={clients.map((client) => ({
                     value: client.id,
-                    label: `${client.nombre} ${client.apellido}${
-                      client.documento ? "," : ""
-                    } ${client.documento ? client.documento : ""}`,
+                    label: `${client.nombre}${
+                      client.apellido ? " " + client.apellido : ""
+                    }, ${client.documento}`,
                     onClick: (value, label) => {
                       setSelectedClient({
                         value,
@@ -2757,69 +2745,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               }}
               required
             />
-          </>
-        ) : null}
-        {selectedSearchType.value === "CLIENTE" ? (
-          <>
-            <div className="relative">
-              {clients.length > 0 && (
-                <SelectWithSearch
-                  options={clients.map((client) => ({
-                    value: client.id,
-                    label: `${client.nombre} ${client.apellido}${
-                      client.documento ? "," : ""
-                    } ${client.documento ? client.documento : ""}`,
-                    onClick: (value, label) => {
-                      setSelectedClient({
-                        value,
-                        label,
-                      });
-                    },
-                  }))}
-                  selected={selectedClient}
-                />
-              )}
-              {clients.length === 0 && loading === false && (
-                <>
-                  <select
-                    className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-                    value={0}
-                    disabled={true}
-                  >
-                    <option value={0}>Seleccionar cliente</option>
-                  </select>
-                  <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
-                </>
-              )}
-              {clients.length === 0 && loading === true && (
-                <>
-                  <select
-                    className="select-none border w-full p-2 rounded outline-none appearance-none text-slate-600 font-medium border-slate-300"
-                    value={0}
-                    disabled={true}
-                  >
-                    <option value={0}>Buscando clientes...</option>
-                  </select>
-                  <svg
-                    aria-hidden="true"
-                    className="inline w-4 h-4 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-[#2096ed] top-11 right-4 absolute"
-                    viewBox="0 0 100 101"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                      fill="currentColor"
-                    />
-                    <path
-                      d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                      fill="currentFill"
-                    />
-                  </svg>
-                  <span className="sr-only">Cargando...</span>
-                </>
-              )}
-            </div>
           </>
         ) : null}
         <div className="flex gap-2 justify-end">
@@ -3189,7 +3114,7 @@ export default function TicketDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         {tickets.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto scrollbar-thin">
             <table className="w-full text-sm text-left border border-slate-300">
               <thead className="text-xs bg-[#2096ed] uppercase text-white">
                 <tr className="border-2 border-[#2096ed]">

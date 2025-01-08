@@ -66,14 +66,14 @@ export default class UserService {
     }
   }
 
-  static async getById(id: number) {
+  static async getById(id: number, token?: string) {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/usuarios/${id}`,
         {
           method: "GET",
           headers: {
-            Authorization: session.find()?.token!,
+            Authorization: session.find()?.token || token!,
             Accept: "application/json",
             "Content-Type": "application/json",
           },

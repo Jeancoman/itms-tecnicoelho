@@ -318,19 +318,6 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect();
-        if (
-          dialogDimensions && // Check if dialogDimensions is defined
-          (e.clientX < dialogDimensions.left ||
-            e.clientX > dialogDimensions.right ||
-            e.clientY < dialogDimensions.top ||
-            e.clientY > dialogDimensions.bottom)
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -714,18 +701,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      onClick={(e: any) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
@@ -1364,7 +1339,9 @@ function DataRow({ impuesto, setOperationAsCompleted }: DataRowProps) {
       >
         {impuesto?.id}
       </th>
-      <td className="px-6 py-4 border border-slate-300 truncate max-w-[250px]">{impuesto?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[250px]">
+        {impuesto?.nombre}
+      </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">
         {impuesto?.codigo}
       </td>
@@ -1698,6 +1675,9 @@ export default function ImpuestosDataDisplay() {
   const input = useImpuestoSearchParamStore((state) => state.input);
   const param = useImpuestoSearchParamStore((state) => state.param);
   const isPrecise = useImpuestoSearchParamStore((state) => state.isPrecise);
+  const setIsPrecise = useImpuestoSearchParamStore(
+    (state) => state.setIsPrecise
+  );
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
   const [isSearch, setIsSearch] = useState(false);
@@ -1759,6 +1739,7 @@ export default function ImpuestosDataDisplay() {
               setCurrent(data.current);
               setLoading(false);
             }
+            setIsPrecise(false);
             setIsOperationCompleted(false);
           });
         } else if (param === "CÓDIGO") {
@@ -1774,6 +1755,7 @@ export default function ImpuestosDataDisplay() {
               setLoading(false);
             }
             toast.dismiss(loadingToast);
+            setIsPrecise(false);
             setIsOperationCompleted(false);
           });
         }
@@ -1875,7 +1857,7 @@ export default function ImpuestosDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         {impuestos.length > 0 && loading == false && (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto scrollbar-thin">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
                 <tr className="border-2 border-[#2096ed]">

@@ -1,4 +1,4 @@
-import { Compra, Response } from "../types";
+import { Compra, GenericResponse, Response } from "../types";
 import session from "../utils/session";
 
 export default class PurchaseService {
@@ -326,13 +326,12 @@ export default class PurchaseService {
         }
       );
 
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
+      return (await response.json()) as GenericResponse;
     } catch {
-      return false;
+      return {
+        message: "La compra no pudo ser anulada.",
+        status: "error",
+      } as GenericResponse;
     }
   }
 }
