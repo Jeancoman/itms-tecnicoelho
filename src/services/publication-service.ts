@@ -13,6 +13,7 @@ export default class PublicationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -43,6 +44,7 @@ export default class PublicationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -69,6 +71,7 @@ export default class PublicationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -101,6 +104,7 @@ export default class PublicationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -131,6 +135,7 @@ export default class PublicationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify(publicación),
@@ -155,6 +160,7 @@ export default class PublicationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify(publicación),
@@ -179,6 +185,7 @@ export default class PublicationService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }

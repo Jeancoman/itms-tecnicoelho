@@ -14,6 +14,7 @@ export default class ImageService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -46,6 +47,7 @@ export default class ImageService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -78,6 +80,7 @@ export default class ImageService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -110,6 +113,7 @@ export default class ImageService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -146,6 +150,7 @@ export default class ImageService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -175,6 +180,7 @@ export default class ImageService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify(image),
@@ -200,6 +206,7 @@ export default class ImageService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify(image),
@@ -225,6 +232,7 @@ export default class ImageService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -251,6 +259,7 @@ export default class ImageService {
         {
           method: "POST",
           headers: {
+            Accept: "application/json",
             Authorization: session.find()?.token!,
           },
           body: formData,

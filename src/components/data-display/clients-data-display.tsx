@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import { ReactComponent as More } from "/src/assets/more_vert.svg";
@@ -21,6 +21,8 @@ import { useSearchedStore } from "../../store/searchedStore";
 import { ReactComponent as On } from "/src/assets/visibility.svg";
 import { ReactComponent as Off } from "/src/assets/visibility_off.svg";
 import clsx from "clsx";
+import { createRowNumber } from "../../utils/functions";
+import debounce from "lodash.debounce";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -40,6 +42,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     contraseña: "",
   });
   const [visible, setVisible] = useState(false);
+  const [documentoExist, setDocumentoExist] = useState(false);
+  const [stillWritingDocumento, setStillWritingDocumento] = useState(false);
+  const [correoExist, setCorreoExist] = useState(false);
+  const [stillWritingCorreo, setStillWritingCorreo] = useState(false);
 
   const resetFormData = () => {
     setFormData({
@@ -85,6 +91,48 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       }
     });
   };
+
+  const checkDocumento = useCallback(
+    debounce(async (documento) => {
+      if (documento.length >= 8) {
+        const exist = await ClientService.getByExactDocumento(
+          documento,
+          1,
+          100
+        );
+        if (exist) {
+          setDocumentoExist(true);
+          setStillWritingDocumento(false);
+        } else {
+          setDocumentoExist(false);
+          setStillWritingDocumento(false);
+        }
+      }
+    }, 500),
+    []
+  );
+
+  const checkCorreo = useCallback(
+    debounce(async (correo) => {
+      const exist = await ClientService.getByExactEmail(correo, 1, 100);
+      if (exist) {
+        setCorreoExist(true);
+        setStillWritingCorreo(false);
+      } else {
+        setCorreoExist(false);
+        setStillWritingCorreo(false);
+      }
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    checkDocumento(`${documentType.value}-${formData.documento}`);
+  }, [formData.documento, documentType.value]);
+
+  useEffect(() => {
+    checkCorreo(formData.email);
+  }, [formData.email]);
 
   const getDocumentoPatternAndMessage = () => {
     switch (documentType.value) {
@@ -219,7 +267,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -237,8 +285,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         >
           <div className="flex gap-2">
             <div className="w-2/4">
-              <label className="block text-gray-600 text-base font-medium mb-2">
-                Nombre*
+              <label className="block text-gray-600 text-base font-medium mb-2 -mt-1">
+                Nombre<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="text"
@@ -286,8 +334,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           </div>
           <div className="flex gap-2">
             <div className="w-2/4">
-              <label className="block text-gray-600 text-base font-medium mb-2">
-                Documento*
+              <label className="block text-gray-600 text-base font-medium mb-2 -mt-1">
+                Documento<span className="text-red-600 text-lg">*</span>
               </label>
               <div className="flex w-full gap-1">
                 <div className="relative w-[20%]">
@@ -357,14 +405,28 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                         ...formData,
                         documento: e.target.value,
                       });
+                      setStillWritingDocumento(true);
                     }}
                     value={formData.documento}
                     required
-                    className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                    className={clsx({
+                      ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                        !documentoExist,
+                      ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                        documentoExist,
+                    })}
                     pattern={getDocumentoPatternAndMessage().pattern.source}
                   />
-                  <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                    {getDocumentoPatternAndMessage().message}
+                  <span
+                    className={clsx({
+                      ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                        !documentoExist,
+                      ["mt-2 text-sm text-red-500 block"]: documentoExist,
+                    })}
+                  >
+                    {documentoExist
+                      ? "Documento ya registrado"
+                      : getDocumentoPatternAndMessage().message}
                   </span>
                 </div>
               </div>
@@ -405,18 +467,31 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   ...formData,
                   email: e.target.value,
                 });
+                setStillWritingCorreo(true);
               }}
               value={formData.email}
-              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              className={clsx({
+                ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                  !correoExist,
+                ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                  correoExist,
+              })}
               pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+              maxLength={254}
             />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              E-mail invalido
+            <span
+              className={clsx({
+                ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                  !correoExist,
+                ["mt-2 text-sm text-red-500 block"]: correoExist,
+              })}
+            >
+              {correoExist ? "E-mail ya registrado" : "E-mail invalido"}
             </span>
           </div>
           <div className="w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Dirección
+              Dirección<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -431,6 +506,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               autoComplete="none"
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               pattern="^.{1,100}$"
+              required
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
               Minimo 1 carácter, máximo 100
@@ -454,9 +530,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               name="password"
               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
               autoComplete="new-password"
+              maxLength={32}
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              La contraseña debe tener mínimo 8 caracteres, contener una letra
+              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener una letra
               mayúscula, una letra minúscula, un número y un carácter especial
             </span>
             {visible ? (
@@ -501,9 +578,15 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 Cancelar
               </button>
               <button
-                className={
-                  "group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
-                }
+                className={clsx({
+                  ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    !documentoExist || !correoExist,
+                  ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    documentoExist ||
+                    stillWritingDocumento ||
+                    correoExist ||
+                    stillWritingCorreo,
+                })}
               >
                 Completar
               </button>
@@ -539,6 +622,10 @@ function EditModal({
     documento: initialDocumento,
   });
   const [visible, setVisible] = useState(false);
+  const [documentoExist, setDocumentoExist] = useState(false);
+  const [stillWritingDocumento, setStillWritingDocumento] = useState(false);
+  const [correoExist, setCorreoExist] = useState(false);
+  const [stillWritingCorreo, setStillWritingCorreo] = useState(false);
 
   const resetFormData = () => {
     setFormData({
@@ -583,6 +670,40 @@ function EditModal({
     });
   };
 
+  const checkDocumento = useCallback(
+    debounce(async (documento) => {
+      if (documento.length >= 8) {
+        const exist = await ClientService.getByExactDocumento(
+          documento,
+          1,
+          100
+        );
+        if (exist && cliente?.documento !== documento) {
+          setDocumentoExist(true);
+          setStillWritingDocumento(false);
+        } else {
+          setDocumentoExist(false);
+          setStillWritingDocumento(false);
+        }
+      }
+    }, 500),
+    []
+  );
+
+  const checkCorreo = useCallback(
+    debounce(async (correo) => {
+      const exist = await ClientService.getByExactEmail(correo, 1, 100);
+      if (exist && cliente?.email !== correo) {
+        setCorreoExist(true);
+        setStillWritingCorreo(false);
+      } else {
+        setCorreoExist(false);
+        setStillWritingCorreo(false);
+      }
+    }, 500),
+    []
+  );
+
   // Define una función para obtener el patrón y el mensaje de error según el tipo de documento
   const getDocumentoPatternAndMessage = () => {
     switch (documentType.value) {
@@ -610,6 +731,14 @@ function EditModal({
         };
     }
   };
+
+  useEffect(() => {
+    checkDocumento(`${documentType.value}-${formData.documento}`);
+  }, [formData.documento, documentType.value]);
+
+  useEffect(() => {
+    checkCorreo(formData.email);
+  }, [formData.email]);
 
   useEffect(() => {
     if (isOpen) {
@@ -824,7 +953,7 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -841,8 +970,8 @@ function EditModal({
         >
           <div className="flex gap-2">
             <div className="w-2/4">
-              <label className="block text-gray-600 text-base font-medium mb-2">
-                Nombre*
+              <label className="block text-gray-600 text-base font-medium mb-2 -mt-1">
+                Nombre<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="text"
@@ -890,8 +1019,8 @@ function EditModal({
           </div>
           <div className="flex gap-2">
             <div className="w-2/4">
-              <label className="block text-gray-600 text-base font-medium mb-2">
-                Documento*
+              <label className="block text-gray-600 text-base font-medium mb-2 -mt-1">
+                Documento<span className="text-red-600 text-lg">*</span>
               </label>
               <div className="flex w-full gap-1">
                 <div className="relative w-[20%]">
@@ -961,14 +1090,28 @@ function EditModal({
                         ...formData,
                         documento: e.target.value,
                       });
+                      setStillWritingDocumento(true)
                     }}
                     value={formData.documento}
                     required
-                    className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                    className={clsx({
+                      ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                        !documentoExist,
+                      ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                        documentoExist,
+                    })}
                     pattern={getDocumentoPatternAndMessage().pattern.source}
                   />
-                  <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                    {getDocumentoPatternAndMessage().message}
+                  <span
+                    className={clsx({
+                      ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                        !documentoExist,
+                      ["mt-2 text-sm text-red-500 block"]: documentoExist,
+                    })}
+                  >
+                    {documentoExist
+                      ? "Documento ya registrado"
+                      : getDocumentoPatternAndMessage().message}
                   </span>
                 </div>
               </div>
@@ -1009,18 +1152,31 @@ function EditModal({
                   ...formData,
                   email: e.target.value,
                 });
+                setStillWritingCorreo(true)
               }}
               value={formData.email}
-              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              className={clsx({
+                ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                  !correoExist,
+                ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                  correoExist,
+              })}
               pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+              maxLength={254}
             />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              E-mail invalido
+            <span
+              className={clsx({
+                ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                  !correoExist,
+                ["mt-2 text-sm text-red-500 block"]: correoExist,
+              })}
+            >
+              {correoExist ? "E-mail ya registrado" : "E-mail invalido"}
             </span>
           </div>
           <div className="w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Dirección
+              Dirección<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -1035,6 +1191,7 @@ function EditModal({
               autoComplete="none"
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               pattern="^.{1,100}$"
+              required
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
               Minimo 1 carácter, máximo 100
@@ -1058,9 +1215,10 @@ function EditModal({
               name="password"
               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
               autoComplete="new-password"
+              maxLength={32}
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              La contraseña debe tener mínimo 8 caracteres, contener una letra
+              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener una letra
               mayúscula, una letra minúscula, un número y un carácter especial.
             </span>
             {visible ? (
@@ -1107,7 +1265,17 @@ function EditModal({
               >
                 Cancelar
               </button>
-              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              <button
+                className={clsx({
+                  ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    !documentoExist || !correoExist,
+                  ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                    documentoExist ||
+                    stillWritingDocumento ||
+                    correoExist ||
+                    stillWritingCorreo,
+                })}
+              >
                 Completar
               </button>
             </div>
@@ -1156,7 +1324,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar cliente</h1>
@@ -1238,7 +1406,7 @@ function ViewModal({ isOpen, closeModal, cliente }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del cliente</h1>
@@ -1387,7 +1555,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar cliente</h1>
@@ -1485,7 +1653,10 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                 setIsPrecise(e.target.checked);
                 setTempIsPrecise(e.target.checked);
               }}
-              checked={tempIsPrecise}
+              checked={
+                selectedSearchType.value === "TELEFONO" ? false : tempIsPrecise
+              }
+              disabled={selectedSearchType.value === "TELEFONO"}
               id="checkbox"
             />
             <label
@@ -1523,7 +1694,11 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
-function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
+function DataRow({
+  cliente,
+  setOperationAsCompleted,
+  row_number,
+}: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -1556,12 +1731,12 @@ function DataRow({ cliente, setOperationAsCompleted }: DataRowProps) {
   };
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {cliente?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300 truncate min-w-[180px]">
         {cliente?.nombre} {cliente?.apellido || ""}
@@ -1988,24 +2163,31 @@ export default function ClientsDataDisplay() {
             }
           );
         } else if (param === "TELEFONO") {
-          void ClientService.getByExactTelefono(input, page, size).then(
-            (data) => {
-              toast.dismiss(loadingToast);
-              if (data === false) {
-                setNotFound(true);
-                setClientes([]);
-                setLoading(false);
-              } else {
-                setClientes(data.rows);
-                setPages(data.pages);
-                setCurrent(data.current);
-                setLoading(false);
-                setNotFound(false);
-              }
-              setIsPrecise(false);
-              setIsOperationCompleted(false);
+          let sanitizedTelefono = input;
+          if ((input as string).startsWith("+")) {
+            sanitizedTelefono = (input as string).substring(1); // Quita el primer carácter (el '+')
+          }
+
+          void ClientService.getByExactTelefono(
+            sanitizedTelefono,
+            page,
+            size
+          ).then((data) => {
+            toast.dismiss(loadingToast);
+            if (data === false) {
+              setNotFound(true);
+              setClientes([]);
+              setLoading(false);
+            } else {
+              setClientes(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
             }
-          );
+            setIsPrecise(false);
+            setIsOperationCompleted(false);
+          });
         } else if (param === "DOCUMENTO") {
           void ClientService.getByExactDocumento(input, page, size).then(
             (data) => {
@@ -2061,21 +2243,28 @@ export default function ClientsDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (param === "TELEFONO") {
-          void ClientService.getByTelefono(input, page, size).then((data) => {
-            toast.dismiss(loadingToast);
-            if (data === false) {
-              setNotFound(true);
-              setClientes([]);
-              setLoading(false);
-            } else {
-              setClientes(data.rows);
-              setPages(data.pages);
-              setCurrent(data.current);
-              setLoading(false);
-              setNotFound(false);
+          let sanitizedTelefono = input;
+          if ((input as string).startsWith("+")) {
+            sanitizedTelefono = (input as string).substring(1); // Quita el primer carácter (el '+')
+          }
+
+          void ClientService.getByTelefono(sanitizedTelefono, page, size).then(
+            (data) => {
+              toast.dismiss(loadingToast);
+              if (data === false) {
+                setNotFound(true);
+                setClientes([]);
+                setLoading(false);
+              } else {
+                setClientes(data.rows);
+                setPages(data.pages);
+                setCurrent(data.current);
+                setLoading(false);
+                setNotFound(false);
+              }
+              setIsOperationCompleted(false);
             }
-            setIsOperationCompleted(false);
-          });
+          );
         } else if (param === "DOCUMENTO") {
           void ClientService.getByDocumento(input, page, size).then((data) => {
             toast.dismiss(loadingToast);
@@ -2186,13 +2375,14 @@ export default function ClientsDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {clientes.map((cliente) => {
+                {clientes.map((cliente, index) => {
                   return (
                     <DataRow
                       action={""}
                       cliente={cliente}
                       setOperationAsCompleted={setAsCompleted}
                       key={cliente.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

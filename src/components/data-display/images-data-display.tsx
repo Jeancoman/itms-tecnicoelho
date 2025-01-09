@@ -19,11 +19,13 @@ import { useImageSearchParamStore } from "../../store/searchParamStore";
 import Select from "../misc/select";
 import { useSearchedStore } from "../../store/searchedStore";
 import clsx from "clsx";
+import { createRowNumber } from "../../utils/functions";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isViewerScreen, setIsViewerScreen] = useState(false); // Nuevo estado para el visualizador
   const [formData, setFormData] = useState<Imagen>({
     url: "",
     descripción: "",
@@ -37,6 +39,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       esPública: true,
     });
     setIsConfirmationScreen(false);
+    setIsViewerScreen(false); // Reiniciar visualizador al resetear
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,6 +59,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         toast.success(data.message);
       }
     });
+    resetFormData();
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,6 +69,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     setIsUploading(true);
     try {
       const result = await ImageService.upload(file);
+      console.log(result);
       if (result.status === "error") {
         toast.error(result.message);
       } else if (result.url) {
@@ -77,20 +82,26 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   };
 
   useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeModal();
+        ref.current?.close();
+        resetFormData();
+      }
+    };
+
     if (isOpen) {
       ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-          resetFormData();
-        }
-      });
+      document.addEventListener("keydown", handleEscape);
     } else {
       closeModal();
       ref.current?.close();
       resetFormData();
     }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [isOpen]);
 
   const renderConfirmationScreen = () => (
@@ -98,7 +109,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       {/* CONTENEDOR PRINCIPAL */}
       <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
         <div className="grid grid-cols-2 gap-6">
-          {/* NOMBRE */}
+          {/* ENLACE */}
           <div className="col-span-2">
             <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
               Enlace
@@ -138,132 +149,171 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     </div>
   );
 
+  const renderViewerScreen = () => (
+    <>
+      <div className="p-8 pt-6">
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          {/* Mostrar la imagen cargada */}
+          {formData.url ? (
+            <img
+              src={formData.url}
+              alt="Visualización"
+              className="w-full h-auto object-contain rounded-md"
+            />
+          ) : (
+            <p className="text-gray-500">No hay imagen para mostrar.</p>
+          )}
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => setIsViewerScreen(false)}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Volver
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
-          {isConfirmationScreen ? "Confirmar imagen" : "Añadir imagen"}
+          {isConfirmationScreen
+            ? "Confirmar imagen"
+            : isViewerScreen
+            ? "Visualizar imagen"
+            : "Añadir imagen"}
         </h1>
       </div>
+      {/* Renderizar diferentes pantallas según el estado */}
       {isConfirmationScreen ? (
         renderConfirmationScreen()
+      ) : isViewerScreen ? (
+        renderViewerScreen()
       ) : (
-        <form
-          className="flex flex-col p-8 pt-6 gap-4 group"
-          autoComplete="off"
-          onSubmit={handleSubmit}
-        >
-          <div>
-            <label className="block text-gray-600 text-base font-medium mb-2">
-              Enlace*
-            </label>
-            <div className="flex gap-2">
-              <div className="w-full">
-                <input
-                  type="url"
-                  placeholder="Introducir enlace de la imagen"
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      url: e.target.value,
-                    });
-                  }}
-                  value={formData.url}
-                  className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                  required
-                />
-                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  Enlace de imagen invalido
-                </span>
-              </div>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="fileInput"
-                  disabled={isUploading}
-                />
-                <label
-                  htmlFor="fileInput"
-                  className={`inline-flex items-center justify-center px-4 py-2 bg-[#2096ed] text-white rounded cursor-pointer hover:bg-[#1182d5] transition ${
-                    isUploading ? "pointer-events-none opacity-70" : ""
-                  }`}
-                >
-                  {isUploading ? (
-                    <svg
-                      aria-hidden="true"
-                      className="inline w-5 h-5 animate-spin text-blue-200 fill-[#2096ed]"
-                      viewBox="0 0 100 101"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                        fill="currentColor"
-                      />
-                      <path
-                        d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                        fill="currentFill"
-                      />
-                    </svg>
-                  ) : (
-                    "Subir"
-                  )}
-                </label>
+        <>
+          <form
+            className="flex flex-col p-8 pt-6 gap-4 group"
+            autoComplete="off"
+            onSubmit={handleSubmit}
+          >
+            <div>
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Enlace<span className="text-red-600 text-lg">*</span>
+              </label>
+              <div className="flex gap-2">
+                <div className="w-full">
+                  <input
+                    type="url"
+                    placeholder="Introducir enlace de la imagen"
+                    onChange={(e) => {
+                      setFormData({
+                        ...formData,
+                        url: e.target.value,
+                      });
+                    }}
+                    value={formData.url}
+                    className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                    required
+                    name="url"
+                  />
+                  <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                    Enlace de imagen inválido
+                  </span>
+                </div>
+                <div className="relative flex gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="fileInput"
+                    disabled={isUploading}
+                  />
+                  <label
+                    htmlFor="fileInput"
+                    className={`inline-flex items-center justify-center px-4 py-2 bg-[#2096ed] text-white rounded cursor-pointer hover:bg-[#1182d5] transition ${
+                      isUploading ? "pointer-events-none opacity-70" : ""
+                    }`}
+                  >
+                    {isUploading ? (
+                      <svg
+                        aria-hidden="true"
+                        className="inline w-5 h-5 animate-spin text-blue-200 fill-[#2096ed]"
+                        viewBox="0 0 100 101"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                          fill="currentColor"
+                        />
+                        <path
+                          d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                          fill="currentFill"
+                        />
+                      </svg>
+                    ) : (
+                      "Subir"
+                    )}
+                  </label>
+                  {/* Botón "Ver" agregado */}
+                  <button
+                    type="button"
+                    onClick={() => setIsViewerScreen(true)}
+                    className="inline-flex items-center justify-center px-4 py-2 bg-gray-500 text-white rounded cursor-pointer hover:bg-gray-600 transition"
+                    disabled={!formData.url} // Deshabilitar si no hay URL
+                  >
+                    Ver
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div>
-            <label className="block text-gray-600 text-base font-medium mb-2">
-              Descripción
-            </label>
-            <textarea
-              rows={6}
-              placeholder="Introducir descripción de la imagen"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  descripción: e.target.value,
-                });
-              }}
-              value={formData.descripción}
-              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              minLength={10}
-            />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 10 caracteres
-            </span>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
-          </div>
-        </form>
+            <div>
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Descripción
+              </label>
+              <textarea
+                rows={6}
+                placeholder="Introducir descripción de la imagen"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    descripción: e.target.value,
+                  });
+                }}
+                value={formData.descripción}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                minLength={10}
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Mínimo 10 caracteres
+              </span>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  closeModal();
+                  ref.current?.close();
+                  resetFormData();
+                }}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cancelar
+              </button>
+              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+                Completar
+              </button>
+            </div>
+          </form>
+        </>
       )}
     </dialog>
   );
@@ -278,6 +328,7 @@ function EditModal({
   const ref = useRef<HTMLDialogElement>(null);
   const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isViewerScreen, setIsViewerScreen] = useState(false); // Nuevo estado para el visualizador
   const [formData, setFormData] = useState<Imagen>(imagen!);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,6 +338,7 @@ function EditModal({
     setIsUploading(true);
     try {
       const result = await ImageService.upload(file);
+      console.log(result);
       if (result.status === "error") {
         toast.error(result.message);
       } else if (result.url) {
@@ -319,18 +371,24 @@ function EditModal({
   };
 
   useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeModal();
+        ref.current?.close();
+      }
+    };
+
     if (isOpen) {
       ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-        }
-      });
+      document.addEventListener("keydown", handleEscape);
     } else {
       closeModal();
       ref.current?.close();
     }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [isOpen]);
 
   const renderConfirmationScreen = () => (
@@ -344,7 +402,7 @@ function EditModal({
               Datos actuales
             </h3>
             <div className="space-y-5">
-              {/* Nombre */}
+              {/* Enlace */}
               <div>
                 <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                   Enlace
@@ -371,7 +429,7 @@ function EditModal({
               Nuevos datos
             </h3>
             <div className="space-y-5">
-              {/* Nombre */}
+              {/* Enlace */}
               <div>
                 <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                   Enlace
@@ -425,136 +483,169 @@ function EditModal({
     </div>
   );
 
+  const renderViewerScreen = () => (
+    <>
+      <div className="p-8 pt-6">
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          {/* Mostrar la imagen cargada */}
+          {formData.url ? (
+            <img
+              src={formData.url}
+              alt="Visualización"
+              className="w-full h-auto object-contain rounded-md"
+            />
+          ) : (
+            <p className="text-gray-500">No hay imagen para mostrar.</p>
+          )}
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => setIsViewerScreen(false)}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Volver
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <dialog
       ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
       className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit max-h-[500px] rounded shadow text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
-          {isConfirmationScreen ? "Confirmar cambios" : "Editar imagen"}
+          {isConfirmationScreen
+            ? "Confirmar cambios"
+            : isViewerScreen
+            ? "Visualizar imagen"
+            : "Editar imagen"}
         </h1>
       </div>
       {isConfirmationScreen ? (
         renderConfirmationScreen()
+      ) : isViewerScreen ? (
+        renderViewerScreen()
       ) : (
-        <form
-          className="flex flex-col p-8 pt-6 gap-4 group"
-          autoComplete="off"
-          onSubmit={handleSubmit}
-        >
-          <div>
-            <label className="block text-gray-600 text-base font-medium mb-2">
-              Enlace*
-            </label>
-            <div className="flex gap-2">
-              <div className="w-full">
-                <input
-                  type="url"
-                  placeholder="Introducir enlace de la imagen"
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      url: e.target.value,
-                    });
-                  }}
-                  value={formData.url}
-                  className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                  required
-                  
-                />
-                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  Enlace de imagen invalido
-                </span>
-              </div>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="fileInput"
-                  disabled={isUploading}
-                />
-                <label
-                  htmlFor="fileInput"
-                  className={`inline-flex items-center justify-center px-4 py-2 bg-[#2096ed] text-white rounded cursor-pointer hover:bg-[#1182d5] transition ${
-                    isUploading ? "pointer-events-none opacity-70" : ""
-                  }`}
-                >
-                  {isUploading ? (
-                    <svg
-                      aria-hidden="true"
-                      className="inline w-5 h-5 animate-spin text-blue-200 fill-[#2096ed]"
-                      viewBox="0 0 100 101"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                        fill="currentColor"
-                      />
-                      <path
-                        d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                        fill="currentFill"
-                      />
-                    </svg>
-                  ) : (
-                    "Subir"
-                  )}
-                </label>
+        <>
+          <form
+            className="flex flex-col p-8 pt-6 gap-4 group"
+            autoComplete="off"
+            onSubmit={handleSubmit}
+          >
+            <div>
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Enlace<span className="text-red-600 text-lg">*</span>
+              </label>
+              <div className="flex gap-2">
+                <div className="w-full">
+                  <input
+                    type="url"
+                    placeholder="Introducir enlace de la imagen"
+                    onChange={(e) => {
+                      setFormData({
+                        ...formData,
+                        url: e.target.value,
+                      });
+                    }}
+                    value={formData.url}
+                    className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                    required
+                    name="url"
+                  />
+                  <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                    Enlace de imagen inválido
+                  </span>
+                </div>
+                <div className="relative flex gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id={"fileInputEdit" + imagen?.id}
+                    disabled={isUploading}
+                  />
+                  <label
+                    htmlFor={"fileInputEdit" + imagen?.id}
+                    className={`inline-flex items-center justify-center px-4 py-2 bg-[#2096ed] text-white rounded cursor-pointer hover:bg-[#1182d5] transition ${
+                      isUploading ? "pointer-events-none opacity-70" : ""
+                    }`}
+                  >
+                    {isUploading ? (
+                      <svg
+                        aria-hidden="true"
+                        className="inline w-5 h-5 animate-spin text-blue-200 fill-[#2096ed]"
+                        viewBox="0 0 100 101"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                          fill="currentColor"
+                        />
+                        <path
+                          d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                          fill="currentFill"
+                        />
+                      </svg>
+                    ) : (
+                      "Subir"
+                    )}
+                  </label>
+                  {/* Botón "Ver" */}
+                  <button
+                    type="button"
+                    onClick={() => setIsViewerScreen(true)}
+                    className="inline-flex items-center justify-center px-4 py-2 bg-gray-500 text-white rounded cursor-pointer hover:bg-gray-600 transition"
+                    disabled={!formData.url} // Deshabilitar si no hay URL
+                  >
+                    Ver
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div>
-            <label className="block text-gray-600 text-base font-medium mb-2">
-              Descripción
-            </label>
-            <textarea
-              rows={6}
-              placeholder="Introducir descripción de la imagen"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  descripción: e.target.value,
-                });
-              }}
-              value={formData.descripción}
-              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              minLength={10}
-            />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 10 caracteres
-            </span>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                closeModal();
-                setFormData(imagen!);
-              }}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
-          </div>
-        </form>
+            <div>
+              <label className="block text-gray-600 text-base font-medium mb-2">
+                Descripción
+              </label>
+              <textarea
+                rows={6}
+                placeholder="Introducir descripción de la imagen"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    descripción: e.target.value,
+                  });
+                }}
+                value={formData.descripción}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                minLength={10}
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Mínimo 10 caracteres
+              </span>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  closeModal();
+                  setFormData(imagen!);
+                }}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cancelar
+              </button>
+              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+                Completar
+              </button>
+            </div>
+          </form>
+        </>
       )}
     </dialog>
   );
@@ -598,7 +689,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar imagen</h1>
@@ -688,7 +779,7 @@ function VisualizeModal({ isOpen, closeModal, imagen }: ModalProps) {
           }
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Visualizador de imagen</h1>
@@ -718,7 +809,87 @@ function VisualizeModal({ isOpen, closeModal, imagen }: ModalProps) {
   );
 }
 
-function DataRow({ imagen, setOperationAsCompleted }: DataRowProps) {
+function ViewModal({ isOpen, closeModal, imagen }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Datos de la imagen</h1>
+      </div>
+      <div className="p-8 pt-6">
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* NOMBRE */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Enlace
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {imagen?.url || "No especificado"}
+              </p>
+            </div>
+
+            {/* DESCRIPCIÓN */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Descripción
+              </p>
+              <p className="text-gray-900 font-medium text-base whitespace-pre-wrap">
+                {imagen?.descripción || "No especificada"}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={closeModal}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
+function DataRow({
+  imagen,
+  setOperationAsCompleted,
+  row_number,
+}: DataRowProps) {
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isVisualizerOpen, setIsVisualizerOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -746,17 +917,21 @@ function DataRow({ imagen, setOperationAsCompleted }: DataRowProps) {
     setIsVisualizerOpen(false);
   };
 
+  const closeViewModal = () => {
+    setIsViewOpen(false);
+  };
+
   const selectAction = (action: `${Action}`) => {
     setAction(action);
   };
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {imagen?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
         <span
@@ -773,7 +948,7 @@ function DataRow({ imagen, setOperationAsCompleted }: DataRowProps) {
         />
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
-        {imagen?.descripción}
+        {imagen?.descripción || "No especificada"}
       </td>
       <td
         ref={ref}
@@ -794,6 +969,24 @@ function DataRow({ imagen, setOperationAsCompleted }: DataRowProps) {
               isOpen={isEditOpen}
               closeModal={closeEditModal}
               setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
+        )}
+        {action === "VIEW" && (
+          <>
+            <button
+              onClick={() => {
+                setIsViewOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Mostrar imagen
+            </button>
+            <ViewModal
+              imagen={imagen}
+              isOpen={isViewOpen}
+              closeModal={closeViewModal}
+              setOperationAsCompleted={() => null}
             />
           </>
         )}
@@ -916,7 +1109,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar imagen</h1>
@@ -1211,6 +1404,29 @@ function IndividualDropup({ id, close, selectAction, top, left }: DropupProps) {
           </div>
         </li>
       )}
+      <li>
+        <div
+          onClick={() => {
+            selectAction("VIEW");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Mostrar imagen
+        </div>
+      </li>
     </ul>
   );
 }
@@ -1266,14 +1482,14 @@ export default function ImagesDataDisplay() {
         if (data === false) {
           setNotFound(true);
           setImages([]);
-          setLoading(false)
+          setLoading(false);
           setWasSearch(false);
         } else {
           setImages(data.rows);
           setPages(data.pages);
           setCurrent(data.current);
           setLoading(false);
-          setNotFound(false)
+          setNotFound(false);
           setWasSearch(false);
         }
         setIsOperationCompleted(false);
@@ -1444,13 +1660,14 @@ export default function ImagesDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {images.map((image) => {
+                {images.map((image, index) => {
                   return (
                     <DataRow
                       action={action}
                       imagen={image}
                       setOperationAsCompleted={setAsCompleted}
                       key={image.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

@@ -59,10 +59,14 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
   const backupsPerPage = 5;
 
   // Estados para gestionar flujo de acciones
-  const [actionType, setActionType] = useState<"create" | "restore" | "delete" | null>(null);
+  const [actionType, setActionType] = useState<
+    "create" | "restore" | "delete" | null
+  >(null);
   const [selectedBackupId, setSelectedBackupId] = useState<string | null>(null);
-  const [step, setStep] = useState<"initial" | "confirm" | "after">( "initial" );
-  const [state, setState] = useState<"loading" | "success" | "error" | null>(null)
+  const [step, setStep] = useState<"initial" | "confirm" | "after">("initial");
+  const [state, setState] = useState<"loading" | "success" | "error" | null>(
+    null
+  );
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
@@ -94,7 +98,7 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
   const handleCreateBackup = async () => {
     setActionType("create");
     setState("loading");
-    setStep("after")
+    setStep("after");
     try {
       await RespaldoService.create();
       setFetched(false);
@@ -120,7 +124,7 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
 
   const executeAction = async () => {
     setState("loading");
-    setStep("after")
+    setStep("after");
     try {
       if (actionType === "restore" && selectedBackupId) {
         await RespaldoService.restore(selectedBackupId);
@@ -134,7 +138,11 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
       setState("success");
     } catch (error) {
       setState("error");
-      setMessage("Ocurrió un error durante la operación.");
+      if (actionType === "restore") {
+        setMessage("No se pudo realizar la restauración.");
+      } else {
+        setMessage("No se pudo eliminar el respaldo.");
+      }
     }
   };
 
@@ -142,7 +150,7 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
     // Reiniciar estados para volver al listado principal
     setActionType(null);
     setSelectedBackupId(null);
-    setState(null)
+    setState(null);
     setStep("initial");
     setMessage("");
   };
@@ -234,7 +242,9 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
             <Pagination
               current={currentPage}
               pages={totalPages}
-              next={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              next={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               prev={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             />
             <div className="mt-6 flex justify-end">
@@ -253,7 +263,7 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
           </>
         )}
 
-        {(step === "confirm") && (
+        {step === "confirm" && (
           // Pantalla de confirmación para restaurar o eliminar
           <div className="flex flex-col items-center">
             <Warning className="fill-red-400 h-16 w-16" />
@@ -312,9 +322,9 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
           </div>
         )}
 
-        {(state === "loading") && actionType && (
+        {state === "loading" && actionType && (
           // Para la acción de creación, aunque se gestiona en el botón, si se desea se puede mostrar pantalla de carga completa
-          <div className="place-self-center">
+          <div className="justify-center flex">
             <div role="status">
               {/* Círculo de carga grande */}
               <svg
@@ -347,7 +357,9 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
             ) : (
               <>
                 <Warning className="fill-red-400 h-16 w-16" />
-                <p className="font-bold text-lg text-center mt-2">Ha ocurrido un error</p>
+                <p className="font-bold text-lg text-center mt-2">
+                  Ha ocurrido un error
+                </p>
               </>
             )}
             <p className="text-center mt-2">{message}</p>
@@ -666,7 +678,7 @@ export default function NavPanel() {
                     <p>Productos</p>
                   </NavLink>
                 ) : null}
-                {permissions.find()?.ver.producto ? (
+                {permissions.find()?.ver.historico ? (
                   <NavLink
                     to="/historico"
                     onClick={resetAllSearchs}

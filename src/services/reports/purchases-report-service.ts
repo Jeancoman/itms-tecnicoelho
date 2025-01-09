@@ -13,6 +13,7 @@ export default class PurchasesReportService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -39,6 +40,7 @@ export default class PurchasesReportService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );

@@ -27,6 +27,7 @@ import clsx from "clsx";
 import RolService from "../../services/rol-service";
 import permissions from "../../utils/permissions";
 import { useNavigate } from "react-router-dom";
+import { createRowNumber } from "../../utils/functions";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -55,6 +56,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const [visible, setVisible] = useState(false);
   const [isTaken, setIsTaken] = useState(false);
   const [stillWriting, setStillWriting] = useState(false);
+  const [documentoExist, setDocumentoExist] = useState(false);
+  const [stillWritingDocumento, setStillWritingDocumento] = useState(false);
+  const [correoExist, setCorreoExist] = useState(false);
+  const [stillWritingCorreo, setStillWritingCorreo] = useState(false);
 
   const resetFormData = () => {
     setFormData({
@@ -75,7 +80,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     });
     setDocumentType({ value: "V", label: "V" });
     setIsConfirmationScreen(false);
-    setVisible(false)
+    setVisible(false);
   };
 
   const checkUsername = useCallback(
@@ -93,6 +98,36 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           setIsTaken(false);
           setStillWriting(false);
         }
+      }
+    }, 500),
+    []
+  );
+
+  const checkDocumento = useCallback(
+    debounce(async (documento) => {
+      if (documento.length >= 8) {
+        const exist = await UserService.getByExactDocumento(documento, 1, 100);
+        if (exist) {
+          setDocumentoExist(true);
+          setStillWritingDocumento(false);
+        } else {
+          setDocumentoExist(false);
+          setStillWritingDocumento(false);
+        }
+      }
+    }, 500),
+    []
+  );
+
+  const checkCorreo = useCallback(
+    debounce(async (correo) => {
+      const exist = await UserService.getByExactCorreo(correo, 1, 100);
+      if (exist) {
+        setCorreoExist(true);
+        setStillWritingCorreo(false);
+      } else {
+        setCorreoExist(false);
+        setStillWritingCorreo(false);
       }
     }, 500),
     []
@@ -174,6 +209,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   useEffect(() => {
     checkUsername(formData.nombreUsuario);
   }, [formData.nombreUsuario]);
+
+  useEffect(() => {
+    checkDocumento(`${documentType.value}-${formData.documento}`);
+  }, [formData.documento, documentType.value]);
+
+  useEffect(() => {
+    checkCorreo(formData.correo);
+  }, [formData.correo]);
 
   useEffect(() => {
     if (roles.length === 0) {
@@ -283,7 +326,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -301,7 +344,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           <div className="flex gap-4 w-full">
             <div className="w-2/4">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Nombre*
+                Nombre<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="text"
@@ -323,7 +366,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             </div>
             <div className="w-2/4">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Apellido*
+                Apellido<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="text"
@@ -346,7 +389,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           </div>
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Documento*
+              Documento<span className="text-red-600 text-lg">*</span>
             </label>
             <div className="flex gap-1">
               <div className="relative w-[20%]">
@@ -416,14 +459,28 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                       ...formData,
                       documento: e.target.value,
                     });
+                    setStillWritingDocumento(true);
                   }}
                   value={formData.documento}
                   required
-                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                  className={clsx({
+                    ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                      !documentoExist,
+                    ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                      documentoExist,
+                  })}
                   pattern={getDocumentoPatternAndMessage().pattern.source}
                 />
-                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  {getDocumentoPatternAndMessage().message}
+                <span
+                  className={clsx({
+                    ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                      !documentoExist,
+                    ["mt-2 text-sm text-red-500 block"]: documentoExist,
+                  })}
+                >
+                  {documentoExist
+                    ? "Documento ya registrado"
+                    : getDocumentoPatternAndMessage().message}
                 </span>
               </div>
             </div>
@@ -431,7 +488,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           <div className="flex gap-4">
             <div className="w-2/4">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Nombre de usuario*
+                Nombre de usuario<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="text"
@@ -467,7 +524,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             </div>
             <div className="relative w-2/4">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Rol*
+                Rol<span className="text-red-600 text-lg">*</span>
               </label>
               <Select
                 options={roles.map((rol) => ({
@@ -492,12 +549,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           </div>
           <div className="w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              E-mail*
+              E-mail<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="email"
               name="email"
-              placeholder="E-mail*"
+              placeholder="Introducir e-mail"
               onChange={(e) => {
                 setFormData({
                   ...formData,
@@ -505,21 +562,33 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 });
               }}
               value={formData.correo}
-              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              className={clsx({
+                ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                  !correoExist,
+                ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                  correoExist,
+              })}
               pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+              maxLength={254}
               required
             />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              E-mail invalido
+            <span
+              className={clsx({
+                ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                  !correoExist,
+                ["mt-2 text-sm text-red-500 block"]: correoExist,
+              })}
+            >
+              {correoExist ? "E-mail ya registrado" : "E-mail invalido"}
             </span>
           </div>
           <div className="relative w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Contraseña*
+              Contraseña<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type={visible ? "text" : "password"}
-              placeholder="Contraseña*"
+              placeholder="Introducir contraseña"
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -531,10 +600,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               name="password"
               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
               autoComplete="new-password"
+              maxLength={32}
               required
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              La contraseña debe tener mínimo 8 caracteres, contener una letra
+              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener una letra
               mayúscula, una letra minúscula, un número y un carácter especial
             </span>
             {visible ? (
@@ -560,10 +630,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             <button
               className={clsx({
                 ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                  !isTaken,
+                  !isTaken || !documentoExist || !correoExist,
                 ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
                   isTaken ||
                   stillWriting ||
+                  documentoExist ||
+                  stillWritingDocumento ||
+                  correoExist ||
+                  stillWritingCorreo ||
                   formData?.nombre.length < 2 ||
                   formData?.nombreUsuario.length < 3 ||
                   selectedRole.label?.startsWith("Selecciona"),
@@ -608,6 +682,10 @@ function EditModal({
   const [visible, setVisible] = useState(false);
   const [isTaken, setIsTaken] = useState(false);
   const [stillWriting, setStillWriting] = useState(false);
+  const [documentoExist, setDocumentoExist] = useState(false);
+  const [stillWritingDocumento, setStillWritingDocumento] = useState(false);
+  const [correoExist, setCorreoExist] = useState(false);
+  const [stillWritingCorreo, setStillWritingCorreo] = useState(false);
 
   const resetFormData = () => {
     setFormData({
@@ -644,6 +722,36 @@ function EditModal({
           setIsTaken(false);
           setStillWriting(false);
         }
+      }
+    }, 500),
+    []
+  );
+
+  const checkDocumento = useCallback(
+    debounce(async (documento) => {
+      if (documento.length >= 8) {
+        const exist = await UserService.getByExactDocumento(documento, 1, 100);
+        if (exist && usuario?.documento !== documento ) {
+          setDocumentoExist(true);
+          setStillWritingDocumento(false);
+        } else {
+          setDocumentoExist(false);
+          setStillWritingDocumento(false);
+        }
+      }
+    }, 500),
+    []
+  );
+
+  const checkCorreo = useCallback(
+    debounce(async (correo) => {
+      const exist = await UserService.getByExactCorreo(correo, 1, 100);
+      if (exist && usuario?.correo !== correo) {
+        setCorreoExist(true);
+        setStillWritingCorreo(false);
+      } else {
+        setCorreoExist(false);
+        setStillWritingCorreo(false);
       }
     }, 500),
     []
@@ -708,6 +816,14 @@ function EditModal({
   useEffect(() => {
     checkUsername(formData.nombreUsuario);
   }, [formData.nombreUsuario]);
+
+  useEffect(() => {
+    checkDocumento(`${documentType.value}-${formData.documento}`);
+  }, [formData.documento, documentType.value]);
+
+  useEffect(() => {
+    checkCorreo(formData.correo);
+  }, [formData.correo]);
 
   useEffect(() => {
     if (isOpen) {
@@ -942,7 +1058,7 @@ function EditModal({
           <div className="flex gap-4 w-full">
             <div className="w-2/4">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Nombre*
+                Nombre<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="text"
@@ -964,7 +1080,7 @@ function EditModal({
             </div>
             <div className="w-2/4">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Apellido*
+                Apellido<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="text"
@@ -987,7 +1103,7 @@ function EditModal({
           </div>
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Documento*
+              Documento<span className="text-red-600 text-lg">*</span>
             </label>
             <div className="flex gap-1">
               <div className="relative w-[20%]">
@@ -1057,14 +1173,28 @@ function EditModal({
                       ...formData,
                       documento: e.target.value,
                     });
+                    setStillWritingDocumento(true);
                   }}
                   value={formData.documento}
                   required
-                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                  className={clsx({
+                    ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                      !documentoExist,
+                    ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                      documentoExist,
+                  })}
                   pattern={getDocumentoPatternAndMessage().pattern.source}
                 />
-                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  {getDocumentoPatternAndMessage().message}
+                <span
+                  className={clsx({
+                    ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                      !documentoExist,
+                    ["mt-2 text-sm text-red-500 block"]: documentoExist,
+                  })}
+                >
+                  {documentoExist
+                    ? "Documento ya registrado"
+                    : getDocumentoPatternAndMessage().message}
                 </span>
               </div>
             </div>
@@ -1072,7 +1202,7 @@ function EditModal({
           <div className="flex gap-2">
             <div className="w-2/4">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Nombre de usuario*
+                Nombre de usuario<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="text"
@@ -1108,7 +1238,7 @@ function EditModal({
             </div>
             <div className="relative w-2/4">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Rol*
+                Rol<span className="text-red-600 text-lg">*</span>
               </label>
               <select
                 className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
@@ -1122,7 +1252,7 @@ function EditModal({
           </div>
           <div className="w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              E-mail*
+              E-mail<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="email"
@@ -1133,19 +1263,32 @@ function EditModal({
                   ...formData,
                   correo: e.target.value,
                 });
+                setStillWritingCorreo(true);
               }}
               value={formData.correo}
-              className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              className={clsx({
+                ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                  !correoExist,
+                ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                  correoExist,
+              })}
               pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+              maxLength={254}
               required
             />
-            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              E-mail invalido
+            <span
+              className={clsx({
+                ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                  !correoExist,
+                ["mt-2 text-sm text-red-500 block"]: correoExist,
+              })}
+            >
+              {correoExist ? "E-mail ya registrado" : "E-mail invalido"}
             </span>
           </div>
           <div className="relative w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Contraseña*
+              Contraseña
             </label>
             <input
               type={visible ? "text" : "password"}
@@ -1161,9 +1304,10 @@ function EditModal({
               name="password"
               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
               autoComplete="new-password"
+              maxLength={32}
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              La contraseña debe tener mínimo 8 caracteres, contener una letra
+              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener una letra
               mayúscula, una letra minúscula, un número y un carácter especial
             </span>
             {visible ? (
@@ -1192,10 +1336,14 @@ function EditModal({
             <button
               className={clsx({
                 ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                  !isTaken,
+                  !isTaken || !documentoExist || !correoExist,
                 ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
                   isTaken ||
                   stillWriting ||
+                  documentoExist ||
+                  stillWritingDocumento ||
+                  correoExist ||
+                  stillWritingCorreo ||
                   formData?.nombre.length < 2 ||
                   formData?.nombreUsuario.length < 3,
               })}
@@ -1247,7 +1395,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar usuario</h1>
@@ -1329,7 +1477,7 @@ function ViewModal({ isOpen, closeModal, usuario }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del usuario</h1>
@@ -1407,7 +1555,11 @@ function ViewModal({ isOpen, closeModal, usuario }: ModalProps) {
   );
 }
 
-function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
+function DataRow({
+  usuario,
+  setOperationAsCompleted,
+  row_number,
+}: DataRowProps) {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -1439,12 +1591,12 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
   };
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {usuario?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300 truncate min-w-[180px]">
         {usuario?.nombre} {usuario?.apellido}
@@ -1464,7 +1616,10 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
           {usuario?.rol?.nombre}
         </div>
       </td>
-      <td ref={ref} className="px-6 py-3 border border-slate-300 min-w-[210px] w-[210px] relative">
+      <td
+        ref={ref}
+        className="px-6 py-3 border border-slate-300 min-w-[210px] w-[210px] relative"
+      >
         {action === "EDIT" && (
           <>
             {
@@ -1575,7 +1730,9 @@ function DataRow({ usuario, setOperationAsCompleted }: DataRowProps) {
               10
             }
             left={
-              (ref?.current?.getBoundingClientRect().left ?? 0) + window.scrollX + 25
+              (ref?.current?.getBoundingClientRect().left ?? 0) +
+              window.scrollX +
+              25
             }
           />
         )}
@@ -1653,7 +1810,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar usuario</h1>
@@ -2030,9 +2187,7 @@ export default function UsersDataDisplay() {
   const input = useUserSearchParamStore((state) => state.input);
   const param = useUserSearchParamStore((state) => state.param);
   const isPrecise = useUserSearchParamStore((state) => state.isPrecise);
-    const setIsPrecise = useUserSearchParamStore(
-      (state) => state.setIsPrecise
-    );
+  const setIsPrecise = useUserSearchParamStore((state) => state.setIsPrecise);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
   const size = 7;
@@ -2117,7 +2272,7 @@ export default function UsersDataDisplay() {
               setNotFound(false);
             }
             toast.dismiss(loadingToast);
-            setIsPrecise(false)
+            setIsPrecise(false);
             setIsOperationCompleted(false);
           });
         } else if (param === "APELLIDO") {
@@ -2135,7 +2290,7 @@ export default function UsersDataDisplay() {
                 setNotFound(false);
               }
               toast.dismiss(loadingToast);
-              setIsPrecise(false)
+              setIsPrecise(false);
               setIsOperationCompleted(false);
             }
           );
@@ -2154,7 +2309,7 @@ export default function UsersDataDisplay() {
                 setNotFound(false);
               }
               toast.dismiss(loadingToast);
-              setIsPrecise(false)
+              setIsPrecise(false);
               setIsOperationCompleted(false);
             }
           );
@@ -2310,13 +2465,14 @@ export default function UsersDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => {
+                {users.map((user, index) => {
                   return (
                     <DataRow
                       action={""}
                       usuario={user}
                       setOperationAsCompleted={setAsCompleted}
                       key={user.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

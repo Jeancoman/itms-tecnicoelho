@@ -13,6 +13,7 @@ export default class HistoricoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -43,6 +44,7 @@ export default class HistoricoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -67,6 +69,7 @@ export default class HistoricoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify(historico),
@@ -92,6 +95,7 @@ export default class HistoricoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify(historico),
@@ -117,6 +121,7 @@ export default class HistoricoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }

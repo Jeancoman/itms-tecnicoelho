@@ -14,6 +14,7 @@ export default class UserService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -46,6 +47,7 @@ export default class UserService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -76,6 +78,7 @@ export default class UserService {
             Authorization: session.find()?.token || token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -102,6 +105,7 @@ export default class UserService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -134,6 +138,7 @@ export default class UserService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -166,6 +171,7 @@ export default class UserService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -202,6 +208,7 @@ export default class UserService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -234,6 +241,7 @@ export default class UserService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -270,6 +278,81 @@ export default class UserService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
+          },
+        }
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByExactDocumento(
+    documento: string,
+    page: number,
+    size: number
+  ) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/usuarios/busqueda?exactitud=EXACTA&documento=${documento}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "Connection": "keep-alive",
+          },
+        }
+      );
+
+      if (response.status > 300) {
+        return false;
+      }
+
+      const data = (await response.json()) as Response;
+
+      if (data.rows.length === 0) {
+        return false;
+      }
+
+      return data;
+    } catch {
+      return false;
+    }
+  }
+
+  static async getByExactCorreo(
+    correo: string,
+    page: number,
+    size: number
+  ) {
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/usuarios/busqueda?exactitud=EXACTA&correo=${correo}&page=${page}&size=${size}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: session.find()?.token!,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -299,6 +382,7 @@ export default class UserService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify(user),
@@ -323,6 +407,7 @@ export default class UserService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify(user),
@@ -347,6 +432,7 @@ export default class UserService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -370,6 +456,7 @@ export default class UserService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
           body: JSON.stringify({
             nombre_usuario: nombre_usuario,
@@ -403,6 +490,7 @@ export default class UserService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
           body: JSON.stringify({
             correo: email,
@@ -429,6 +517,7 @@ export default class UserService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
           body: JSON.stringify({
             userId,

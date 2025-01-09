@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import Pagination from "../misc/pagination";
-import { DataRowProps, AccesoUsuario, Usuario } from "../../types";
+import { DataRowProps, AccesoUsuario, Usuario, ModalProps } from "../../types";
 import { Toaster } from "react-hot-toast";
 import { useCategorySearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import { useNavigate, useParams } from "react-router-dom";
 import UserService from "../../services/user-service";
+import { createRowNumber } from "../../utils/functions";
+import { format } from "date-fns";
 
 /*
 function EditModal({
@@ -58,7 +60,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar categoría</h1>
@@ -238,7 +240,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Añadir categoría</h1>
@@ -418,7 +420,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -540,7 +542,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar categoría</h1>
@@ -688,20 +690,25 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 }
 */
 
-function DataRow({ acceso }: DataRowProps) {
+function DataRow({ acceso, row_number }: DataRowProps) {
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const closeViewModal = () => {
+    setIsViewOpen(false);
+  };
+
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {acceso?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300">{acceso?.ip}</td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">
         {acceso?.dispositivo}
       </td>
-      <td className="px-6 py-4 border border-slate-300 truncate">
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[80px]">
         {acceso?.navegador}
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate">
@@ -714,9 +721,198 @@ function DataRow({ acceso }: DataRowProps) {
         {acceso?.urlReferida}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {acceso?.peticionMetodo}
+        {acceso?.peticionMetodo === "POST" ? (
+          <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
+            POST
+          </div>
+        ) : acceso?.peticionMetodo === "PATCH" ? (
+          <div className="bg-yellow-200 text-center text-yellow-600 text-xs py-2 font-bold rounded-lg capitalize">
+            PATCH
+          </div>
+        ) : (
+          <div className="bg-red-200 text-center text-red-600 text-xs py-2 font-bold rounded-lg capitalize">
+            DELETE
+          </div>
+        )}
+      </td>
+      <td className="px-6 py-3 border border-slate-300 w-[200px] relative">
+        <button
+          onClick={() => {
+            setIsViewOpen(true);
+          }}
+          className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+        >
+          Mostrar registro
+        </button>
+        <AccesoModal
+          acceso={acceso}
+          isOpen={isViewOpen}
+          closeModal={closeViewModal}
+          setOperationAsCompleted={() => null}
+        />
       </td>
     </tr>
+  );
+}
+
+function AccesoModal({ isOpen, closeModal, acceso }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeModal();
+        ref.current?.close();
+      }
+    };
+
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", handleKeyDown);
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, closeModal]);
+
+    // Función para formatear el JSON con indentación
+    const formatJSON = (jsonString: string) => {
+      try {
+        const obj = JSON.parse(jsonString);
+        return JSON.stringify(obj, null, 2); // Sangría de 2 espacios
+      } catch {
+        return jsonString; // Si no es un JSON válido, se retorna tal cual
+      }
+    };
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect();
+        if (!dialogDimensions) return;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Detalle de acceso</h1>
+      </div>
+      <div className="p-8 pt-6">
+        <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* IP */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                IP
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {acceso?.ip || "No especificada"}
+              </p>
+            </div>
+            {/* Dispositivo */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Dispositivo
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {acceso?.dispositivo || "No especificado"}
+              </p>
+            </div>
+            {/* Navegador */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Navegador
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {acceso?.navegador || "No especificado"}
+              </p>
+            </div>
+            {/* Sistema Operativo */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Sistema Operativo
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {acceso?.sistemaOperativo || "No especificado"}
+              </p>
+            </div>
+            {/* URL Solicitada */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                URL Solicitada
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {acceso?.urlSolicitada || "No especificada"}
+              </p>
+            </div>
+            {/* URL Referida */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                URL Referida
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {acceso?.urlReferida || "No especificada"}
+              </p>
+            </div>
+            {/* Método de petición */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Método de Petición
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {acceso?.peticionMetodo || "No especificado"}
+              </p>
+            </div>
+            {/* Fecha de Creación */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Fecha de Acceso
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {acceso?.creado
+                  ? format(new Date(acceso?.creado), "dd/MM/yyyy hh:mm a")
+                  : "No especificada"}
+              </p>
+            </div>
+            {/* Encabezados de la petición */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Encabezados de la Petición
+              </p>
+              <div className="max-h-60 overflow-auto bg-gray-100 p-2 rounded text-sm font-mono whitespace-pre">
+                {acceso?.peticionEncabezados
+                  ? formatJSON(acceso.peticionEncabezados)
+                  : "No especificados"}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => {
+              closeModal();
+              ref.current?.close();
+            }}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </dialog>
   );
 }
 
@@ -1021,16 +1217,20 @@ export default function AccesoDataDisplay() {
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Metodo
                   </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Acción
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {accesos.map((acceso) => {
+                {accesos.map((acceso, index) => {
                   return (
                     <DataRow
                       action={""}
                       acceso={acceso}
                       setOperationAsCompleted={setAsCompleted}
                       key={acceso.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

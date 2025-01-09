@@ -21,6 +21,7 @@ import options from "../../utils/options";
 import { Socket, io } from "socket.io-client";
 import MessageSenderService from "../../services/message-sender-service";
 import permissions from "../../utils/permissions";
+import { createRowNumber } from "../../utils/functions";
 
 hljs.registerLanguage("tecniplantilla", () => {
   return {
@@ -54,6 +55,7 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Connection: "keep-alive",
           },
         }
       );
@@ -142,7 +144,7 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Configurar mensajero</h1>
@@ -235,6 +237,91 @@ function MessengerModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
+function ViewModal({ isOpen, closeModal, plantilla }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Datos de la plantilla</h1>
+      </div>
+      <div className="p-8 pt-6">
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* NOMBRE */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Contenido
+              </p>
+              <div className="max-h-[300px] overflow-auto bg-slate-50 scrollbar">
+                <Editor
+                  value={plantilla?.contenido || ""}
+                  onValueChange={() => null}
+                  readOnly
+                  highlight={(code) => {
+                    console.log(
+                      hljs.highlight(code, { language: "tecniplantilla" }).value
+                    );
+                    return hljs.highlight(code, {
+                      language: "tecniplantilla",
+                    }).value;
+                  }}
+                  padding={10}
+                  style={{
+                    fontFamily: '"consolas", "Fira Mono", monospace',
+                    fontSize: 14,
+                  }}
+                  textareaClassName="outline-none"
+                  preClassName="language-tecniplantilla"
+                  className="min-h-[300px]"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={closeModal}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
 function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [formData, setFormData] = useState<Mensajería>(mensajería!);
@@ -269,7 +356,7 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Configurar mensajería</h1>
@@ -436,6 +523,7 @@ function EditModal({
   plantilla,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [formData, setFormData] = useState<Plantilla>(plantilla!);
 
   useEffect(() => {
@@ -453,110 +541,243 @@ function EditModal({
     }
   }, [isOpen]);
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    closeModal();
+    const loadingToast = toast.loading("Editando plantilla...");
+    TemplateService.update(plantilla?.id!, formData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data) {
+        toast.success("Plantilla editada con exito.");
+      } else {
+        toast.error("Plantilla no pudo ser editada.");
+      }
+    });
+  };
+
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6 w-fit">
+        <div className="grid grid-cols-2 gap-8">
+          {/* COLUMNA IZQUIERDA - Datos actuales */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Datos actuales
+            </h3>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Contenido
+                </p>
+                <div className="max-h-[300px] overflow-auto bg-slate-50 scrollbar">
+                  <Editor
+                    value={plantilla?.contenido || ""}
+                    onValueChange={() => null}
+                    readOnly
+                    highlight={(code) => {
+                      console.log(
+                        hljs.highlight(code, { language: "tecniplantilla" })
+                          .value
+                      );
+                      return hljs.highlight(code, {
+                        language: "tecniplantilla",
+                      }).value;
+                    }}
+                    padding={10}
+                    style={{
+                      fontFamily: '"consolas", "Fira Mono", monospace',
+                      fontSize: 14,
+                    }}
+                    textareaClassName="outline-none"
+                    preClassName="language-tecniplantilla"
+                    className="min-h-[300px]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* COLUMNA DERECHA - Nuevos datos */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Nuevos datos
+            </h3>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Contenido
+                </p>
+                <div className="max-h-[300px] overflow-auto bg-slate-50 scrollbar">
+                  <Editor
+                    value={formData?.contenido || ""}
+                    onValueChange={() => null}
+                    readOnly
+                    highlight={(code) => {
+                      console.log(
+                        hljs.highlight(code, { language: "tecniplantilla" })
+                          .value
+                      );
+                      return hljs.highlight(code, {
+                        language: "tecniplantilla",
+                      }).value;
+                    }}
+                    padding={10}
+                    style={{
+                      fontFamily: '"consolas", "Fira Mono", monospace',
+                      fontSize: 14,
+                    }}
+                    textareaClassName="outline-none"
+                    preClassName="language-tecniplantilla"
+                    className="min-h-[300px]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* BOTONES DE ACCIÓN */}
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => setIsConfirmationScreen(false)} // Retorna al formulario
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Volver
+          </button>
+          <button
+            onClick={handleFinalSubmit} // Confirmación final
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Guardar cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar plantilla</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isConfirmationScreen ? "Confirmar cambios" : "Editar plantilla"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Editando plantilla...");
-          TemplateService.update(plantilla?.id!, formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data) {
-              toast.success("Plantilla editada con exito.");
-            } else {
-              toast.error("Plantilla no pudo ser editada.");
-            }
-          });
-        }}
-      >
-        <div className="max-h-[300px] overflow-auto bg-slate-50 scrollbar">
-          <Editor
-            value={formData.contenido}
-            onValueChange={(code) =>
-              setFormData({
-                ...formData,
-                contenido: code,
-              })
-            }
-            highlight={(code) => {
-              console.log(
-                hljs.highlight(code, { language: "tecniplantilla" }).value
-              );
-              return hljs.highlight(code, { language: "tecniplantilla" }).value;
-            }}
-            padding={10}
-            style={{
-              fontFamily: '"consolas", "Fira Mono", monospace',
-              fontSize: 14,
-            }}
-            textareaClassName="outline-none"
-            preClassName="language-tecniplantilla"
-            className="min-h-[300px]"
-          />
-        </div>
-        <div className="flex w-full justify-between items-center">
-          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
-            <input
-              className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
-              type="checkbox"
-              onChange={(e) => {
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4"
+          autoComplete="off"
+          onSubmit={handleSubmit}
+        >
+          <div className="max-h-[300px] overflow-auto bg-slate-50 scrollbar">
+            <Editor
+              value={formData.contenido}
+              onValueChange={(code) =>
                 setFormData({
                   ...formData,
-                  estaActiva: e.target.checked,
-                });
+                  contenido: code,
+                })
+              }
+              highlight={(code) => {
+                console.log(
+                  hljs.highlight(code, { language: "tecniplantilla" }).value
+                );
+                return hljs.highlight(code, { language: "tecniplantilla" })
+                  .value;
               }}
-              checked={formData.estaActiva}
-              id="checkbox"
+              padding={10}
+              style={{
+                fontFamily: '"consolas", "Fira Mono", monospace',
+                fontSize: 14,
+              }}
+              textareaClassName="outline-none"
+              preClassName="language-tecniplantilla"
+              className="min-h-[300px]"
             />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox"
-            >
-              ¿Esta activa?
-            </label>
           </div>
-          <div className="flex gap-2 text-base">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
+          <div className="flex w-full justify-between items-center">
+            <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+              <input
+                className="mr-1 leading-tight w-4 h-4 accent-[#2096ed] bg-gray-100 border-gray-300 rounded focus:ring-[#2096ed]"
+                type="checkbox"
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    estaActiva: e.target.checked,
+                  });
+                }}
+                checked={formData.estaActiva}
+                id="checkbox"
+              />
+              <label
+                className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+                htmlFor="checkbox"
+              >
+                ¿Esta activa?
+              </label>
+            </div>
+            <div className="flex gap-2 text-base">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cancelar
+              </button>
+              <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+                Completar
+              </button>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      )}
     </dialog>
   );
 }
 
-function DataRow({ plantilla, setOperationAsCompleted }: DataRowProps) {
+function DataRow({
+  plantilla,
+  setOperationAsCompleted,
+  row_number,
+}: DataRowProps) {
+  const ref = useRef<HTMLTableCellElement>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [action, setAction] = useState<`${Action}`>(
+    permissions.find()?.editar.mensajería ? "EDIT" : "VIEW"
+  );
+  const [isDropup, setIsDropup] = useState(false);
 
   const closeEditModal = () => {
     setIsEditOpen(false);
   };
+  const closeViewModal = () => {
+    setIsViewOpen(false);
+  };
+
+  const selectAction = (action: `${Action}`) => {
+    setAction(action);
+  };
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {plantilla?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300 capitalize">
         {plantilla?.evento}
@@ -572,8 +793,11 @@ function DataRow({ plantilla, setOperationAsCompleted }: DataRowProps) {
           </div>
         )}
       </td>
-      <td className="px-6 py-3 border border-slate-300 w-[200px] min-w-[200px] truncate">
-        {permissions.find()?.editar.mensajería && (
+      <td
+        ref={ref}
+        className="px-6 py-3 border border-slate-300 w-[200px] min-w-[200px] truncate relative"
+      >
+        {action === "EDIT" && (
           <>
             <button
               onClick={() => {
@@ -591,7 +815,53 @@ function DataRow({ plantilla, setOperationAsCompleted }: DataRowProps) {
             />
           </>
         )}
-        {!permissions.find()?.editar.mensajería && "Ninguna acción permitida"}
+        {action === "VIEW" && (
+          <>
+            <button
+              onClick={() => {
+                setIsViewOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Mostrar plantilla
+            </button>
+            <ViewModal
+              plantilla={plantilla}
+              isOpen={isViewOpen}
+              closeModal={closeViewModal}
+              setOperationAsCompleted={() => null}
+            />
+          </>
+        )}
+        {isDropup && (
+          <IndividualDropup
+            close={() => setIsDropup(false)}
+            selectAction={selectAction}
+            openAddModal={() => null}
+            openSearchModal={() => null}
+            id={plantilla?.id}
+            top={
+              (ref?.current?.getBoundingClientRect().top ?? 0) +
+              (window.scrollY ?? 0) +
+              (ref?.current?.getBoundingClientRect().height ?? 0) -
+              10
+            }
+            left={
+              (ref?.current?.getBoundingClientRect().left ?? 0) +
+              window.scrollX +
+              25
+            }
+          />
+        )}
+        {permissions.find()?.editar.mensajería ? (
+          <button
+            id={`acciones-btn-${plantilla?.id}`}
+            className="bg-gray-300 border right-6 bottom-2.5 absolute hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+            onClick={() => setIsDropup(!isDropup)}
+          >
+            <More className="w-5 h-5 inline fill-black" />
+          </button>
+        ) : null}
       </td>
     </tr>
   );
@@ -688,6 +958,98 @@ function Dropup({ close, selectAction }: DropupProps) {
           </div>
         </li>
       )}
+    </ul>
+  );
+}
+
+function IndividualDropup({ id, close, selectAction, top, left }: DropupProps) {
+  const dropupRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (
+        dropupRef.current &&
+        !dropupRef.current.contains(event.target) &&
+        event.target.id !== `acciones-btn-${id}`
+      ) {
+        close();
+      }
+    };
+    document.addEventListener("click", handleClickOutside, true);
+    return () => {
+      document.removeEventListener("click", handleClickOutside, true);
+    };
+  }, []);
+
+  return (
+    <ul
+      ref={dropupRef}
+      className="
+          min-w-max
+          fixed
+          bg-white
+          text-base
+          z-50
+          py-2
+          list-none
+          text-left
+          rounded-lg
+          shadow-xl
+          mt-2
+          m-0
+          bg-clip-padding
+          border
+        "
+      style={{ top: top, left }}
+    >
+      {permissions.find()?.editar.mensajería && (
+        <li>
+          <div
+            onClick={() => {
+              selectAction("EDIT");
+              close();
+            }}
+            className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+          >
+            Editar plantilla
+          </div>
+        </li>
+      )}
+      <li>
+        <div
+          onClick={() => {
+            selectAction("VIEW");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Mostrar plantilla
+        </div>
+      </li>
     </ul>
   );
 }
@@ -821,13 +1183,14 @@ export default function MessagingDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {template.map((template) => {
+                {template.map((template, index) => {
                   return (
                     <DataRow
                       action={action}
                       plantilla={template}
                       setOperationAsCompleted={setAsCompleted}
                       key={template.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

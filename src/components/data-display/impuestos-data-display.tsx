@@ -21,6 +21,7 @@ import { useSearchedStore } from "../../store/searchedStore";
 import clsx from "clsx";
 import ImpuestoService from "../../services/impuesto-service";
 import debounce from "lodash.debounce";
+import { createRowNumber } from "../../utils/functions";
 
 function EditModal({
   isOpen,
@@ -74,7 +75,7 @@ function EditModal({
     debounce(async (codigo) => {
       if (codigo.length >= 2) {
         const exist = await ImpuestoService.getByExactCódigo(codigo, 1, 100);
-        if (exist) {
+        if (exist && impuesto?.codigo !== codigo) {
           setCodigoExist(true);
           setStillWritingCodigo(false);
         } else {
@@ -318,7 +319,7 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -335,7 +336,7 @@ function EditModal({
         >
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Nombre*
+              Nombre<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -346,7 +347,7 @@ function EditModal({
                 });
               }}
               value={formData.nombre}
-              placeholder="Introducir nombre*"
+              placeholder="Introducir nombre"
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               required
               pattern="^.{1,150}$"
@@ -358,7 +359,7 @@ function EditModal({
           </div>
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Código*
+              Código<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -370,7 +371,7 @@ function EditModal({
                 setStillWritingCodigo(true);
               }}
               value={formData.codigo}
-              placeholder="Introducir código*"
+              placeholder="Introducir código"
               className={clsx({
                 ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
                   !codigoExist,
@@ -395,7 +396,7 @@ function EditModal({
           </div>
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Porcentaje*
+              Porcentaje<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="number"
@@ -406,16 +407,16 @@ function EditModal({
                 });
               }}
               value={formData.porcentaje === 0 ? "" : formData.porcentaje}
-              placeholder="Introducir porcentaje*"
+              placeholder="Introducir porcentaje"
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               required
-              min="0"
+              min="1"
               max="100"
               step="0.01"
               name="porcentaje"
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Debe ser un número entre 0 y 100
+              Debe ser un número entre 1 y 100
             </span>
           </div>
           <div className="relative">
@@ -701,7 +702,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -718,7 +719,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         >
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Nombre*
+              Nombre<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -729,7 +730,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 });
               }}
               value={formData.nombre}
-              placeholder="Introducir nombre*"
+              placeholder="Introducir nombre"
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               required
               pattern="^.{1,150}$"
@@ -741,7 +742,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           </div>
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Código*
+              Código<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -753,7 +754,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 setStillWritingCodigo(true);
               }}
               value={formData.codigo}
-              placeholder="Introducir código*"
+              placeholder="Introducir código"
               className={clsx({
                 ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
                   !codigoExist,
@@ -778,7 +779,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           </div>
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Porcentaje*
+              Porcentaje<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="number"
@@ -789,21 +790,21 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 });
               }}
               value={formData.porcentaje === 0 ? "" : formData.porcentaje}
-              placeholder="Introducir porcentaje*"
+              placeholder="Introducir porcentaje"
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               required
-              min="0"
+              min="1"
               max="100"
               step="0.01"
               name="porcentaje"
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Debe ser un número entre 0 y 100
+              Debe ser un número entre 1 y 100
             </span>
           </div>
           <div className="relative">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Aplica a*
+              Aplica a<span className="text-red-600 text-lg">*</span>
             </label>
             <Select
               options={[
@@ -977,7 +978,7 @@ function ViewModal({ isOpen, closeModal, impuesto }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del impuesto</h1>
@@ -1069,7 +1070,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar impuesto</h1>
@@ -1186,7 +1187,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar impuesto</h1>
@@ -1298,7 +1299,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
-function DataRow({ impuesto, setOperationAsCompleted }: DataRowProps) {
+function DataRow({ impuesto, setOperationAsCompleted, row_number }: DataRowProps) {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -1332,12 +1333,12 @@ function DataRow({ impuesto, setOperationAsCompleted }: DataRowProps) {
   };
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {impuesto?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[250px]">
         {impuesto?.nombre}
@@ -1879,13 +1880,14 @@ export default function ImpuestosDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {impuestos.map((impuesto) => {
+                {impuestos.map((impuesto, index) => {
                   return (
                     <DataRow
                       action={""}
                       impuesto={impuesto}
                       setOperationAsCompleted={setAsCompleted}
                       key={impuesto.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

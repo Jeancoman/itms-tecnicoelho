@@ -21,6 +21,7 @@ import clsx from "clsx";
 import { useSearchedStore } from "../../store/searchedStore";
 import ExportCSV from "../misc/export-to-cvs";
 import { format } from "date-fns";
+import { createRowNumber } from "../../utils/functions";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -211,7 +212,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -228,7 +229,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         >
           <div className="w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Nombre*
+              Nombre<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -247,7 +248,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           </div>
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Documento*
+              Documento<span className="text-red-600 text-lg">*</span>
             </label>
             <div className="flex gap-1">
               <div className="relative w-[20%]">
@@ -433,7 +434,8 @@ function EditModal({
   };
 
   const handleFinalSubmit = async () => {
-    handleClose();
+    closeModal();
+    ref.current?.close();
 
     let updatedFormData = { ...formData };
 
@@ -649,7 +651,7 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -666,7 +668,7 @@ function EditModal({
         >
           <div className="w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Nombre*
+              Nombre<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -684,7 +686,7 @@ function EditModal({
           </div>
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Documento*
+              Documento<span className="text-red-600 text-lg">*</span>
             </label>
             <div className="flex gap-1">
               <div className="relative w-[20%]">
@@ -851,7 +853,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar proveedor</h1>
@@ -933,7 +935,7 @@ function ViewModal({ isOpen, closeModal, proveedor }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del proveedor</h1>
@@ -1066,7 +1068,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar proveedor</h1>
@@ -1319,7 +1321,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
     <dialog
       ref={ref}
       onClick={handleClickOutside}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Generar reporte</h1>
@@ -1396,7 +1398,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
-function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
+function DataRow({ proveedor, setOperationAsCompleted, row_number }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -1430,12 +1432,12 @@ function DataRow({ proveedor, setOperationAsCompleted }: DataRowProps) {
   };
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {proveedor?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300 truncate">{proveedor?.nombre}</td>
       <td className="px-6 py-4 border border-slate-300 truncate min-w-[100px]">
@@ -2011,13 +2013,14 @@ export default function ProvidersDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {providers.map((provider) => {
+                {providers.map((provider, index) => {
                   return (
                     <DataRow
                       action={""}
                       proveedor={provider}
                       setOperationAsCompleted={setAsCompleted}
                       key={provider.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

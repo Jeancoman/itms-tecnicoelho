@@ -11,6 +11,7 @@ export default class SalesReportService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );
@@ -36,6 +37,7 @@ export default class SalesReportService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
           },
         }
       );

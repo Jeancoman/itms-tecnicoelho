@@ -57,9 +57,10 @@ export default function PasswordResetPage() {
               name="password"
               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
               autoComplete="new-password"
+              maxLength={32}
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              La contraseña debe tener mínimo 8 caracteres, contener una letra
+              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener una letra
               mayúscula, una letra minúscula, un número y un carácter especial
             </span>
             {visible ? (

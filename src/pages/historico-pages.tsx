@@ -12,7 +12,7 @@ export default function HistoricoPage() {
     if (!session.find()) {
       navigate("/entrar");
     } else {
-      if (!permissions.find()?.ver.producto) {
+      if (!permissions.find()?.ver.historico) {
         navigate("/");
       }
     }
@@ -21,7 +21,7 @@ export default function HistoricoPage() {
   if (!session.find()) {
     return null;
   } else {
-    if (!permissions.find()?.ver.producto) {
+    if (!permissions.find()?.ver.historico) {
       return null;
     }
   }

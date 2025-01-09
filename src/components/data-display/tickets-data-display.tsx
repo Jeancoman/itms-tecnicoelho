@@ -36,6 +36,7 @@ import MessageSenderService from "../../services/message-sender-service";
 import clsx from "clsx";
 import TicketService from "../../services/ticket-service";
 import { Editor } from "@tinymce/tinymce-react";
+import { createRowNumber } from "../../utils/functions";
 
 function EditModal({
   isOpen,
@@ -191,7 +192,8 @@ function EditModal({
 
   const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    handleClose();
+    closeModal();
+    setIsConfirmationScreen(false);
 
     const loadingToast = toast.loading("Editando ticket...");
     const updatedTicket = await TicketService.update(
@@ -571,12 +573,12 @@ function EditModal({
                 >
                   <option value={0}>Cerrado</option>
                 </select>
-                <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
+                <Down className="absolute h-4 w-4 top-3 right-5 fill-slate-300" />
               </div>
             ) : null}
             <div className="w-full">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Asunto*
+                Asunto<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="text"
@@ -599,7 +601,7 @@ function EditModal({
             </div>
             <div className="relative">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Prioridad*
+                Prioridad<span className="text-red-600 text-lg">*</span>
               </label>
               <Select
                 onChange={() => {
@@ -645,7 +647,7 @@ function EditModal({
             </div>
             <div className="relative">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Cliente*
+                Cliente<span className="text-red-600 text-lg">*</span>
               </label>
               <select
                 className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
@@ -665,7 +667,7 @@ function EditModal({
             <div className="flex gap-2">
               <div className="relative w-2/4">
                 <label className="block text-gray-600 text-base font-medium mb-2">
-                  Tipo*
+                  Tipo<span className="text-red-600 text-lg">*</span>
                 </label>
                 <Select
                   onChange={() => {
@@ -711,7 +713,7 @@ function EditModal({
               </div>
               <div className="relative w-2/4">
                 <label className="block text-gray-600 text-base font-medium mb-2">
-                  Categoría*
+                  Categoría<span className="text-red-600 text-lg">*</span>
                 </label>
                 {categories.length > 0 && (
                   <SelectWithSearch
@@ -1197,7 +1199,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           >
             <div className="w-full">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Asunto*
+                Asunto<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="text"
@@ -1221,7 +1223,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             <div>
               <div className="relative">
                 <label className="block text-gray-600 text-base font-medium mb-2">
-                  Prioridad*
+                  Prioridad<span className="text-red-600 text-lg">*</span>
                 </label>
                 <Select
                   onChange={() => {
@@ -1268,7 +1270,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             </div>
             <div className="relative">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Cliente*
+                Cliente<span className="text-red-600 text-lg">*</span>
               </label>
               {clients.length > 0 && (
                 <SelectWithSearch
@@ -1339,7 +1341,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             <div className="flex gap-2">
               <div className="relative w-2/4">
                 <label className="block text-gray-600 text-base font-medium mb-2">
-                  Tipo*
+                  Tipo<span className="text-red-600 text-lg">*</span>
                 </label>
                 <Select
                   onChange={() => {
@@ -1385,7 +1387,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               </div>
               <div className="relative w-2/4">
                 <label className="block text-gray-600 text-base font-medium mb-2">
-                  Categoría*
+                  Categoría<span className="text-red-600 text-lg">*</span>
                 </label>
                 {categories.length > 0 && (
                   <SelectWithSearch
@@ -1563,9 +1565,11 @@ function DeleteModal({
 
     if (data.status === "success") {
       toast.success(data.message);
+
       if (options.find()?.creación.siempre) {
         await handleCreateMessage();
       }
+
     } else {
       toast.error(data.message);
     }
@@ -1588,6 +1592,7 @@ function DeleteModal({
             ? "La plantilla está desactivada"
             : "El mensaje no pudo ser creado."
         );
+
         toast.dismiss(messageToast);
         return;
       }
@@ -1648,7 +1653,7 @@ function DeleteModal({
           handleClose();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar ticket</h1>
@@ -1726,7 +1731,7 @@ function ViewModal({ isOpen, closeModal, ticket }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del ticket</h1>
@@ -1840,7 +1845,7 @@ function ViewModal({ isOpen, closeModal, ticket }: ModalProps) {
   );
 }
 
-function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
+function DataRow({ ticket, setOperationAsCompleted, row_number }: DataRowProps) {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -1878,12 +1883,12 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
   };
 
   return (
-    <tr>
+    <tr className="font-normal">
       <th
         scope="row"
-        className="px-6 py-3 font-medium text-[#2096ed] whitespace-nowrap border border-slate-300 w-[50px]"
+        className="px-6 py-3 font-bold text-[#2096ed] whitespace-nowrap border border-slate-300 w-[50px]"
       >
-        {ticket?.id}
+        {row_number}
       </th>
       <td className="px-6 py-2 border border-slate-300">
         {ticket?.estado === "ABIERTO" ? (
@@ -1910,6 +1915,9 @@ function DataRow({ ticket, setOperationAsCompleted }: DataRowProps) {
             Alta
           </div>
         )}
+      </td>
+      <td className="px-6 py-3 border border-slate-300 truncate w-[50px] text-center">
+        {ticket?.id}
       </td>
       <td className="px-6 py-3 border border-slate-300 truncate">
         {ticket?.cliente?.nombre}
@@ -2399,7 +2407,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar ticket</h1>
@@ -2424,26 +2432,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               setParam(selectedSearchType.value as string);
             }}
             options={[
-              {
-                value: "ABIERTO",
-                label: "Fecha de apertura",
-                onClick: (value, label) => {
-                  setSelectedSearchType({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "CERRADO",
-                label: "Fecha de cierre",
-                onClick: (value, label) => {
-                  setSelectedSearchType({
-                    value,
-                    label,
-                  });
-                },
-              },
               {
                 value: "CLIENTE",
                 label: "Cliente",
@@ -3131,6 +3119,9 @@ export default function TicketDataDisplay() {
                     Prioridad
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
+                    ID
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
                     Cliente
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
@@ -3148,13 +3139,14 @@ export default function TicketDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {tickets.map((ticket) => {
+                {tickets.map((ticket, index) => {
                   return (
                     <DataRow
                       action={""}
                       ticket={ticket}
                       setOperationAsCompleted={setAsCompleted}
                       key={ticket.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

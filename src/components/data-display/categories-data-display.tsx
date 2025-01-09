@@ -22,6 +22,7 @@ import { useCategorySearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import clsx from "clsx";
 import debounce from "lodash.debounce";
+import { createRowNumber } from "../../utils/functions";
 
 function EditModal({
   isOpen,
@@ -72,7 +73,7 @@ function EditModal({
           100,
           tipo
         );
-        if (exist) {
+        if (exist && categoría?.nombre !== nombre) {
           setNameExist(true);
           setStillWritingName(false);
         } else {
@@ -143,15 +144,6 @@ function EditModal({
                   {categoría?.tipo === "PRODUCTO" ? "Producto" : "Ticket"}
                 </p>
               </div>
-              {/* Es digital */}
-              <div>
-                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                  ¿Es digital?
-                </p>
-                <p className="text-gray-900 font-medium text-base break-words">
-                  {categoría?.esDigital ? "Sí" : "No"}
-                </p>
-              </div>
             </div>
           </div>
 
@@ -206,21 +198,6 @@ function EditModal({
                   {selectedType?.label || "No especificado"}
                 </p>
               </div>
-              {/* Es digital */}
-              <div>
-                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                  ¿Es digital?
-                </p>
-                <p
-                  className={`text-base font-medium break-words ${
-                    formData.esDigital !== categoría?.esDigital
-                      ? "text-blue-600 font-semibold"
-                      : "text-gray-900"
-                  }`}
-                >
-                  {formData.esDigital ? "Sí" : "No"}
-                </p>
-              </div>
             </div>
           </div>
         </div>
@@ -248,7 +225,7 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -265,7 +242,7 @@ function EditModal({
         >
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Nombre*
+              Nombre<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -324,7 +301,7 @@ function EditModal({
           </div>
           <div className="relative">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Tipo*
+              Tipo<span className="text-red-600 text-lg">*</span>
             </label>
             <select
               className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
@@ -335,49 +312,27 @@ function EditModal({
             </select>
             <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
           </div>
-          <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
-            <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
-              <input
-                className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                type="checkbox"
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    esDigital: e.target.checked,
-                  });
-                }}
-                checked={formData.esDigital}
-                id="checkbox"
-              />
-              <label
-                className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-                htmlFor="checkbox"
-              >
-                ¿Es digital?
-              </label>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  closeModal();
-                  resetFormData();
-                }}
-                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-              >
-                Cancelar
-              </button>
-              <button
-                className={clsx({
-                  ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                    !nameExist,
-                  ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                    nameExist || stillWritingName,
-                })}
-              >
-                Completar
-              </button>
-            </div>
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                closeModal();
+                resetFormData();
+              }}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button
+              className={clsx({
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  !nameExist,
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  nameExist || stillWritingName,
+              })}
+            >
+              Completar
+            </button>
           </div>
         </form>
       )}
@@ -512,16 +467,6 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               {selectedType?.label || "No especificado"}
             </p>
           </div>
-
-          {/* ES DIGITAL */}
-          <div className="col-span-2">
-            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-              ¿Es digital?
-            </p>
-            <p className="text-gray-900 font-medium text-base break-words">
-              {formData.esDigital ? "Sí" : "No"}
-            </p>
-          </div>
         </div>
       </div>
 
@@ -547,7 +492,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -564,7 +509,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         >
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Nombre*
+              Nombre<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -623,7 +568,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           </div>
           <div className="relative">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Tipo*
+              Tipo<span className="text-red-600 text-lg">*</span>
             </label>
             <Select
               onChange={() => {
@@ -658,49 +603,27 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               selected={selectedType}
             />
           </div>
-          <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
-            <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
-              <input
-                className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                type="checkbox"
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    esDigital: e.target.checked,
-                  });
-                }}
-                checked={formData.esDigital}
-                id="checkbox"
-              />
-              <label
-                className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-                htmlFor="checkbox"
-              >
-                ¿Es digital?
-              </label>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={closeModal}
-                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-              >
-                Cancelar
-              </button>
-              <button
-                className={clsx({
-                  ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                    !nameExist,
-                  ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                    nameExist ||
-                    stillWritingName ||
-                    selectedType.label?.startsWith("Selecciona") ||
-                    fetch,
-                })}
-              >
-                Completar
-              </button>
-            </div>
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button
+              className={clsx({
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  !nameExist,
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  nameExist ||
+                  stillWritingName ||
+                  selectedType.label?.startsWith("Selecciona") ||
+                  fetch,
+              })}
+            >
+              Completar
+            </button>
           </div>
         </form>
       )}
@@ -746,7 +669,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar cliente</h1>
@@ -828,7 +751,7 @@ function ViewModal({ isOpen, closeModal, categoría }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos de la categoría</h1>
@@ -863,16 +786,6 @@ function ViewModal({ isOpen, closeModal, categoría }: ModalProps) {
               </p>
               <p className="text-gray-900 font-medium text-base break-words">
                 {categoría?.tipo === "PRODUCTO" ? "Producto" : "Ticket"}
-              </p>
-            </div>
-
-            {/* ES DIGITAL */}
-            <div className="col-span-2">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                ¿Es digital?
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {categoría?.esDigital ? "Sí" : "No"}
               </p>
             </div>
           </div>
@@ -966,7 +879,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar categoría</h1>
@@ -1113,7 +1026,11 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
-function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
+function DataRow({
+  categoría,
+  setOperationAsCompleted,
+  row_number,
+}: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -1147,12 +1064,12 @@ function DataRow({ categoría, setOperationAsCompleted }: DataRowProps) {
   };
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {categoría?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300 truncate">
         {categoría?.nombre}
@@ -1572,7 +1489,7 @@ export default function CategoriesDataDisplay() {
               setNotFound(false);
             }
             toast.dismiss(loadingToast);
-            setIsPrecise(false)
+            setIsPrecise(false);
             setIsOperationCompleted(false);
           });
         } else {
@@ -1679,13 +1596,14 @@ export default function CategoriesDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {categories.map((category) => {
+                {categories.map((category, index) => {
                   return (
                     <DataRow
                       action={""}
                       categoría={category}
                       setOperationAsCompleted={setAsCompleted}
                       key={category.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

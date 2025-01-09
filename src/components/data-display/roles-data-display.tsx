@@ -21,6 +21,7 @@ import clsx from "clsx";
 import RolService from "../../services/rol-service";
 import { INICIALES } from "../../utils/data";
 import debounce from "lodash.debounce";
+import { createRowNumber } from "../../utils/functions";
 
 type PermissionPanelProps = {
   onChange: (rol: Partial<Rol>) => void;
@@ -43,6 +44,7 @@ const categories = [
   { name: "Mensajería", key: "mensajería" },
   { name: "Roles", key: "rol" },
   { name: "Restauración", key: "restauracion" },
+  { name: "Historico", key: "historico"}
 ];
 
 const actions = ["ver", "crear", "editar", "eliminar"];
@@ -61,9 +63,13 @@ const customConfig: Record<
   },
   restauracion: {
     actions: ["crear"],
+    actionLabels: { crear: "gestionar" },
   },
   mensajería: {
     actions: ["ver", "editar"],
+  },
+  historico: {
+    actions: ["ver"],
   },
 };
 
@@ -95,7 +101,7 @@ function EditModal({
     debounce(async (nombre) => {
       if (nombre.length >= 1) {
         const exist = await RolService.getByExactNombre(nombre, 1, 100);
-        if (exist) {
+        if (exist && rol?.nombre !== nombre) {
           setNameExist(true);
           setStillWritingName(false);
         } else {
@@ -293,7 +299,7 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar rol</h1>
@@ -308,7 +314,7 @@ function EditModal({
         >
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Nombre
+              Nombre<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -541,7 +547,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -558,7 +564,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         >
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Nombre*
+              Nombre<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -662,7 +668,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar rol</h1>
@@ -772,7 +778,7 @@ function ViewModal({ isOpen, closeModal, rol }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del rol</h1>
@@ -953,7 +959,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar rol</h1>
@@ -1055,7 +1061,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
-function DataRow({ rol, setOperationAsCompleted }: DataRowProps) {
+function DataRow({ rol, setOperationAsCompleted, row_number }: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -1088,12 +1094,12 @@ function DataRow({ rol, setOperationAsCompleted }: DataRowProps) {
   };
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {rol?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300">{rol?.nombre}</td>
       <td
@@ -1592,13 +1598,14 @@ export default function RolsDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {roles.map((rol) => {
+                {roles.map((rol, index) => {
                   return (
                     <DataRow
                       action={""}
                       rol={rol}
                       setOperationAsCompleted={setAsCompleted}
                       key={rol.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

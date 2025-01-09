@@ -25,9 +25,11 @@ import TicketService from "../../services/ticket-service";
 import MessageSenderService from "../../services/message-sender-service";
 import clsx from "clsx";
 import { useFunctionStore } from "../../store/functionStore";
+import { createRowNumber } from "../../utils/functions";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const { id } = useParams();
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
   const [formData, setFormData] = useState<Mensaje>({
     contenido: "",
@@ -38,6 +40,26 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     setFormData({
       contenido: "",
       estado: "NO_ENVIADO",
+    });
+    setIsConfirmationScreen(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    closeModal();
+    const loadingToast = toast.loading("Añadiendo mensaje...");
+    MessageService.create(Number(id), formData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data.status === "error") {
+        toast.error(data.message);
+      } else {
+        toast.success(data.message);
+      }
     });
   };
 
@@ -58,67 +80,96 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     }
   }, [isOpen]);
 
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+        <div className="grid grid-cols-2 gap-6">
+          {/* DESCRIPCIÓN */}
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Contenido
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words whitespace-pre-wrap">
+              {formData.contenido || "No especificada"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTONES DE ACCIÓN */}
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)} // Retorna al formulario
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+        >
+          Volver
+        </button>
+        <button
+          onClick={handleFinalSubmit} // Confirmación final
+          className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+        >
+          Guardar
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Añadir mensaje</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isConfirmationScreen ? "Confirmar mensaje" : "Añadir mensaje"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Añadiendo mensaje...");
-          void MessageService.create(Number(id), formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data.status === "error") {
-              toast.error(data.message);
-            } else {
-              toast.success(data.message);
-            }
-          });
-        }}
-      >
-        <div className="w-full">
-          <label className="block text-gray-600 text-base font-medium mb-2">
-            Contenido*
-          </label>
-          <textarea
-            rows={8}
-            placeholder="Introducir contenido"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                contenido: e.target.value,
-              });
-            }}
-            value={formData.contenido}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-            required
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
-          </span>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Cancelar
-          </button>
-          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Completar
-          </button>
-        </div>
-      </form>
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4 group"
+          autoComplete="off"
+          onSubmit={handleSubmit}
+        >
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Contenido<span className="text-red-600 text-lg">*</span>
+            </label>
+            <textarea
+              rows={8}
+              placeholder="Introducir contenido"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  contenido: e.target.value,
+                });
+              }}
+              value={formData.contenido}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
+              required
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
+            </button>
+          </div>
+        </form>
+      )}
     </dialog>
   );
 }
@@ -132,6 +183,7 @@ function EditModal({
   const ref = useRef<HTMLDialogElement>(null);
   const { id } = useParams();
   const [formData, setFormData] = useState<Mensaje>(mensaje!);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [selectedState, setSelectedState] = useState<Selected>({
     value: mensaje?.estado,
     label: mensaje?.estado === "ENVIADO" ? "Enviado" : "No enviado",
@@ -142,6 +194,27 @@ function EditModal({
     setSelectedState({
       value: mensaje?.estado,
       label: mensaje?.estado === "ENVIADO" ? "Enviado" : "No enviado",
+    });
+    setIsConfirmationScreen(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsConfirmationScreen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    closeModal();
+    const loadingToast = toast.loading("Editando mensaje...");
+    MessageService.update(Number(id), mensaje?.id!, formData).then((data) => {
+      toast.dismiss(loadingToast);
+      setOperationAsCompleted();
+      if (data.status === "success") {
+        toast.success(data.message);
+      } else {
+        toast.error(data.message);
+      }
+      setOperationAsCompleted();
     });
   };
 
@@ -160,109 +233,193 @@ function EditModal({
     }
   }, [isOpen]);
 
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+        <div className="grid grid-cols-2 gap-8">
+          {/* COLUMNA IZQUIERDA - Datos actuales */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Datos actuales
+            </h3>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Estado
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {mensaje?.estado === "ENVIADO" ? "Enviado" : "No enviado"}
+                </p>
+              </div>
+              {/* Descripción */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Contenido
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words whitespace-pre-wrap">
+                  {mensaje?.contenido || "No especificada"}
+                </p>
+              </div>
+              {/* Tipo */}
+            </div>
+          </div>
+
+          {/* COLUMNA DERECHA - Nuevos datos */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Nuevos datos
+            </h3>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Estado
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    selectedState.value !== mensaje?.estado
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {selectedState.label || "No especificado"}
+                </p>
+              </div>
+              {/* Descripción */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Contenido
+                </p>
+                <p
+                  className={`text-base font-medium break-words whitespace-pre-wrap ${
+                    formData.contenido !== mensaje?.contenido
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.contenido || "No especificada"}
+                </p>
+              </div>
+              {/* Tipo */}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTONES DE ACCIÓN */}
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)} // Retorna al formulario
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+        >
+          Volver
+        </button>
+        <button
+          onClick={handleFinalSubmit} // Confirmación final
+          className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+        >
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar mensaje</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isConfirmationScreen ? "Confirmar cambios" : "Editar mensaje"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Editando mensaje...");
-          MessageService.update(Number(id), mensaje?.id!, formData).then(
-            (data) => {
-              toast.dismiss(loadingToast);
-              setOperationAsCompleted();
-              if (data.status === "success") {
-                toast.success(data.message);
-              } else {
-                toast.error(data.message);
-              }
-              setOperationAsCompleted();
-            }
-          );
-        }}
-      >
-        <div className="relative">
-          <label className="block text-gray-600 text-base font-medium mb-2">
-            Estado*
-          </label>
-          <Select
-            onChange={() => {
-              setFormData({
-                ...formData,
-                estado: selectedState.value as MensajeEstado,
-              });
-            }}
-            options={[
-              {
-                value: "ENVIADO",
-                label: "Enviado",
-                onClick: (value, label) => {
-                  setSelectedState({
-                    value,
-                    label,
-                  });
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4 group"
+          autoComplete="off"
+          onSubmit={handleSubmit}
+        >
+          <div className="relative">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Estado<span className="text-red-600 text-lg">*</span>
+            </label>
+            <Select
+              onChange={() => {
+                setFormData({
+                  ...formData,
+                  estado: selectedState.value as MensajeEstado,
+                });
+              }}
+              options={[
+                {
+                  value: "ENVIADO",
+                  label: "Enviado",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
                 },
-              },
-              {
-                value: "NO_ENVIADO",
-                label: "No enviado",
-                onClick: (value, label) => {
-                  setSelectedState({
-                    value,
-                    label,
-                  });
+                {
+                  value: "NO_ENVIADO",
+                  label: "No enviado",
+                  onClick: (value, label) => {
+                    setSelectedState({
+                      value,
+                      label,
+                    });
+                  },
                 },
-              },
-            ]}
-            selected={selectedState}
-          />
-        </div>
-        <div className="w-full">
-          <label className="block text-gray-600 text-base font-medium mb-2">
-            Contenido*
-          </label>
-          <textarea
-            rows={8}
-            placeholder="Introducir contenido*"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                contenido: e.target.value,
-              });
-            }}
-            value={formData.contenido}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-            required
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
-          </span>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              closeModal();
-              resetFormData();
-            }}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Cancelar
-          </button>
-          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Completar
-          </button>
-        </div>
-      </form>
+              ]}
+              selected={selectedState}
+            />
+          </div>
+          <div className="w-full">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Contenido<span className="text-red-600 text-lg">*</span>
+            </label>
+            <textarea
+              rows={8}
+              placeholder="Introducir contenido"
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  contenido: e.target.value,
+                });
+              }}
+              value={formData.contenido}
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              minLength={10}
+              required
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              Minimo 10 caracteres
+            </span>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                closeModal();
+                resetFormData();
+              }}
+              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+            >
+              Cancelar
+            </button>
+            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+              Completar
+            </button>
+          </div>
+        </form>
+      )}
     </dialog>
   );
 }
@@ -306,7 +463,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar mensaje</h1>
@@ -355,7 +512,11 @@ function DeleteModal({
   );
 }
 
-function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
+function DataRow({
+  mensaje,
+  setOperationAsCompleted,
+  row_number,
+}: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
@@ -367,7 +528,8 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
-  const anyAction = permissions.find()?.editar.mensaje || permissions.find()?.eliminar.mensaje
+  const anyAction =
+    permissions.find()?.editar.mensaje || permissions.find()?.eliminar.mensaje;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -416,12 +578,12 @@ function DataRow({ mensaje, setOperationAsCompleted }: DataRowProps) {
   };
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {mensaje?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-xs">
         {mensaje?.contenido}
@@ -593,7 +755,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar Messagen</h1>
@@ -977,16 +1139,12 @@ export default function MessagesDataDisplay() {
             setNotFound(true);
             setMessages([]);
             setLoading(false);
-            resetSearchCount();
-            setWasSearch(false);
           } else {
             setMessages(data.rows);
             setPages(data.pages);
             setCurrent(data.current);
             setLoading(false);
             setNotFound(false);
-            resetSearchCount();
-            setWasSearch(false);
           }
           toast.dismiss(loadingToast);
           setIsOperationCompleted(false);
@@ -1092,13 +1250,14 @@ export default function MessagesDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {messages.map((message) => {
+                {messages.map((message, index) => {
                   return (
                     <DataRow
                       action={action}
                       mensaje={message}
                       setOperationAsCompleted={setAsCompleted}
                       key={message.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

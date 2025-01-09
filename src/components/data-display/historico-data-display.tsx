@@ -21,6 +21,7 @@ import session from "../../utils/session";
 import ProductService from "../../services/producto-service";
 import SelectWithSearch from "../misc/select-with-search";
 import { format } from "date-fns";
+import { createRowNumber } from "../../utils/functions";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -40,7 +41,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     existenciasNuevo: 0,
     producto_id: -1,
     usuario_id: session.find()?.usuario.id,
-    usuarioNombre: `${session.find()?.usuario.nombre} ${session.find()?.usuario.apellido}, ${session.find()?.usuario.documento}`
+    usuarioNombre: `${session.find()?.usuario.nombre} ${
+      session.find()?.usuario.apellido
+    }, ${session.find()?.usuario.documento}`,
   });
   const [retirarCantidad, setRetirarCantidad] = useState(0);
 
@@ -70,7 +73,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         ...formData,
         producto_id: Number(value),
         existenciasAnterior: productoSeleccionado.existencias,
-        productoNombre: productoSeleccionado.nombre
+        productoNombre: productoSeleccionado.nombre,
       });
     }
   };
@@ -117,7 +120,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Ajustar inventario</h1>
@@ -142,7 +145,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       >
         <div className="relative">
           <label className="block text-gray-600 text-base font-medium mb-2">
-            Motivo
+            Motivo<span className="text-red-600 text-lg">*</span>
           </label>
           <Select
             onChange={() => {
@@ -198,7 +201,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         </div>
         <div className="relative">
           <label className="block text-gray-600 text-base font-medium mb-2">
-            Producto
+            Producto<span className="text-red-600 text-lg">*</span>
           </label>
           <SelectWithSearch
             options={productos.map((producto) => ({
@@ -234,6 +237,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               <>
                 <label className="block text-gray-600 text-base font-medium mb-2">
                   Existencias contadas
+                  <span className="text-red-600 text-lg">*</span>
                 </label>
                 <input
                   type="number"
@@ -250,7 +254,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   }
                   className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
                   required
-                  min={0}
+                  min={1}
                 />
               </>
             ) : (
@@ -258,6 +262,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 <div className="mb-3">
                   <label className="block text-gray-600 text-base font-medium mb-2">
                     Retirar existencias
+                    <span className="text-red-600 text-lg">*</span>
                   </label>
                   <input
                     type="number"
@@ -277,7 +282,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                     value={retirarCantidad === 0 ? "" : retirarCantidad}
                     className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
                     required
-                    min={0}
+                    min={1}
                     max={formData.existenciasAnterior}
                   />
                 </div>
@@ -313,6 +318,145 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           </button>
         </div>
       </form>
+    </dialog>
+  );
+}
+
+function HistoricoModal({ isOpen, closeModal, historico }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeModal();
+        ref.current?.close();
+      }
+    };
+
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", handleKeyDown);
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, closeModal]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect();
+        if (!dialogDimensions) return;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Datos del registro</h1>
+      </div>
+      <div className="p-8 pt-6">
+        <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* Tipo de cambio */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Tipo de Cambio
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {historico?.tipoCambio || "No especificado"}
+              </p>
+            </div>
+            {/* Motivo */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Motivo
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {historico?.motivo || "No especificado"}
+              </p>
+            </div>
+            {/* Comentarios */}
+            {/* Existencias Anteriores */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Existencias antes
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {historico?.existenciasAnterior ?? "No especificado"}
+              </p>
+            </div>
+            {/* Existencias Nuevas */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Existencias después
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {historico?.existenciasNuevo ?? "No especificado"}
+              </p>
+            </div>
+            {/* Usuario */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Usuario
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {historico?.usuario
+                  ? `${historico?.usuario?.nombre} ${historico?.usuario?.apellido}, ${historico?.usuario?.documento}`
+                  : historico?.usuarioNombre}
+              </p>
+            </div>
+            {/* Producto */}
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Producto
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {historico?.producto
+                  ? historico.producto.nombre
+                  : historico?.productoNombre}
+              </p>
+            </div>
+            {/* Fecha del cambio */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Fecha de Cambio
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {historico?.fechaCambio
+                  ? format(
+                      new Date(historico?.fechaCambio),
+                      "dd/MM/yyyy hh:mm a"
+                    )
+                  : "No especificada"}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => {
+              closeModal();
+              ref.current?.close();
+            }}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
     </dialog>
   );
 }
@@ -356,7 +500,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -480,7 +624,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar categoría</h1>
@@ -628,25 +772,19 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 }
 */
 
-function DataRow({ historico }: DataRowProps) {
-  /*
-  const [action, setAction] = useState<`${Action}`>("NONE");
-  const [isDropup, setIsDropup] = useState(false);
-  const ref = useRef<HTMLTableCellElement>(null);
-  const anyAction = false;
-
-  const selectAction = (action: `${Action}`) => {
-    setAction(action);
+function DataRow({ historico, row_number }: DataRowProps) {
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const closeViewModal = () => {
+    setIsViewOpen(false);
   };
-  */
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {historico?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300 truncate">
         {historico?.tipoCambio}
@@ -655,49 +793,34 @@ function DataRow({ historico }: DataRowProps) {
         {historico?.motivo}
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">
-        {Math.abs(
-          (historico?.existenciasNuevo || 0) -
-            (historico?.existenciasAnterior || 0)
-        )}
+        {historico?.existenciasAnterior}
+      </td>
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">
+        {historico?.existenciasNuevo}
       </td>
       <td className="px-6 py-4 border border-slate-300 truncate">{`${historico?.producto?.nombre}`}</td>
-      <td className="px-6 py-4 border border-slate-300 truncate">{`${historico?.usuario?.nombre} ${historico?.usuario?.apellido}, ${historico?.usuario?.documento}`}</td>
+      {/*
+         <td className="px-6 py-4 border border-slate-300 truncate">{`${historico?.usuario?.nombre} ${historico?.usuario?.apellido}, ${historico?.usuario?.documento}`}</td>
+        */}
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {format(new Date(historico?.fechaCambio!), "dd/MM/yyyy hh:mm a")}
       </td>
-      {/*
-              <td
-        ref={ref}
-        className="px-6 py-3 border border-slate-300 w-[200px] relative"
-      >
-        {action === "NONE" && (
-          <button className="font-medium text-[#2096ed] dark:text-blue-500 italic cursor-not-allowed">
-            Ninguna seleccionada
-          </button>
-        )}
-
-        {isDropup && (
-          <IndividualDropup
-            close={() => setIsDropup(false)}
-            selectAction={selectAction}
-            openAddModal={() => null}
-            openSearchModal={() => null}
-            id={historico?.id}
-            top={
-              (ref?.current?.getBoundingClientRect().top ?? 0) +
-              (window.scrollY ?? 0) +
-              (ref?.current?.getBoundingClientRect().height ?? 0) -
-              10
-            }
-            left={
-              (ref?.current?.getBoundingClientRect().left ?? 0) +
-              window.scrollX +
-              25
-            }
-          />
-        )}
+      <td className="px-6 py-3 border border-slate-300 w-[200px] relative">
+        <button
+          onClick={() => {
+            setIsViewOpen(true);
+          }}
+          className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+        >
+          Mostrar registro
+        </button>
+        <HistoricoModal
+          historico={historico}
+          isOpen={isViewOpen}
+          closeModal={closeViewModal}
+          setOperationAsCompleted={() => null}
+        />
       </td>
-      */}
     </tr>
   );
 }
@@ -898,6 +1021,7 @@ export default function HistoricoDataDisplay() {
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
+  //@ts-ignore
   const [action, setAction] = useState<`${Action}`>(
     permissions.find()?.crear.categoría ? "ADD" : "SEARCH"
   );
@@ -975,32 +1099,13 @@ export default function HistoricoDataDisplay() {
                 openSearchModal={() => {}}
               />
             )}
-            {action === "ADD" ? (
+            {permissions.find()?.editar.producto ? (
               <button
                 onClick={openAddModal}
                 className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
               >
                 Ajustar inventario
               </button>
-            ) : null}
-            {action === "SEARCH" ? (
-              <>
-                {searchCount > 0 ? (
-                  <button
-                    type="button"
-                    onClick={resetSearchCount}
-                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-                  >
-                    Cancelar busqueda
-                  </button>
-                ) : null}
-                <button
-                  onClick={() => null}
-                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                >
-                  Buscar en historico
-                </button>
-              </>
             ) : null}
           </div>
         </nav>
@@ -1020,27 +1125,31 @@ export default function HistoricoDataDisplay() {
                     Motivo
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Cantidad
+                    Antes
+                  </th>
+                  <th scope="col" className="px-6 py-3 border border-slate-300">
+                    Después
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Producto
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Usuario
+                    Fecha
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Fecha 
+                    Acción
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {historico.map((historico) => {
+                {historico.map((historico, index) => {
                   return (
                     <DataRow
                       action={""}
                       historico={historico}
                       setOperationAsCompleted={setAsCompleted}
                       key={historico.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

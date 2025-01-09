@@ -33,6 +33,7 @@ import { format } from "date-fns";
 import MultiSelect from "../misc/multi-select";
 import ImpuestoService from "../../services/impuesto-service";
 import ImageService from "../../services/image-service";
+import { createRowNumber } from "../../utils/functions";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -300,7 +301,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -317,7 +318,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         >
           <div className="w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              URL Slug*
+              URL Slug<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -378,7 +379,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
 
           <div className="w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Nombre*
+              Nombre<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -405,7 +406,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           <div className="flex gap-4">
             <div className="w-1/3">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Existencias*
+                Existencias<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="number"
@@ -427,7 +428,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             </div>
             <div className="w-1/3">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Precio de compra*
+                Precio de compra<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="number"
@@ -444,15 +445,16 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 min={0}
                 step="0.01"
+                max={1000000000000}
                 required
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Formato debe ser 0,00 o 0.00
+                El formato debe ser 0,00 o 0.00, 12 dígitos máximo
               </span>
             </div>
             <div className="w-1/3">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Precio de venta*
+                Precio de venta<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="number"
@@ -469,16 +471,17 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 min={0}
                 step="0.01"
+                max={1000000000000}
                 required
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Formato debe ser 0,00 o 0.00
+                El formato debe ser 0,00 o 0.00, 12 dígitos máximo
               </span>
             </div>
           </div>
           <div className="relative">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Categoría*
+              Categoría<span className="text-red-600 text-lg">*</span>
             </label>
             {categories.length > 0 && (
               <SelectWithSearch
@@ -1112,7 +1115,7 @@ function EditModal({
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
@@ -1129,7 +1132,7 @@ function EditModal({
         >
           <div className="w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              URL Slug*
+              URL Slug<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -1189,7 +1192,7 @@ function EditModal({
             */}
           <div className="w-full">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Nombre*
+              Nombre<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -1203,7 +1206,7 @@ function EditModal({
                 });
               }}
               value={formData.nombre}
-              placeholder="Introducir nombre*"
+              placeholder="Introducir nombre"
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               required
               pattern="^.{1,250}$"
@@ -1216,7 +1219,7 @@ function EditModal({
           <div className="flex gap-4">
             <div className="w-1/3">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Existencias*
+                Existencias<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="number"
@@ -1238,7 +1241,7 @@ function EditModal({
             </div>
             <div className="w-1/3">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Precio de compra*
+                Precio de compra<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="number"
@@ -1254,16 +1257,17 @@ function EditModal({
                 value={formData.precioCompra}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 min={0}
+                max={1000000000000}
                 step="0.01"
                 required
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Formato debe ser 0,00 o 0.00
+                El formato debe ser 0,00 o 0.00, 12 dígitos máximo
               </span>
             </div>
             <div className="w-1/3">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Precio de venta*
+                Precio de venta<span className="text-red-600 text-lg">*</span>
               </label>
               <input
                 type="number"
@@ -1279,17 +1283,18 @@ function EditModal({
                 value={formData.precioVenta}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 min={0}
+                max={1000000000000}
                 step="0.01"
                 required
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Formato debe ser 0,00 o 0.00
+                El formato debe ser 0,00 o 0.00, 12 dígitos máximo
               </span>
             </div>
           </div>
           <div className="relative">
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Categoría*
+              Categoría<span className="text-red-600 text-lg">*</span>
             </label>
             {categories.length > 0 && (
               <SelectWithSearch
@@ -1489,6 +1494,8 @@ function ImagesModal({
   );
   const [toDelete, setToDelete] = useState<Imagen[]>([]);
   const [lastID, setLastID] = useState(-2);
+  const [currentURL, setCurrentURL] = useState("");
+  const [isViewerScreen, setIsViewerScreen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -1576,198 +1583,254 @@ function ImagesModal({
     setLastID(-2);
   };
 
+  const renderViewerScreen = () => (
+    <>
+      <div className="p-8 pt-6">
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          {/* Mostrar la imagen cargada */}
+          {currentURL ? (
+            <img
+              src={currentURL}
+              alt="Visualización"
+              className="w-full h-auto object-contain rounded-md"
+            />
+          ) : (
+            <p className="text-gray-500">No hay imagen para mostrar.</p>
+          )}
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => setIsViewerScreen(false)}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Volver
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar imagenes</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isViewerScreen ? "Visualizar imagen" : "Editar imagenes"}
+        </h1>
       </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Editando imagenes...");
-          void ProductService.editImages(producto?.id!, {
-            toUpdate,
-            toCreate,
-            toDelete,
-          }).then((data) => {
-            if (data) {
-              toast.dismiss(loadingToast);
-              toast.success("Imagenes editadas con exito.");
-            } else {
-              toast.dismiss(loadingToast);
-              toast.error("Imagenes no pudieron ser editadas.");
-            }
-            setOperationAsCompleted();
-          });
-        }}
-      >
-        {toUpdate.map((imagen) => (
-          <div className="w-full flex gap-2 items-center" key={imagen.id}>
-            <div className="w-full flex gap-2">
-              <div className="w-full">
-                <input
-                  type="url"
-                  onChange={(e) => {
-                    const data = { ...imagen, url: e.target.value };
-                    setToUpdate([
-                      ...toUpdate.filter((img) => img.id !== imagen.id),
-                      data,
-                    ]);
-                  }}
-                  value={imagen.url}
-                  placeholder="Enlace de imagen*"
-                  className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                  required
-                />
-                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  Enlace de imagen invalido
-                </span>
+      {isViewerScreen ? (
+        renderViewerScreen()
+      ) : (
+        <form
+          className="flex flex-col p-8 pt-6 gap-4 group"
+          autoComplete="off"
+          onSubmit={(e) => {
+            e.preventDefault();
+            closeModal();
+            const loadingToast = toast.loading("Editando imagenes...");
+            void ProductService.editImages(producto?.id!, {
+              toUpdate,
+              toCreate,
+              toDelete,
+            }).then((data) => {
+              if (data) {
+                toast.dismiss(loadingToast);
+                toast.success("Imagenes editadas con exito.");
+              } else {
+                toast.dismiss(loadingToast);
+                toast.error("Imagenes no pudieron ser editadas.");
+              }
+              setOperationAsCompleted();
+            });
+          }}
+        >
+          {toUpdate.map((imagen) => (
+            <div className="w-full flex gap-2 items-center" key={imagen.id}>
+              <div className="w-full flex gap-2">
+                <div className="w-full">
+                  <input
+                    type="url"
+                    onChange={(e) => {
+                      const data = { ...imagen, url: e.target.value };
+                      setToUpdate([
+                        ...toUpdate.filter((img) => img.id !== imagen.id),
+                        data,
+                      ]);
+                    }}
+                    value={imagen.url}
+                    placeholder="Enlace de imagen*"
+                    className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                    required
+                  />
+                  <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                    Enlace de imagen invalido
+                  </span>
+                </div>
+                <div className="relative flex gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, imagen.id!)}
+                    className="hidden"
+                    id={`fileInput-${imagen.id}`}
+                    disabled={isUploading[imagen.id!]}
+                  />
+                  <label
+                    htmlFor={`fileInput-${imagen.id}`}
+                    className={`inline-flex items-center justify-center px-4 py-2 bg-[#2096ed] text-white rounded cursor-pointer hover:bg-[#1182d5] transition ${
+                      isUploading[imagen.id!]
+                        ? "pointer-events-none opacity-70"
+                        : ""
+                    }`}
+                  >
+                    {isUploading[imagen.id!] ? (
+                      <svg
+                        aria-hidden="true"
+                        className="inline w-5 h-5 animate-spin text-blue-200 fill-[#2096ed]"
+                        viewBox="0 0 100 101"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                          fill="currentColor"
+                        />
+                        <path
+                          d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                          fill="currentFill"
+                        />
+                      </svg>
+                    ) : (
+                      "Subir"
+                    )}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsViewerScreen(true);
+                      setCurrentURL(imagen.url);
+                    }}
+                    className="inline-flex items-center justify-center px-4 py-2 bg-gray-500 text-white rounded cursor-pointer hover:bg-gray-600 transition"
+                    disabled={!imagen.url} // Deshabilitar si no hay URL
+                  >
+                    Ver
+                  </button>
+                </div>
               </div>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileUpload(e, imagen.id!)}
-                  className="hidden"
-                  id={`fileInput-${imagen.id}`}
-                  disabled={isUploading[imagen.id!]}
-                />
-                <label
-                  htmlFor={`fileInput-${imagen.id}`}
-                  className={`inline-flex items-center justify-center px-4 py-2 bg-[#2096ed] text-white rounded cursor-pointer hover:bg-[#1182d5] transition ${
-                    isUploading[imagen.id!]
-                      ? "pointer-events-none opacity-70"
-                      : ""
-                  }`}
-                >
-                  {isUploading[imagen.id!] ? (
-                    <svg
-                      aria-hidden="true"
-                      className="inline w-5 h-5 animate-spin text-blue-200 fill-[#2096ed]"
-                      viewBox="0 0 100 101"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                        fill="currentColor"
-                      />
-                      <path
-                        d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                        fill="currentFill"
-                      />
-                    </svg>
-                  ) : (
-                    "Subir"
-                  )}
-                </label>
-              </div>
+              <Delete
+                onClick={() => handleDeleteImage(imagen.id!)}
+                className="fill-white bg-red-400 p-2 h-10 w-10 rounded cursor-pointer hover:bg-red-500 transition ease-in-out delay-100 duration-300"
+              />
             </div>
-            <Delete
-              onClick={() => handleDeleteImage(imagen.id!)}
-              className="fill-white bg-red-400 p-2 h-9 w-10 rounded cursor-pointer hover:bg-red-500 transition ease-in-out delay-100 duration-300"
-            />
-          </div>
-        ))}
-        {toCreate.map((imagen) => (
-          <div className="w-full flex gap-2 items-center" key={imagen.id}>
-            <div className="w-full flex gap-2">
-              <div className="w-full">
-                <input
-                  type="url"
-                  onChange={(e) => {
-                    const data = { ...imagen, url: e.target.value };
-                    setToCreate([
-                      ...toCreate.filter((img) => img.id !== imagen.id),
-                      data,
-                    ]);
-                  }}
-                  value={imagen.url}
-                  placeholder="Enlace de imagen*"
-                  className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                  required
-                />
-                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  Enlace de imagen invalido
-                </span>
+          ))}
+          {toCreate.map((imagen) => (
+            <div className="w-full flex gap-2 items-center" key={imagen.id}>
+              <div className="w-full flex gap-2">
+                <div className="w-full">
+                  <input
+                    type="url"
+                    onChange={(e) => {
+                      const data = { ...imagen, url: e.target.value };
+                      setToCreate([
+                        ...toCreate.filter((img) => img.id !== imagen.id),
+                        data,
+                      ]);
+                    }}
+                    value={imagen.url}
+                    placeholder="Enlace de imagen*"
+                    className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                    required
+                  />
+                  <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                    Enlace de imagen invalido
+                  </span>
+                </div>
+                <div className="relative flex gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, imagen.id!)}
+                    className="hidden"
+                    id={`fileInput-${imagen.id}`}
+                    disabled={isUploading[imagen.id!]}
+                  />
+                  <label
+                    htmlFor={`fileInput-${imagen.id}`}
+                    className={`inline-flex items-center justify-center px-4 py-2 bg-[#2096ed] text-white rounded cursor-pointer hover:bg-[#1182d5] transition ${
+                      isUploading[imagen.id!]
+                        ? "pointer-events-none opacity-70"
+                        : ""
+                    }`}
+                  >
+                    {isUploading[imagen.id!] ? (
+                      <svg
+                        aria-hidden="true"
+                        className="inline w-5 h-5 animate-spin text-blue-200 fill-[#2096ed]"
+                        viewBox="0 0 100 101"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                          fill="currentColor"
+                        />
+                        <path
+                          d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                          fill="currentFill"
+                        />
+                      </svg>
+                    ) : (
+                      "Subir"
+                    )}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsViewerScreen(true);
+                      setCurrentURL(imagen.url);
+                    }}
+                    className="inline-flex items-center justify-center px-4 py-2 bg-gray-500 text-white rounded cursor-pointer hover:bg-gray-600 transition"
+                    disabled={!imagen.url} // Deshabilitar si no hay URL
+                  >
+                    Ver
+                  </button>
+                </div>
               </div>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileUpload(e, imagen.id!)}
-                  className="hidden"
-                  id={`fileInput-${imagen.id}`}
-                  disabled={isUploading[imagen.id!]}
-                />
-                <label
-                  htmlFor={`fileInput-${imagen.id}`}
-                  className={`inline-flex items-center justify-center px-4 py-2 bg-[#2096ed] text-white rounded cursor-pointer hover:bg-[#1182d5] transition ${
-                    isUploading[imagen.id!]
-                      ? "pointer-events-none opacity-70"
-                      : ""
-                  }`}
-                >
-                  {isUploading[imagen.id!] ? (
-                    <svg
-                      aria-hidden="true"
-                      className="inline w-5 h-5 animate-spin text-blue-200 fill-[#2096ed]"
-                      viewBox="0 0 100 101"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                        fill="currentColor"
-                      />
-                      <path
-                        d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                        fill="currentFill"
-                      />
-                    </svg>
-                  ) : (
-                    "Subir"
-                  )}
-                </label>
-              </div>
+              <Delete
+                onClick={() => handleDeleteImage(imagen.id!)}
+                className="fill-white bg-red-400 p-2 h-10 w-10 rounded cursor-pointer hover:bg-red-500 transition ease-in-out delay-100 duration-300"
+              />
             </div>
-            <Delete
-              onClick={() => handleDeleteImage(imagen.id!)}
-              className="fill-white bg-red-400 p-2 h-9 w-10 rounded cursor-pointer hover:bg-red-500 transition ease-in-out delay-100 duration-300"
-            />
-          </div>
-        ))}
-        <div className="flex w-full justify-between">
-          <button
-            type="button"
-            onClick={handleAddImage}
-            className="text-[#2096ed] bg-blue-100 font-semibold rounded-lg p-2 px-4 hover:bg-blue-200 transition ease-in-out delay-100 duration-300"
-          >
-            Añadir imagen
-          </button>
-          <div className="flex gap-2 justify-self-end justify-end">
+          ))}
+          <div className="flex w-full justify-between">
             <button
               type="button"
-              onClick={() => {
-                closeModal();
-                resetFormData();
-              }}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              onClick={handleAddImage}
+              className="text-[#2096ed] bg-blue-100 font-semibold rounded-lg p-2 px-4 hover:bg-blue-200 transition ease-in-out delay-100 duration-300"
             >
-              Cancelar
+              Añadir imagen
             </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
+            <div className="flex gap-2 justify-self-end justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  closeModal();
+                  resetFormData();
+                }}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Cancelar
+              </button>
+              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+                Completar
+              </button>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      )}
     </dialog>
   );
 }
@@ -1810,7 +1873,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar producto</h1>
@@ -1892,7 +1955,7 @@ function ViewModal({ isOpen, closeModal, producto }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del producto</h1>
@@ -2117,7 +2180,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar producto</h1>
@@ -2273,7 +2336,7 @@ function DataRow({ producto, setOperationAsCompleted }: DataRowProps) {
   });
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
@@ -2617,6 +2680,51 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
     [selectedSearchType, selectedFecha, fetchAndDownloadReport]
   );
 
+  /*
+  const data = [
+    {
+      value: "VENDIDO_EN",
+      label: "Vendidos en",
+      onClick: (value, label) => {
+        setSelectedSearchType({
+          value,
+          label,
+        });
+      },
+    },
+    {
+      value: "COMPRADO_EN",
+      label: "Comprados en",
+      onClick: (value, label) => {
+        setSelectedSearchType({
+          value,
+          label,
+        });
+      },
+    },
+    {
+      value: "MAS_VENDIDO",
+      label: "Más vendidos",
+      onClick: (value, label) => {
+        setSelectedSearchType({
+          value,
+          label,
+        });
+      },
+    },
+    {
+      value: "MAS_COMPRADO",
+      label: "Más comprados",
+      onClick: (value, label) => {
+        setSelectedSearchType({
+          value,
+          label,
+        });
+      },
+    },
+  ];
+  */
+
   return (
     <dialog
       ref={ref}
@@ -2636,7 +2744,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
           }
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Generar reporte</h1>
@@ -2649,46 +2757,6 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
         {/* Selección del tipo de reporte */}
         <Select
           options={[
-            {
-              value: "VENDIDO_EN",
-              label: "Vendidos en",
-              onClick: (value, label) => {
-                setSelectedSearchType({
-                  value,
-                  label,
-                });
-              },
-            },
-            {
-              value: "COMPRADO_EN",
-              label: "Comprados en",
-              onClick: (value, label) => {
-                setSelectedSearchType({
-                  value,
-                  label,
-                });
-              },
-            },
-            {
-              value: "MAS_VENDIDO",
-              label: "Más vendidos",
-              onClick: (value, label) => {
-                setSelectedSearchType({
-                  value,
-                  label,
-                });
-              },
-            },
-            {
-              value: "MAS_COMPRADO",
-              label: "Más comprados",
-              onClick: (value, label) => {
-                setSelectedSearchType({
-                  value,
-                  label,
-                });
-              },
-            },
             {
               value: "STOCK_BAJO",
               label: "Existencias bajas",
@@ -3350,13 +3418,14 @@ export default function ProductsDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => {
+                {products.map((product, index) => {
                   return (
                     <DataRow
                       action={""}
                       producto={product}
                       setOperationAsCompleted={setAsCompleted}
                       key={product.id}
+                      row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
                 })}

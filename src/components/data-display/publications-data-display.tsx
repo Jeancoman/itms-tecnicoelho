@@ -26,6 +26,7 @@ import { useSearchedStore } from "../../store/searchedStore";
 import clsx from "clsx";
 import ImageService from "../../services/image-service";
 import { useConfirmationScreenStore } from "../../store/confirmationStore";
+import { createRowNumber } from "../../utils/functions";
 
 function AddSection({ close, setOperationAsCompleted }: SectionProps) {
   const isConfirmationScreen = useConfirmationScreenStore(
@@ -34,6 +35,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
   const setIsConfirmationScreen = useConfirmationScreenStore(
     (state) => state.setIsConfirmationScreen
   );
+  const [isViewImageOpen, setIsViewImageOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [randomString, setRandomString] = useState(Slugifier.randomString());
   const [formData, setFormData] = useState<Publicación>({
@@ -148,7 +150,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
         </div>
         <div className="flex flex-col gap-4">
           <label className="block text-gray-600 text-base font-medium">
-            URL Slug*
+            URL Slug<span className="text-red-600 text-lg">*</span>
           </label>
           <input
             type="text"
@@ -159,7 +161,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
           />
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Título*
+              Título<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -185,7 +187,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
           </div>
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Enlace de portada*
+              Enlace de portada<span className="text-red-600 text-lg">*</span>
             </label>
             <div className="flex gap-2">
               <div className="w-full">
@@ -207,7 +209,7 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
                   Enlace de portada invalido
                 </span>
               </div>
-              <div className="relative">
+              <div className="relative flex gap-2">
                 <input
                   type="file"
                   accept="image/*"
@@ -243,6 +245,14 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
                     "Subir"
                   )}
                 </label>
+                <button
+                  type="button"
+                  onClick={() => setIsViewImageOpen(true)}
+                  className="inline-flex items-center justify-center px-4 py-2 bg-gray-500 text-white rounded cursor-pointer hover:bg-gray-600 transition"
+                  disabled={!formData.portada} // Deshabilitar si no hay URL
+                >
+                  Ver
+                </button>
               </div>
             </div>
           </div>
@@ -317,6 +327,15 @@ function AddSection({ close, setOperationAsCompleted }: SectionProps) {
         setOperationAsCompleted={() => null}
         publicación={formData}
       />
+      <VisualizeModal
+        isOpen={isViewImageOpen}
+        closeModal={() => setIsViewImageOpen(false)}
+        imagen={{
+          url: formData.portada,
+          esPública: false,
+        }}
+        setOperationAsCompleted={() => null}
+      />
     </>
   );
 }
@@ -374,7 +393,7 @@ function AddConfirmationModal({
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       {view === "confirmation" && (
         <>
@@ -595,7 +614,7 @@ function ViewModal({ isOpen, closeModal, publicación }: ModalProps) {
           handleClose();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       {view === "confirmation" && (
         <>
@@ -752,6 +771,77 @@ function ViewModal({ isOpen, closeModal, publicación }: ModalProps) {
   );
 }
 
+function VisualizeModal({ isOpen, closeModal, imagen }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeModal();
+        ref.current?.close();
+      }
+    };
+
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", handleKeyDown);
+    } else {
+      ref.current?.close();
+    }
+
+    // Limpia el listener cuando el componente se desmonta o cambia isOpen
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, closeModal]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect();
+        if (dialogDimensions) {
+          if (
+            e.clientX < dialogDimensions.left ||
+            e.clientX > dialogDimensions.right ||
+            e.clientY < dialogDimensions.top ||
+            e.clientY > dialogDimensions.bottom
+          ) {
+            closeModal();
+            ref.current?.close();
+          }
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Visualizador de imagen</h1>
+      </div>
+      <div className="p-8 pt-6">
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          {/* Agregamos la imagen aquí */}
+          <img
+            src={imagen?.url}
+            alt="Visualización"
+            className="w-full h-auto object-contain rounded-md"
+          />
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => {
+              closeModal();
+              ref.current?.close();
+            }}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
 function EditSection({
   close,
   setOperationAsCompleted,
@@ -764,6 +854,7 @@ function EditSection({
     (state) => state.setIsConfirmationScreen
   );
   const [isUploading, setIsUploading] = useState(false);
+  const [isViewImageOpen, setIsViewImageOpen] = useState(false);
   const [randomString, setRandomString] = useState(Slugifier.randomString());
   const [formData, setFormData] = useState<Publicación>(publicación!);
 
@@ -858,7 +949,7 @@ function EditSection({
         </div>
         <div className="flex flex-col gap-4">
           <label className="block text-gray-600 text-base font-medium">
-            URL Slug*
+            URL Slug<span className="text-red-600 text-lg">*</span>
           </label>
           <input
             type="text"
@@ -869,7 +960,7 @@ function EditSection({
           />
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Título*
+              Título<span className="text-red-600 text-lg">*</span>
             </label>
             <input
               type="text"
@@ -895,7 +986,7 @@ function EditSection({
           </div>
           <div>
             <label className="block text-gray-600 text-base font-medium mb-2">
-              Enlace de portada*
+              Enlace de portada<span className="text-red-600 text-lg">*</span>
             </label>
             <div className="flex gap-2">
               <div className="w-full">
@@ -917,7 +1008,7 @@ function EditSection({
                   Enlace de portada invalido
                 </span>
               </div>
-              <div className="relative">
+              <div className="relative flex gap-2">
                 <input
                   type="file"
                   accept="image/*"
@@ -953,6 +1044,14 @@ function EditSection({
                     "Subir"
                   )}
                 </label>
+                <button
+                  type="button"
+                  onClick={() => setIsViewImageOpen(true)}
+                  className="inline-flex items-center justify-center px-4 py-2 bg-gray-500 text-white rounded cursor-pointer hover:bg-gray-600 transition"
+                  disabled={!formData.portada} // Deshabilitar si no hay URL
+                >
+                  Ver
+                </button>
               </div>
             </div>
           </div>
@@ -1028,6 +1127,15 @@ function EditSection({
         publicación={publicación}
         formData={formData}
       />
+      <VisualizeModal
+        isOpen={isViewImageOpen}
+        closeModal={() => setIsViewImageOpen(false)}
+        imagen={{
+          url: formData.portada,
+          esPública: false,
+        }}
+        setOperationAsCompleted={() => null}
+      />
     </>
   );
 }
@@ -1092,7 +1200,7 @@ function EditConfirmationModal({
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       {view === "confirmation" && (
         <>
@@ -1420,7 +1528,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Eliminar publicación</h1>
@@ -1473,6 +1581,7 @@ function DataRow({
   publicación,
   setOperationAsCompleted,
   onClick,
+  row_number,
 }: DataRowProps) {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -1502,12 +1611,12 @@ function DataRow({
   };
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {publicación?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {publicación?.título}
@@ -1711,7 +1820,7 @@ function Dropup({ close, selectAction }: DropupProps) {
   );
 }
 
-function IndividualDropup({ id, close, selectAction, top, left}: DropupProps) {
+function IndividualDropup({ id, close, selectAction, top, left }: DropupProps) {
   const dropupRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -1899,7 +2008,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar publicaciones</h1>
@@ -2252,7 +2361,7 @@ export default function PublicationsDataDisplay() {
                     </tr>
                   </thead>
                   <tbody>
-                    {publications.map((publication) => {
+                    {publications.map((publication, index) => {
                       return (
                         <DataRow
                           action={""}
@@ -2262,6 +2371,7 @@ export default function PublicationsDataDisplay() {
                           onClick={() => {
                             setToEdit(true), setPublication(publication);
                           }}
+                          row_number={createRowNumber(current, size, index + 1)}
                         />
                       );
                     })}

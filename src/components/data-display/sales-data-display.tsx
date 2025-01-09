@@ -38,6 +38,7 @@ import { useNavigate } from "react-router-dom";
 import clsx from "clsx";
 import ImpuestoService from "../../services/impuesto-service";
 import { useConfirmationScreenStore } from "../../store/confirmationStore";
+import { createRowNumber } from "../../utils/functions";
 
 function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
   const isConfirmationScreen = useConfirmationScreenStore(
@@ -320,7 +321,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative w-1/3 min-w-60">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Cliente*
+                Cliente<span className="text-red-600 text-lg">*</span>
               </label>
               {clients.length > 0 && (
                 <SelectWithSearch
@@ -388,7 +389,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
             </div>
             <div>
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Condición de pago*
+                Condición de pago<span className="text-red-600 text-lg">*</span>
               </label>
               <div className="flex w-full gap-1">
                 <div className="relative">
@@ -431,7 +432,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
           <div className="flex gap-4">
             <div className="w-2/4">
               <label className="block text-gray-600 text-base font-medium mb-2">
-                Moneda de pago*
+                Moneda de pago<span className="text-red-600 text-lg">*</span>
               </label>
               <div className="flex w-full gap-1">
                 <div className="relative">
@@ -630,7 +631,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
                     {impuestosCalculados
                       .filter((impuesto) => impuesto.total > 0)
                       .map(({ impuesto, total }) => (
-                        <tr key={impuesto.id}>
+                        <tr key={impuesto.id} className="font-semibold">
                           <td className="px-6 py-3 border border-slate-300">
                             {impuesto.codigo}
                           </td>
@@ -800,7 +801,7 @@ function ConfirmationModal({
   return (
     <dialog
       ref={ref}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Confirmar venta</h1>
@@ -1019,7 +1020,7 @@ function EditModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Editar deuda</h1>
@@ -1157,7 +1158,7 @@ function ViewModal({ isOpen, closeModal, venta }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos de la venta</h1>
@@ -1327,7 +1328,7 @@ function ViewModal({ isOpen, closeModal, venta }: ModalProps) {
   );
 }
 
-function DataRow({ venta, setOperationAsCompleted }: DataRowProps) {
+function DataRow({ venta, setOperationAsCompleted, row_number }: DataRowProps) {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const navigate = useNavigate();
@@ -1359,12 +1360,12 @@ function DataRow({ venta, setOperationAsCompleted }: DataRowProps) {
   });
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="px-6 py-3 font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 w-[50px]"
       >
-        {venta?.id}
+        {row_number}
       </th>
       <td className="px-6 py-4 border border-slate-300 min-w-[60px] truncate">
         {format(new Date(venta?.fecha!), "dd/MM/yyyy hh:mm a")}
@@ -1501,6 +1502,7 @@ function EmbeddedDataRow({
   producto,
   action,
   onChange,
+  row_number
 }: EmbeddedDataRowProps) {
   const max = producto?.existencias!;
   const precio = producto?.precioVenta!;
@@ -1542,12 +1544,12 @@ function EmbeddedDataRow({
   });
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 text-center"
       >
-        {producto?.id}
+        {row_number}
       </th>
       <td className="px-6 py-2 border border-slate-300 truncate">
         {producto?.código}
@@ -1612,6 +1614,7 @@ function EmbeddedDetailsDataRow({
   producto,
   action,
   onChange,
+  row_number
 }: EmbeddedDataRowProps) {
   const max = producto?.existencias!;
   const precio = producto?.precioVenta!;
@@ -1653,12 +1656,12 @@ function EmbeddedDetailsDataRow({
   });
 
   return (
-    <tr>
+    <tr className="font-semibold">
       <th
         scope="row"
         className="font-bold whitespace-nowrap text-[#2096ed] border border-slate-300 text-center"
       >
-        {producto?.id}
+        {row_number}
       </th>
       <td className="px-6 py-2 border border-slate-300 truncate">
         {producto?.código}
@@ -1727,6 +1730,7 @@ function EmbeddedTable({
   const [detalles, setDetalles] = useState<DetalleVenta[]>(
     detalles_venta ? detalles_venta : []
   );
+  const [thisPage, setThisPage] = useState(1)
   const size = 8;
 
   useEffect(() => {
@@ -1739,6 +1743,7 @@ function EmbeddedTable({
         } else {
           setProductos(data.rows);
           setPages?.(data.pages);
+          setThisPage(data.current)
           setCurrent?.(data.current);
           setLoading(false);
           setNotFound(false);
@@ -1815,7 +1820,7 @@ function EmbeddedTable({
                 </tr>
               </thead>
               <tbody>
-                {productos?.map((product) => {
+                {productos?.map((product, index) => {
                   return (
                     <EmbeddedDataRow
                       producto={product}
@@ -1825,6 +1830,7 @@ function EmbeddedTable({
                         (detalle) => detalle.producto_id === product.id
                       )}
                       action={action}
+                      row_number={createRowNumber(thisPage, size, index + 1)}
                     />
                   );
                 })}
@@ -1951,7 +1957,7 @@ function EmbeddedDetailsTable({
                     };
                   }
                 })
-                .map((detail) => {
+                .map((detail, index) => {
                   return (
                     <EmbeddedDetailsDataRow
                       producto={detail?.producto}
@@ -1959,6 +1965,7 @@ function EmbeddedDetailsTable({
                       onChange={secondOnChange}
                       detalle_venta={detail}
                       action={action}
+                      row_number={index + 1}
                     />
                   );
                 })}
@@ -2008,7 +2015,7 @@ function DeleteModal({
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Anular venta</h1>
@@ -2162,7 +2169,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           ref.current?.close();
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Buscar venta</h1>
@@ -2577,7 +2584,7 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
           }
         }
       }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Generar reporte</h1>
@@ -3482,7 +3489,7 @@ export default function SalesDataDisplay() {
                         scope="col"
                         className="px-6 py-3 border border-slate-300"
                       >
-                        Registrada
+                        Fecha de venta
                       </th>
                       <th
                         scope="col"
@@ -3517,7 +3524,7 @@ export default function SalesDataDisplay() {
                     </tr>
                   </thead>
                   <tbody>
-                    {sales.map((sale) => {
+                    {sales.map((sale, index) => {
                       return (
                         <DataRow
                           action={action}
@@ -3527,6 +3534,7 @@ export default function SalesDataDisplay() {
                           onClick={() => {
                             setToEdit(true), setSale(sale);
                           }}
+                          row_number={createRowNumber(current, size, index + 1)}
                         />
                       );
                     })}

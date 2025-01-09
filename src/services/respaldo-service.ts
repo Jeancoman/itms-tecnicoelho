@@ -11,6 +11,7 @@ export default class RespaldoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -33,6 +34,7 @@ export default class RespaldoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -40,7 +42,7 @@ export default class RespaldoService {
 
       return await response.json();
     } catch {
-      return null;
+      throw new Error()
     }
   }
 
@@ -53,6 +55,7 @@ export default class RespaldoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify({
@@ -63,7 +66,7 @@ export default class RespaldoService {
 
       return await response.json();
     } catch {
-      return null;
+      throw new Error()
     }
   }
 
@@ -76,6 +79,7 @@ export default class RespaldoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify({
@@ -86,7 +90,7 @@ export default class RespaldoService {
 
       return await response.json();
     } catch {
-      return null;
+      throw new Error()
     }
   }
 }

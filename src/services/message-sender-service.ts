@@ -21,6 +21,7 @@ export default class MessageSenderService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify({ datos: datos, hash: hash }),
@@ -46,6 +47,7 @@ export default class MessageSenderService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            "Connection": "keep-alive",
             Authorization: session.find()?.token!,
           },
         }

@@ -19,6 +19,8 @@ export type ModalProps = {
   impuesto?: Impuesto;
   rol?: Rol;
   deuda?: DeudaCliente;
+  historico?: HistoricoInventario;
+  acceso?: AccesoUsuario;
 };
 
 export type SectionProps = {
@@ -50,6 +52,7 @@ export type EmbeddedDataRowProps = {
   detalle_compra?: DetalleCompra;
   detalle_venta?: DetalleVenta;
   action?: Action;
+  row_number: number;
 };
 
 export type DropupProps = {
@@ -91,6 +94,7 @@ export type DataRowProps = {
   rol?: Rol;
   historico?: HistoricoInventario;
   acceso?: AccesoUsuario;
+  row_number: number;
 };
 
 export type OptionProps = {
@@ -296,6 +300,7 @@ export type Permiso = {
   mensajería: boolean;
   impuesto: boolean;
   rol: boolean;
+  historico: boolean;
 };
 
 export interface Permisos {
@@ -537,7 +542,6 @@ export interface AccesoUsuario {
   sistemaOperativo: string;
   urlSolicitada: string;
   urlReferida: string;
-  peticionCuerpo: string;
   peticionEncabezados: string;
   peticionMetodo: string;
   readonly creado?: Date;
