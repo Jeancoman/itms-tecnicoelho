@@ -1018,40 +1018,44 @@ function ViewModal({ isOpen, closeModal, impuesto }: ModalProps) {
               </p>
             </div>
 
-                      {/* PORCENTAJE */}
-          <div className="col-span-2">
-            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-              Aplica a
-            </p>
-            <p className="text-gray-900 font-medium text-base break-words">
-              {impuesto?.aplicaA === "PRODUCTO" ? "Producto" : "Ventas y compras"}
-            </p>
-          </div>
+            {/* PORCENTAJE */}
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Aplica a
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {impuesto?.aplicaA === "PRODUCTO"
+                  ? "Producto"
+                  : "Ventas y compras"}
+              </p>
+            </div>
 
-          {impuesto?.aplicaA === "VENTA" && (
-            <>
-              {impuesto?.condicionPago && (
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Condición de pago
-                  </p>
-                  <p className="text-gray-900 font-medium text-base break-words">
-                    {impuesto?.condicionPago === "CONTADO" ? "Contado" : "Credito"}
-                  </p>
-                </div>
-              )}
-              {impuesto.tipoMoneda && (
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Moneda de pago
-                  </p>
-                  <p className="text-gray-900 font-medium text-base break-words">
-                    {impuesto.tipoMoneda === "BOLIVAR" ? "Bolívar" : "Divisa"}
-                  </p>
-                </div>
-              )}
-            </>
-          )}
+            {impuesto?.aplicaA === "VENTA" && (
+              <>
+                {impuesto?.condicionPago && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                      Condición de pago
+                    </p>
+                    <p className="text-gray-900 font-medium text-base break-words">
+                      {impuesto?.condicionPago === "CONTADO"
+                        ? "Contado"
+                        : "Credito"}
+                    </p>
+                  </div>
+                )}
+                {impuesto.tipoMoneda && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                      Moneda de pago
+                    </p>
+                    <p className="text-gray-900 font-medium text-base break-words">
+                      {impuesto.tipoMoneda === "BOLIVAR" ? "Bolívar" : "Divisa"}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
         <div className="flex gap-2 justify-end">
@@ -2020,7 +2024,7 @@ export default function ImpuestosDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
-              setJustSearched(false)
+              setJustSearched(false);
             }
           }}
           prev={() => {
@@ -2030,7 +2034,18 @@ export default function ImpuestosDataDisplay() {
           }}
         />
       )}
-      <Toaster position="bottom-right" reverseOrder={false} />
+      <Toaster
+        position="bottom-right"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            duration: 1000,
+          },
+          error: {
+            duration: 1500,
+          },
+        }}
+      />
       <AddModal
         isOpen={isAddOpen}
         closeModal={closeAddModal}

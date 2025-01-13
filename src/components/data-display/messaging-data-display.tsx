@@ -342,8 +342,8 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
   }, [isOpen]);
 
   useEffect(() => {
-    setFormData(mensajería!)
-  }, [mensajería])
+    setFormData(mensajería!);
+  }, [mensajería]);
 
   return (
     <dialog
@@ -1259,7 +1259,18 @@ export default function MessagingDataDisplay() {
           }}
         />
       )}
-      <Toaster position="bottom-right" reverseOrder={false} />
+      <Toaster
+        position="bottom-right"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            duration: 1000,
+          },
+          error: {
+            duration: 1500,
+          },
+        }}
+      />
       <MessengerModal
         isOpen={isAddOpen}
         closeModal={() => setIsAddOpen(false)}

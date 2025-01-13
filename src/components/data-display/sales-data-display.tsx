@@ -1333,9 +1333,7 @@ function DataRow({ venta, setOperationAsCompleted, row_number }: DataRowProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const navigate = useNavigate();
   const [action, setAction] = useState<`${Action}`>(
-    permissions.find()?.eliminar.venta && !venta?.anulada
-      ? "DELETE"
-      : "VIEW"
+    permissions.find()?.eliminar.venta && !venta?.anulada ? "DELETE" : "VIEW"
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
@@ -1374,10 +1372,10 @@ function DataRow({ venta, setOperationAsCompleted, row_number }: DataRowProps) {
         {venta?.historico_ventum?.cliente_documento}
       </td>
       <td className="px-6 py-2 border border-slate-300 min-w-[60px] w-[150px]">
-        {formatter.format(venta?.subtotal || 0)}
-      </td>
-      <td className="px-6 py-2 border border-slate-300 min-w-[60px] w-[150px]">
         {formatter.format(venta?.total || 0)}
+      </td>
+      <td className="px-6 py-2 border border-slate-300 min-w-[60px] w-[50px]">
+        #{venta?.id}
       </td>
       <td className="px-6 py-2 border border-slate-300">
         {!venta?.anulada ? (
@@ -1406,7 +1404,7 @@ function DataRow({ venta, setOperationAsCompleted, row_number }: DataRowProps) {
             </button>
           </>
         )}
-        {(action === "DELETE" && !venta?.anulada) && (
+        {action === "DELETE" && !venta?.anulada && (
           <>
             <button
               onClick={() => {
@@ -3529,13 +3527,13 @@ export default function SalesDataDisplay() {
                         scope="col"
                         className="px-6 py-3 border border-slate-300"
                       >
-                        Subtotal
+                        Total
                       </th>
                       <th
                         scope="col"
                         className="px-6 py-3 border border-slate-300"
                       >
-                        Total
+                        ID
                       </th>
                       <th
                         scope="col"
@@ -3631,7 +3629,18 @@ export default function SalesDataDisplay() {
           }}
         />
       )}
-      <Toaster position="bottom-right" reverseOrder={false} />
+      <Toaster
+        position="bottom-right"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            duration: 1000,
+          },
+          error: {
+            duration: 1500,
+          },
+        }}
+      />
       <SearchModal
         isOpen={isSearch}
         closeModal={() => setIsSearch(false)}

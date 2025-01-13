@@ -496,11 +496,13 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
                   numeroFactura: e.target.value,
                 });
               }}
+              pattern="[0-9]*"
+              maxLength={24}
               value={formData.numeroFactura}
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Formato debe ser 0,00 o 0.00
+              Solo números
             </span>
           </div>
         </div>
@@ -1027,10 +1029,10 @@ function DataRow({
         {compra?.historico_compra?.proveedor_documento}
       </td>
       <td className="px-6 py-2 border border-slate-300 min-w-[60px] w-[150px]">
-        {formatter.format(compra?.subtotal || 0)}
-      </td>
-      <td className="px-6 py-2 border border-slate-300 min-w-[60px] w-[150px]">
         {formatter.format(compra?.total || 0)}
+      </td>
+      <td className="px-6 py-2 border border-slate-300  w-[50px]">
+        #{compra?.id}
       </td>
       <td className="px-6 py-2 border border-slate-300">
         {!compra?.anulada ? (
@@ -3356,13 +3358,13 @@ export default function PurchaseDataDisplay() {
                         scope="col"
                         className="px-6 py-3 border border-slate-300"
                       >
-                        Subtotal
+                        Total
                       </th>
                       <th
                         scope="col"
                         className="px-6 py-3 border border-slate-300"
                       >
-                        Total
+                        ID
                       </th>
                       <th
                         scope="col"
@@ -3458,7 +3460,18 @@ export default function PurchaseDataDisplay() {
           }}
         />
       )}
-      <Toaster position="bottom-right" reverseOrder={false} />
+      <Toaster
+        position="bottom-right"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            duration: 1000,
+          },
+          error: {
+            duration: 1500,
+          },
+        }}
+      />
       <SearchModal
         isOpen={isSearch}
         closeModal={() => setIsSearch(false)}

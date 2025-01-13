@@ -2016,7 +2016,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             incrementSearchCount();
             closeModal();
             setWasSearch(true);
-            setJustSearched(true)
+            setJustSearched(true);
           }
         }}
       >
@@ -2138,7 +2138,9 @@ export default function PublicationsDataDisplay() {
   const setJustSearched = usePublicationSearchParamStore(
     (state) => state.setJustSearched
   );
-  const justSearched = usePublicationSearchParamStore((state) => state.justSearched);
+  const justSearched = usePublicationSearchParamStore(
+    (state) => state.justSearched
+  );
   const size = 8;
 
   const openAddModal = () => {
@@ -2196,7 +2198,7 @@ export default function PublicationsDataDisplay() {
             setCurrent(data.current);
             setLoading(false);
           }
-          toast.dismiss(loadingToast)
+          toast.dismiss(loadingToast);
           setIsOperationCompleted(false);
         });
       } else if (wasSearch) {
@@ -2217,7 +2219,7 @@ export default function PublicationsDataDisplay() {
             setCurrent(data.current);
             setLoading(false);
           }
-          toast.dismiss(loadingToast)
+          toast.dismiss(loadingToast);
           setIsOperationCompleted(false);
         });
       }
@@ -2468,7 +2470,7 @@ export default function PublicationsDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
-              setJustSearched(false)
+              setJustSearched(false);
             }
           }}
           prev={() => {
@@ -2478,7 +2480,18 @@ export default function PublicationsDataDisplay() {
           }}
         />
       )}
-      <Toaster position="bottom-right" reverseOrder={false} />
+      <Toaster
+        position="bottom-right"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            duration: 1000,
+          },
+          error: {
+            duration: 1500,
+          },
+        }}
+      />
       <SearchModal
         isOpen={isSearch}
         closeModal={() => setIsSearch(false)}

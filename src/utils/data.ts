@@ -18,6 +18,9 @@ export const INICIALES: Permisos = {
     producto: false,
     impuesto: false,
     rol: false,
+    conversion: false,
+    historico: false,
+    bitacora: false
   },
   crear: {
     usuario: false,
@@ -36,6 +39,9 @@ export const INICIALES: Permisos = {
     producto: false,
     impuesto: false,
     rol: false,
+    conversion: false,
+    historico: false,
+    bitacora: false
   },
   editar: {
     usuario: false,
@@ -54,6 +60,9 @@ export const INICIALES: Permisos = {
     producto: false,
     impuesto: false,
     rol: false,
+    conversion: false,
+    historico: false,
+    bitacora: false
   },
   eliminar: {
     usuario: false,
@@ -72,5 +81,8 @@ export const INICIALES: Permisos = {
     producto: false,
     impuesto: false,
     rol: false,
+    conversion: false,
+    historico: false,
+    bitacora: false
   },
 };

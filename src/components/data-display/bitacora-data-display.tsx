@@ -1176,7 +1176,18 @@ export default function BitacoraDataDisplay() {
           }}
         />
       )}
-      <Toaster position="bottom-right" reverseOrder={false} />
+      <Toaster
+        position="bottom-right"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            duration: 1000,
+          },
+          error: {
+            duration: 1500
+          }
+        }}
+      />
       <SearchModal
         isOpen={isSearch}
         closeModal={() => setIsSearch(false)}

@@ -7,7 +7,6 @@ import session from "../utils/session";
 import permissions from "../utils/permissions";
 import { format } from "date-fns";
 import { useFunctionStore } from "../store/functionStore";
-import { convertirIdA4Digitos } from "../utils/functions";
 
 export default function SalePDFPage() {
   const { id } = useParams();
@@ -103,7 +102,7 @@ export default function SalePDFPage() {
               <h5 className="font-mono">TELF: +58 0426-2452374</h5>
               <h5 className="font-mono">Calle Retumbo, Valle de la Pascua</h5>
               <h5 className="mt-8 font-mono">
-                FACTURA: {convertirIdA4Digitos(venta?.id || 0)}
+                <span className="font-bold">FACTURA NO.</span> {venta?.id || 0}
               </h5>
               <h5 className="font-mono">
                 FECHA:{" "}

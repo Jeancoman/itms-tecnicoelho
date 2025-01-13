@@ -1695,7 +1695,7 @@ export default function CategoriesDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
-              setJustSearched(false)
+              setJustSearched(false);
             }
           }}
           prev={() => {
@@ -1705,7 +1705,18 @@ export default function CategoriesDataDisplay() {
           }}
         />
       )}
-      <Toaster position="bottom-right" reverseOrder={false} />
+      <Toaster
+        position="bottom-right"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            duration: 1000,
+          },
+          error: {
+            duration: 1500
+          }
+        }}
+      />
       <AddModal
         isOpen={isAddOpen}
         closeModal={closeAddModal}
