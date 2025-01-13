@@ -446,7 +446,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 }}
                 value={formData.telefono}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                pattern="^\+(?:[0-9]●?){10,12}[0-9]$"
+                pattern="^\+(?:[0-9]●?){11,12}[0-9]$"
                 required={formData.enviarMensajes}
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">

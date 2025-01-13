@@ -22,6 +22,7 @@ import { useSearchedStore } from "../../store/searchedStore";
 import ExportCSV from "../misc/export-to-cvs";
 import { format } from "date-fns";
 import { createRowNumber } from "../../utils/functions";
+import debounce from "lodash.debounce";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -32,15 +33,17 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   });
   const [formData, setFormData] = useState<Proveedor>({
     nombre: "",
-    documento: undefined,
+    documento: "",
     descripción: "",
     telefono: "",
   });
+  const [documentoExist, setDocumentoExist] = useState(false);
+  const [stillWritingDocumento, setStillWritingDocumento] = useState(false);
 
   const resetFormData = useCallback(() => {
     setFormData({
       nombre: "",
-      documento: undefined,
+      documento: "",
       descripción: "",
       telefono: "",
     });
@@ -67,6 +70,26 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     e.preventDefault();
     setIsConfirmationScreen(true);
   };
+
+  const checkDocumento = useCallback(
+    debounce(async (documento) => {
+      if (documento.length >= 8) {
+        const exist = await ProviderService.getByExactDocumento(
+          documento,
+          1,
+          100
+        );
+        if (exist) {
+          setDocumentoExist(true);
+          setStillWritingDocumento(false);
+        } else {
+          setDocumentoExist(false);
+          setStillWritingDocumento(false);
+        }
+      }
+    }, 500),
+    []
+  );
 
   const handleFinalSubmit = async () => {
     handleClose();
@@ -128,6 +151,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
         };
     }
   };
+
+  useEffect(() => {
+    checkDocumento(`${documentType.value}-${formData.documento}`);
+  }, [formData.documento, documentType.value]);
 
   useEffect(() => {
     if (isOpen) {
@@ -313,14 +340,33 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 <input
                   type="text"
                   placeholder="Introducir documento"
-                  onChange={handleInputChange("documento")}
-                  value={formData.documento || ""}
-                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                  pattern={getDocumentoPatternAndMessage().pattern.source}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      documento: e.target.value,
+                    });
+                    setStillWritingDocumento(true);
+                  }}
+                  value={formData.documento}
                   required
+                  className={clsx({
+                    ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                      !documentoExist,
+                    ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                      documentoExist,
+                  })}
+                  pattern={getDocumentoPatternAndMessage().pattern.source}
                 />
-                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  {getDocumentoPatternAndMessage().message}
+                <span
+                  className={clsx({
+                    ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                      !documentoExist,
+                    ["mt-2 text-sm text-red-500 block"]: documentoExist,
+                  })}
+                >
+                  {documentoExist
+                    ? "Documento ya registrado"
+                    : getDocumentoPatternAndMessage().message}
                 </span>
               </div>
             </div>
@@ -364,12 +410,22 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           <div className="flex gap-2 justify-end">
             <button
               type="button"
-              onClick={handleClose}
+              onClick={() => {
+                handleClose(),
+                resetFormData()
+              }}
               className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
             >
               Cancelar
             </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  !documentoExist,
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  documentoExist || stillWritingDocumento,
+              })}
+            >
               Completar
             </button>
           </div>
@@ -401,6 +457,8 @@ function EditModal({
     ...proveedor!,
     documento: initialDocumento,
   });
+  const [documentoExist, setDocumentoExist] = useState(false);
+  const [stillWritingDocumento, setStillWritingDocumento] = useState(false);
 
   const resetFormData = () => {
     setFormData({
@@ -494,6 +552,26 @@ function EditModal({
       }));
     };
 
+  const checkDocumento = useCallback(
+    debounce(async (documento) => {
+      if (documento.length >= 8) {
+        const exist = await ProviderService.getByExactDocumento(
+          documento,
+          1,
+          100
+        );
+        if (exist && proveedor?.documento !== documento) {
+          setDocumentoExist(true);
+          setStillWritingDocumento(false);
+        } else {
+          setDocumentoExist(false);
+          setStillWritingDocumento(false);
+        }
+      }
+    }, 500),
+    []
+  );
+
   useEffect(() => {
     if (isOpen) {
       ref.current?.showModal();
@@ -506,6 +584,10 @@ function EditModal({
       document.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen, handleEscape, handleClose]);
+
+  useEffect(() => {
+    checkDocumento(`${documentType.value}-${formData.documento}`);
+  }, [formData.documento, documentType.value]);
 
   const renderConfirmationScreen = () => (
     <div className="p-8 pt-6">
@@ -662,7 +744,7 @@ function EditModal({
         renderConfirmationScreen()
       ) : (
         <form
-          className="flex flex-col p-8 pt-6 gap-4"
+          className="flex flex-col p-8 pt-6 gap-4 group"
           autoComplete="off"
           onSubmit={handleSubmit}
         >
@@ -751,14 +833,33 @@ function EditModal({
                 <input
                   type="text"
                   placeholder="Introducir documento"
-                  onChange={handleInputChange("documento")}
-                  value={formData.documento || ""}
-                  className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                  pattern={getDocumentoPatternAndMessage().pattern.source}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      documento: e.target.value,
+                    });
+                    setStillWritingDocumento(true);
+                  }}
+                  value={formData.documento}
                   required
+                  className={clsx({
+                    ["border p-2 rounded outline-none focus:border-[#2096ed] border-slate-300 w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"]:
+                      !documentoExist,
+                    ["border p-2 rounded outline-none focus:border-red-500 border-red-600 text-red-500 w-full"]:
+                      documentoExist,
+                  })}
+                  pattern={getDocumentoPatternAndMessage().pattern.source}
                 />
-                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                  {getDocumentoPatternAndMessage().message}
+                <span
+                  className={clsx({
+                    ["mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block"]:
+                      !documentoExist,
+                    ["mt-2 text-sm text-red-500 block"]: documentoExist,
+                  })}
+                >
+                  {documentoExist
+                    ? "Documento ya registrado"
+                    : getDocumentoPatternAndMessage().message}
                 </span>
               </div>
             </div>
@@ -805,7 +906,14 @@ function EditModal({
             >
               Cancelar
             </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            <button
+              className={clsx({
+                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  !documentoExist,
+                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                  documentoExist || stillWritingDocumento,
+              })}
+            >
               Completar
             </button>
           </div>
