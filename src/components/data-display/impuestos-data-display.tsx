@@ -50,6 +50,8 @@ function EditModal({
   const resetFormData = () => {
     setFormData(impuesto!);
     setIsConfirmationScreen(false);
+    setCodigoExist(false);
+    setStillWritingCodigo(false)
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -548,6 +550,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       value: "",
     });
     setIsConfirmationScreen(false);
+    setCodigoExist(false);
+    setStillWritingCodigo(false)
   };
 
   const handleSubmit = (e: React.FormEvent) => {

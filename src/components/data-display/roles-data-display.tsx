@@ -99,6 +99,8 @@ function EditModal({
     setFormData(rol!);
     setIsConfirmationScreen(false);
     handlePermissionChange(rol!);
+    setNameExist(false)
+    setStillWritingName(false)
   };
 
   const handlePermissionChange = (updatedPermissions: Partial<Rol>) => {
@@ -421,6 +423,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       eliminar: INICIALES.eliminar,
     });
     setIsConfirmationScreen(false);
+    setNameExist(false)
+    setStillWritingName(false)
   };
 
   const handlePermissionChange = (updatedPermissions: Partial<Rol>) => {

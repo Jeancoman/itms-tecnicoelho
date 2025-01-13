@@ -43,6 +43,8 @@ function EditModal({
   const resetFormData = () => {
     setFormData(categoría!);
     setIsConfirmationScreen(false);
+    setNameExist(false);
+    setStillWritingName(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -369,6 +371,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       value: "PRODUCTO",
     });
     setIsConfirmationScreen(false);
+    setNameExist(false);
+    setStillWritingName(false);
+    setFetch(false)
   };
 
   const handleSubmit = (e: React.FormEvent) => {

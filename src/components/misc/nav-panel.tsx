@@ -33,9 +33,11 @@ import {
 } from "../../store/colapsableStore";
 import {
   useAccesoSearchParamStore,
+  useBitacoraSearchParamStore,
   useCategorySearchParamStore,
   useClientSearchParamStore,
   useHistoricoSearchParamStore,
+  useImageSearchParamStore,
   useImpuestoSearchParamStore,
   useMessageSearchParamStore,
   useProductSearchParamStore,
@@ -587,6 +589,10 @@ export default function NavPanel() {
   const resetAccesoSearchCount = useAccesoSearchParamStore(
     (state) => state.resetSearchCount
   );
+  const resetBitacoraSearchCount = useBitacoraSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const resetImageSearchCount = useImageSearchParamStore((state) => state.resetSearchCount)
   const setFunction = useFunctionStore((state) => state.setFunction);
 
   const resetAllSearchs = () => {
@@ -603,7 +609,9 @@ export default function NavPanel() {
     resetRoleSearchCount();
     resetTaxSearchCount();
     resetHistoricoSearchCount();
+    resetBitacoraSearchCount()
     resetAccesoSearchCount()
+    resetImageSearchCount()
   };
 
   useEffect(() => {

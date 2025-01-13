@@ -52,6 +52,8 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
       label: "V",
     });
     setIsConfirmationScreen(false);
+    setStillWritingDocumento(false)
+    setDocumentoExist(false)
   }, []);
 
   const handleEscape = useCallback((e: KeyboardEvent) => {
@@ -472,6 +474,8 @@ function EditModal({
       label: proveedor?.documento?.charAt(0) || "V",
     });
     setIsConfirmationScreen(false);
+    setStillWritingDocumento(false)
+    setDocumentoExist(false)
   };
 
   const handleEscape = useCallback((e: KeyboardEvent) => {

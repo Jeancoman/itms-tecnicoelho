@@ -81,6 +81,12 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     setDocumentType({ value: "V", label: "V" });
     setIsConfirmationScreen(false);
     setVisible(false);
+    setStillWritingCorreo(false);
+    setCorreoExist(false);
+    setStillWritingDocumento(false)
+    setDocumentoExist(false)
+    setIsTaken(false)
+    setStillWriting(false)
   };
 
   const checkUsername = useCallback(
@@ -708,6 +714,12 @@ function EditModal({
     });
     setIsConfirmationScreen(false);
     setVisible(false);
+    setStillWritingCorreo(false);
+    setCorreoExist(false);
+    setStillWritingDocumento(false)
+    setDocumentoExist(false)
+    setIsTaken(false)
+    setStillWriting(false)
   };
 
   const checkUsername = useCallback(

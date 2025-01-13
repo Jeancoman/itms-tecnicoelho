@@ -64,6 +64,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     });
     setVisible(false);
     setIsConfirmationScreen(false);
+    setStillWritingCorreo(false);
+    setCorreoExist(false);
+    setStillWritingDocumento(false)
+    setDocumentoExist(false)
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -642,6 +646,10 @@ function EditModal({
     });
     setVisible(false);
     setIsConfirmationScreen(false);
+    setStillWritingCorreo(false);
+    setCorreoExist(false);
+    setStillWritingDocumento(false)
+    setDocumentoExist(false)
   };
 
   const handleSubmit = (e: React.FormEvent) => {
