@@ -3,6 +3,7 @@ import { create } from "zustand";
 interface SimpleSearchParamStore {
   tempIsPrecise: boolean;
   isPrecise: boolean;
+  justSearched: boolean;
   tempParam: string;
   tempInput: string;
   input: string;
@@ -22,6 +23,7 @@ interface SimpleSearchParamStore {
   setTempIsPrecise: (arg: boolean) => void;
   setSecondTempInput: (arg: string) => void;
   setSecondTempParam: (arg: string) => void;
+  setJustSearched: (arg: boolean) => void;
   incrementSearchCount: () => void;
   resetSearchCount: () => void;
   searchId: number;
@@ -33,6 +35,8 @@ export const useProductSearchParamStore = create<SimpleSearchParamStore>(
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",
@@ -64,6 +68,8 @@ export const useImpuestoSearchParamStore = create<SimpleSearchParamStore>(
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",
@@ -95,6 +101,8 @@ export const useClientSearchParamStore = create<SimpleSearchParamStore>(
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",
@@ -126,6 +134,8 @@ export const useUserSearchParamStore = create<SimpleSearchParamStore>(
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",
@@ -157,6 +167,8 @@ export const useProviderSearchParamStore = create<SimpleSearchParamStore>(
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",
@@ -188,6 +200,41 @@ export const useSaleSearchParamStore = create<SimpleSearchParamStore>(
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
+    tempParam: "",
+    tempInput: "",
+    param: "",
+    secondParam: "",
+    input: "",
+    secondInput: "",
+    secondTempInput: "",
+    secondTempParam: "",
+    setParam: (arg) => set(() => ({ param: arg })),
+    setInput: (arg) => set(() => ({ input: arg })),
+    setTempInput: (arg) => set(() => ({ tempInput: arg })),
+    setTempParam: (arg) => set(() => ({ tempParam: arg })),
+    setIsPrecise: (arg) => set(() => ({ isPrecise: arg })),
+    setTempIsPrecise: (arg) => set(() => ({ tempIsPrecise: arg })),
+    incrementSearchCount: () =>
+      set((state) => ({ searchCount: state.searchCount + 1 })),
+    resetSearchCount: () => set(() => ({ searchCount: 0 })),
+    setSecondParam: (arg) => set(() => ({ secondParam: arg })),
+    setSecondInput: (arg) => set(() => ({ secondInput: arg })),
+    setSecondTempParam: (arg) => set(() => ({ secondTempParam: arg })),
+    setSecondTempInput: (arg) => set(() => ({ secondTempInput: arg })),
+    searchId: 0,
+    setSearchId: (arg) => set(() => ({ searchId: arg })),
+  })
+);
+
+export const useBitacoraSearchParamStore = create<SimpleSearchParamStore>(
+  (set) => ({
+    searchCount: 0,
+    tempIsPrecise: false,
+    isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",
@@ -219,6 +266,8 @@ export const useCategorySearchParamStore = create<SimpleSearchParamStore>(
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",
@@ -250,6 +299,8 @@ export const usePurchaseSearchParamStore = create<SimpleSearchParamStore>(
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",
@@ -281,6 +332,8 @@ export const useTicketSearchParamStore = create<SimpleSearchParamStore>(
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",
@@ -312,6 +365,8 @@ export const usePublicationSearchParamStore = create<SimpleSearchParamStore>(
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",
@@ -343,6 +398,8 @@ export const useImageSearchParamStore = create<SimpleSearchParamStore>(
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",
@@ -374,6 +431,8 @@ export const useMessageSearchParamStore = create<SimpleSearchParamStore>(
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",
@@ -400,11 +459,77 @@ export const useMessageSearchParamStore = create<SimpleSearchParamStore>(
   })
 );
 
-export const useRolSearchParamStore = create<SimpleSearchParamStore>(
+export const useRolSearchParamStore = create<SimpleSearchParamStore>((set) => ({
+  searchCount: 0,
+  tempIsPrecise: false,
+  isPrecise: false,
+  tempParam: "",
+  justSearched: false,
+  setJustSearched: (arg) => set(() => ({ justSearched: arg })),
+  tempInput: "",
+  param: "",
+  secondParam: "",
+  input: "",
+  secondInput: "",
+  secondTempInput: "",
+  secondTempParam: "",
+  setParam: (arg) => set(() => ({ param: arg })),
+  setInput: (arg) => set(() => ({ input: arg })),
+  setTempInput: (arg) => set(() => ({ tempInput: arg })),
+  setTempParam: (arg) => set(() => ({ tempParam: arg })),
+  setIsPrecise: (arg) => set(() => ({ isPrecise: arg })),
+  setTempIsPrecise: (arg) => set(() => ({ tempIsPrecise: arg })),
+  incrementSearchCount: () =>
+    set((state) => ({ searchCount: state.searchCount + 1 })),
+  resetSearchCount: () => set(() => ({ searchCount: 0 })),
+  setSecondParam: (arg) => set(() => ({ secondParam: arg })),
+  setSecondInput: (arg) => set(() => ({ secondInput: arg })),
+  setSecondTempParam: (arg) => set(() => ({ secondTempParam: arg })),
+  setSecondTempInput: (arg) => set(() => ({ secondTempInput: arg })),
+  searchId: 0,
+  setSearchId: (arg) => set(() => ({ searchId: arg })),
+}));
+
+export const useHistoricoSearchParamStore = create<SimpleSearchParamStore>(
   (set) => ({
     searchCount: 0,
     tempIsPrecise: false,
     isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
+    tempParam: "",
+    tempInput: "",
+    param: "",
+    secondParam: "",
+    input: "",
+    secondInput: "",
+    secondTempInput: "",
+    secondTempParam: "",
+    setParam: (arg) => set(() => ({ param: arg })),
+    setInput: (arg) => set(() => ({ input: arg })),
+    setTempInput: (arg) => set(() => ({ tempInput: arg })),
+    setTempParam: (arg) => set(() => ({ tempParam: arg })),
+    setIsPrecise: (arg) => set(() => ({ isPrecise: arg })),
+    setTempIsPrecise: (arg) => set(() => ({ tempIsPrecise: arg })),
+    incrementSearchCount: () =>
+      set((state) => ({ searchCount: state.searchCount + 1 })),
+    resetSearchCount: () => set(() => ({ searchCount: 0 })),
+    setSecondParam: (arg) => set(() => ({ secondParam: arg })),
+    setSecondInput: (arg) => set(() => ({ secondInput: arg })),
+    setSecondTempParam: (arg) => set(() => ({ secondTempParam: arg })),
+    setSecondTempInput: (arg) => set(() => ({ secondTempInput: arg })),
+    searchId: 0,
+    setSearchId: (arg) => set(() => ({ searchId: arg })),
+  })
+);
+
+export const useAccesoSearchParamStore = create<SimpleSearchParamStore>(
+  (set) => ({
+    searchCount: 0,
+    tempIsPrecise: false,
+    isPrecise: false,
+    justSearched: false,
+    setJustSearched: (arg) => set(() => ({ justSearched: arg })),
     tempParam: "",
     tempInput: "",
     param: "",

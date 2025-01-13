@@ -14,7 +14,7 @@ export default class ClientService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
           },
         }
       );
@@ -45,7 +45,7 @@ export default class ClientService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
           },
         }
       );
@@ -69,7 +69,7 @@ export default class ClientService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify(client),
@@ -97,7 +97,7 @@ export default class ClientService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
           },
         }
       );
@@ -130,7 +130,7 @@ export default class ClientService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
           },
         }
       );
@@ -163,7 +163,7 @@ export default class ClientService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
           },
         }
       );
@@ -200,7 +200,7 @@ export default class ClientService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
           },
         }
       );
@@ -233,7 +233,7 @@ export default class ClientService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
           },
         }
       );
@@ -266,7 +266,7 @@ export default class ClientService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
           },
         }
       );
@@ -303,7 +303,7 @@ export default class ClientService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
           },
         }
       );
@@ -336,7 +336,7 @@ export default class ClientService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
           },
         }
       );
@@ -373,7 +373,7 @@ export default class ClientService {
             Authorization: session.find()?.token!,
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
           },
         }
       );
@@ -403,7 +403,7 @@ export default class ClientService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify(client),
@@ -428,7 +428,7 @@ export default class ClientService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
             Authorization: session.find()?.token!,
           },
         }

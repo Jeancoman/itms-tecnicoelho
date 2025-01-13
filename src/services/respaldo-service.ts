@@ -11,7 +11,7 @@ export default class RespaldoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -34,15 +34,19 @@ export default class RespaldoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
       );
 
+      if (response.status > 300) {
+        throw new Error();
+      }
+
       return await response.json();
     } catch {
-      throw new Error()
+      throw new Error();
     }
   }
 
@@ -55,7 +59,7 @@ export default class RespaldoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify({
@@ -64,9 +68,13 @@ export default class RespaldoService {
         }
       );
 
+      if (response.status > 300) {
+        throw new Error();
+      }
+
       return await response.json();
     } catch {
-      throw new Error()
+      throw new Error();
     }
   }
 
@@ -79,7 +87,7 @@ export default class RespaldoService {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
             Authorization: session.find()?.token!,
           },
           body: JSON.stringify({
@@ -88,9 +96,13 @@ export default class RespaldoService {
         }
       );
 
+      if (response.status > 300) {
+        throw new Error();
+      }
+
       return await response.json();
     } catch {
-      throw new Error()
+      throw new Error();
     }
   }
 }

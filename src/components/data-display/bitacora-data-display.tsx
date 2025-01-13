@@ -2,478 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
 import Pagination from "../misc/pagination";
-import {
-  DataRowProps,
-  AccesoUsuario,
-  Usuario,
-  ModalProps,
-  Selected,
-} from "../../types";
+import { DataRowProps, Bitacora, ModalProps, Selected } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
-import { useAccesoSearchParamStore } from "../../store/searchParamStore";
+import { useBitacoraSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
-import { useNavigate, useParams } from "react-router-dom";
-import UserService from "../../services/user-service";
 import { createRowNumber } from "../../utils/functions";
 import { format } from "date-fns";
+import BitacoraService from "../../services/bitacora-service";
 import clsx from "clsx";
 import Select from "../misc/select";
 
 /*
-function EditModal({
-  isOpen,
-  closeModal,
-  setOperationAsCompleted,
-  categoría,
-}: ModalProps) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const [formData, setFormData] = useState<Categoría>(categoría!);
-  const [selectedType] = useState<Selected>({
-    label: categoría?.tipo === "PRODUCTO" ? "Producto" : "Servicio",
-    value: categoría?.tipo,
-  });
-
-  const resetFormData = () => {
-    setFormData(categoría!);
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-        }
-      });
-    } else {
-      closeModal();
-      ref.current?.close();
-    }
-  }, [closeModal, isOpen]);
-
-  return (
-    <dialog
-      ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect();
-        if (
-          dialogDimensions && // Check if dialogDimensions is defined
-          (e.clientX < dialogDimensions.left ||
-            e.clientX > dialogDimensions.right ||
-            e.clientY < dialogDimensions.top ||
-            e.clientY > dialogDimensions.bottom)
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
-    >
-      <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Editar categoría</h1>
-      </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group text-base font-normal"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Editando categoría...");
-          void CategoryService.update(categoría?.id!, formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Categoría no pudo ser editada.");
-            } else {
-              toast.success("Categoría editada con exito.");
-            }
-          });
-        }}
-      >
-        <div>
-          <label className="block text-gray-600 text-base font-medium mb-2">
-            Nombre*
-          </label>
-          <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            value={formData.nombre}
-            placeholder="Introducir nombre"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^.{2,}$"
-            name="name"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 2 caracteres
-          </span>
-        </div>
-        <div>
-          <label className="block text-gray-600 text-base font-medium mb-2">
-            Descripción
-          </label>
-          <textarea
-            rows={3}
-            placeholder="Introducir descripción"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                descripción: e.target.value,
-              });
-            }}
-            value={formData.descripción}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
-          </span>
-        </div>
-        <div className="relative">
-          <label className="block text-gray-600 text-base font-medium mb-2">
-            Tipo*
-          </label>
-          <select
-            className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-            value={selectedType.value}
-            disabled={true}
-          >
-            <option value={selectedType.value}>{selectedType.label}</option>
-          </select>
-          <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
-        </div>
-        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
-          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
-            <input
-              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              type="checkbox"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  esDigital: e.target.checked,
-                });
-              }}
-              checked={formData.esDigital}
-              id="checkbox"
-            />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox"
-            >
-              ¿Es digital?
-            </label>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                closeModal();
-                resetFormData();
-              }}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
-          </div>
-        </div>
-      </form>
-    </dialog>
-  );
-}
-
-function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const [selectedType, setSelectedType] = useState<Selected>({
-    label: "Seleccionar tipo",
-    value: "",
-  });
-  const [formData, setFormData] = useState<Categoría>({
-    nombre: "",
-    descripción: "",
-    tipo: "PRODUCTO",
-    esDigital: false,
-  });
-
-  const resetFormData = () => {
-    setFormData({
-      nombre: "",
-      descripción: "",
-      tipo: "PRODUCTO",
-      esDigital: false,
-    });
-    setSelectedType({
-      label: "Seleccionar tipo",
-      value: "",
-    });
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-          resetFormData();
-        }
-      });
-    } else {
-      closeModal();
-      ref.current?.close();
-      resetFormData();
-    }
-  }, [isOpen]);
-
-  return (
-    <dialog
-      ref={ref}
-      onClick={(e: any) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
-    >
-      <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Añadir categoría</h1>
-      </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Añadiendo categoría...");
-          void CategoryService.create(formData).then((data) => {
-            toast.dismiss(loadingToast);
-            setOperationAsCompleted();
-            if (data === false) {
-              toast.error("Categoría no pudo ser añadida.");
-            } else {
-              toast.success("Categoría añadida con exito.");
-            }
-          });
-        }}
-      >
-        <div>
-          <label className="block text-gray-600 text-base font-medium mb-2">
-            Nombre*
-          </label>
-          <input
-            type="text"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                nombre: e.target.value,
-              });
-            }}
-            value={formData.nombre}
-            placeholder="Introducir nombre"
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            required
-            pattern="^.{2,}$"
-            name="name"
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 2 caracteres
-          </span>
-        </div>
-        <div>
-          <label className="block text-gray-600 text-base font-medium mb-2">
-            Descripción
-          </label>
-          <textarea
-            rows={3}
-            placeholder="Introducir descripción"
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                descripción: e.target.value,
-              });
-            }}
-            value={formData.descripción}
-            className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-            minLength={10}
-          />
-          <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-            Minimo 10 caracteres
-          </span>
-        </div>
-        <div className="relative">
-          <label className="block text-gray-600 text-base font-medium mb-2">
-            Tipo*
-          </label>
-          <Select
-            onChange={() => {
-              setFormData({
-                ...formData,
-                tipo: selectedType.value as CategoríaTipo,
-              });
-            }}
-            options={[
-              {
-                value: "PRODUCTO",
-                label: "Producto",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "SERVICIO",
-                label: "Servicio",
-                onClick: (value, label) => {
-                  setSelectedType({
-                    value,
-                    label,
-                  });
-                },
-              },
-            ]}
-            selected={selectedType}
-          />
-        </div>
-        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
-          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
-            <input
-              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              type="checkbox"
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  esDigital: e.target.checked,
-                });
-              }}
-              checked={formData.esDigital}
-              id="checkbox"
-            />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox"
-            >
-              ¿Es digital?
-            </label>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-              Completar
-            </button>
-          </div>
-        </div>
-      </form>
-    </dialog>
-  );
-}
-
-function DeleteModal({
-  isOpen,
-  closeModal,
-  setOperationAsCompleted,
-  categoría,
-}: ModalProps) {
-  const ref = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-        }
-      });
-    } else {
-      closeModal();
-      ref.current?.close();
-    }
-  }, [isOpen]);
-
-  return (
-    <dialog
-      ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
-    >
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Eliminando categoría...");
-          CategoryService.delete(categoría?.id!).then((data) => {
-            toast.dismiss(loadingToast);
-            if (data) {
-              toast.success("Categoría eliminada con exito.");
-            } else {
-              toast.error("Categoría no pudo ser eliminada.");
-            }
-            setOperationAsCompleted();
-          });
-        }}
-      >
-        <div className="place-self-center  flex flex-col items-center">
-          <Warning className="fill-red-400 h-16 w-16" />
-          <p className="font-bold text-lg text-center mt-2">
-            ¿Esta seguro de que desea continuar?
-          </p>
-          <p className="font-medium text text-center mt-1">
-            Los cambios provocados por esta acción son irreversibles.
-          </p>
-        </div>
-        <div className="flex gap-2 justify-center">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Cancelar
-          </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Continuar
-          </button>
-        </div>
-      </form>
-    </dialog>
-  );
-}
-
 function SearchModal({ isOpen, closeModal }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
@@ -698,7 +237,7 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
 }
 */
 
-function DataRow({ acceso, row_number }: DataRowProps) {
+function DataRow({ bitacora, row_number }: DataRowProps) {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const closeViewModal = () => {
     setIsViewOpen(false);
@@ -712,27 +251,17 @@ function DataRow({ acceso, row_number }: DataRowProps) {
       >
         {row_number}
       </th>
-      <td className="px-6 py-4 border border-slate-300">{acceso?.ip}</td>
-      <td className="px-6 py-4 border border-slate-300 truncate max-w-[300px]">
-        {acceso?.dispositivo}
-      </td>
-      <td className="px-6 py-4 border border-slate-300 truncate max-w-[80px]">
-        {acceso?.navegador}
-      </td>
-      <td className="px-6 py-4 border border-slate-300 truncate">
-        {acceso?.sistemaOperativo}
+      <td className="px-6 py-4 border border-slate-300">
+        {bitacora?.usuario || "No especificado"}
       </td>
       <td className="px-6 py-4 border border-slate-300">
-        {acceso?.urlSolicitada}
-      </td>
-      <td className="px-6 py-4 border border-slate-300">
-        {acceso?.peticionMetodo === "POST" ? (
+        {bitacora?.accion === "INSERT" ? (
           <div className="bg-green-200 text-center text-green-600 text-xs py-2 font-bold rounded-lg capitalize">
-            POST
+            INSERT
           </div>
-        ) : acceso?.peticionMetodo === "PATCH" ? (
+        ) : bitacora?.accion === "UPDATE" ? (
           <div className="bg-blue-200 text-center text-blue-600 text-xs py-2 font-bold rounded-lg capitalize">
-            PATCH
+            UPDATE
           </div>
         ) : (
           <div className="bg-red-200 text-center text-red-600 text-xs py-2 font-bold rounded-lg capitalize">
@@ -740,7 +269,14 @@ function DataRow({ acceso, row_number }: DataRowProps) {
           </div>
         )}
       </td>
-      <td className="px-6 py-3 border border-slate-300 w-[200px] relative truncate">
+      <td className="px-6 py-4 border border-slate-300 truncate max-w-[80px]">
+        {bitacora?.tabla}
+      </td>
+      <td className="px-6 py-4 border border-slate-300 truncate">
+        {format(new Date(bitacora?.fecha!), "dd/MM/yyyy hh:mm a")}
+      </td>
+
+      <td className="px-6 py-3 border border-slate-300 w-[200px] relative">
         <button
           onClick={() => {
             setIsViewOpen(true);
@@ -749,8 +285,8 @@ function DataRow({ acceso, row_number }: DataRowProps) {
         >
           Mostrar registro
         </button>
-        <AccesoModal
-          acceso={acceso}
+        <BitacoraModal
+          bitacora={bitacora}
           isOpen={isViewOpen}
           closeModal={closeViewModal}
           setOperationAsCompleted={() => null}
@@ -760,7 +296,7 @@ function DataRow({ acceso, row_number }: DataRowProps) {
   );
 }
 
-function AccesoModal({ isOpen, closeModal, acceso }: ModalProps) {
+function BitacoraModal({ isOpen, closeModal, bitacora }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -813,7 +349,7 @@ function AccesoModal({ isOpen, closeModal, acceso }: ModalProps) {
       className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Detalle de acceso</h1>
+        <h1 className="text-xl font-bold text-white">Datos del registro</h1>
       </div>
       <div className="p-8 pt-6">
         <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
@@ -821,85 +357,58 @@ function AccesoModal({ isOpen, closeModal, acceso }: ModalProps) {
             {/* IP */}
             <div>
               <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                IP
+                Tabla
               </p>
               <p className="text-gray-900 font-medium text-base break-words">
-                {acceso?.ip || "No especificada"}
+                {bitacora?.tabla || "No especificada"}
               </p>
             </div>
             {/* Dispositivo */}
             <div>
               <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Dispositivo
+                Accion
               </p>
               <p className="text-gray-900 font-medium text-base break-words">
-                {acceso?.dispositivo || "No especificado"}
-              </p>
-            </div>
-            {/* Navegador */}
-            <div>
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Navegador
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {acceso?.navegador || "No especificado"}
-              </p>
-            </div>
-            {/* Sistema Operativo */}
-            <div>
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Sistema Operativo
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {acceso?.sistemaOperativo || "No especificado"}
-              </p>
-            </div>
-            {/* URL Solicitada */}
-            <div className="col-span-2">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                URL Solicitada
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {acceso?.urlSolicitada || "No especificada"}
-              </p>
-            </div>
-            {/* URL Referida */}
-            <div className="col-span-2">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                URL Referida
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {acceso?.urlReferida || "No especificada"}
-              </p>
-            </div>
-            {/* Método de petición */}
-            <div>
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Método de Petición
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {acceso?.peticionMetodo || "No especificado"}
+                {bitacora?.accion || "No especificada"}
               </p>
             </div>
             {/* Fecha de Creación */}
             <div>
               <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Fecha de Acceso
+                Fecha
               </p>
               <p className="text-gray-900 font-medium text-base break-words">
-                {acceso?.creado
-                  ? format(new Date(acceso?.creado), "dd/MM/yyyy hh:mm a")
+                {bitacora?.fecha
+                  ? format(new Date(bitacora?.fecha), "dd/MM/yyyy hh:mm a")
                   : "No especificada"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Usuario
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {bitacora?.usuario ? bitacora?.usuario : "No especificado"}
               </p>
             </div>
             {/* Encabezados de la petición */}
             <div className="col-span-2">
               <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Encabezados de la Petición
+                Datos anteriores
               </p>
               <div className="max-h-60 overflow-auto bg-gray-100 p-2 rounded text-sm font-mono whitespace-pre">
-                {acceso?.peticionEncabezados
-                  ? formatJSON(acceso.peticionEncabezados)
+                {bitacora?.antes
+                  ? formatJSON(bitacora?.antes)
+                  : "No especificados"}
+              </div>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Datos nuevos
+              </p>
+              <div className="max-h-60 overflow-auto bg-gray-100 p-2 rounded text-sm font-mono whitespace-pre">
+                {bitacora?.despues
+                  ? formatJSON(bitacora?.despues)
                   : "No especificados"}
               </div>
             </div>
@@ -931,27 +440,29 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     value: "",
     label: "Seleccionar tipo de busqueda",
   });
-  const tempInput = useAccesoSearchParamStore((state) => state.tempInput);
-  const secondTempInput = useAccesoSearchParamStore(
+  const tempInput = useBitacoraSearchParamStore((state) => state.tempInput);
+  const secondTempInput = useBitacoraSearchParamStore(
     (state) => state.secondTempInput
   );
-  const setInput = useAccesoSearchParamStore((state) => state.setInput);
-  const setTempInput = useAccesoSearchParamStore((state) => state.setTempInput);
-  const setSecondInput = useAccesoSearchParamStore(
+  const setInput = useBitacoraSearchParamStore((state) => state.setInput);
+  const setTempInput = useBitacoraSearchParamStore(
+    (state) => state.setTempInput
+  );
+  const setSecondInput = useBitacoraSearchParamStore(
     (state) => state.setSecondInput
   );
-  const setSecondTempInput = useAccesoSearchParamStore(
+  const setSecondTempInput = useBitacoraSearchParamStore(
     (state) => state.setSecondTempInput
   );
-  const setParam = useAccesoSearchParamStore((state) => state.setParam);
-  const setSecondParam = useAccesoSearchParamStore(
+  const setParam = useBitacoraSearchParamStore((state) => state.setParam);
+  const setSecondParam = useBitacoraSearchParamStore(
     (state) => state.setSecondParam
   );
-  const incrementSearchCount = useAccesoSearchParamStore(
+  const incrementSearchCount = useBitacoraSearchParamStore(
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
-  const setJustSearched = useAccesoSearchParamStore(
+  const setJustSearched = useBitacoraSearchParamStore(
     (state) => state.setJustSearched
   );
 
@@ -1364,32 +875,31 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
 }
 */
 
-export default function AccesoDataDisplay() {
-  const { id } = useParams();
-  const [accesos, setAccesos] = useState<AccesoUsuario[]>([]);
-  const [user, setUser] = useState<Usuario>();
+export default function BitacoraDataDisplay() {
+  const [bitacora, setBitacora] = useState<Bitacora[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
+  const [isSearch, setIsSearch] = useState(false);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
-  const searchCount = useAccesoSearchParamStore((state) => state.searchCount);
-  const resetSearchCount = useAccesoSearchParamStore(
+  const searchCount = useBitacoraSearchParamStore((state) => state.searchCount);
+  const resetSearchCount = useBitacoraSearchParamStore(
     (state) => state.resetSearchCount
   );
-  const [isSearch, setIsSearch] = useState(false);
-  const input = useAccesoSearchParamStore((state) => state.input);
-  const param = useAccesoSearchParamStore((state) => state.param);
-  const secondInput = useAccesoSearchParamStore((state) => state.secondInput);
-  const secondParam = useAccesoSearchParamStore((state) => state.secondParam);
+  const input = useBitacoraSearchParamStore((state) => state.input);
+  const param = useBitacoraSearchParamStore((state) => state.param);
+  const secondInput = useBitacoraSearchParamStore((state) => state.secondInput);
+  const secondParam = useBitacoraSearchParamStore((state) => state.secondParam);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
-  const setJustSearched = useAccesoSearchParamStore(
+  const setJustSearched = useBitacoraSearchParamStore(
     (state) => state.setJustSearched
   );
-  const justSearched = useAccesoSearchParamStore((state) => state.justSearched);
-  const navigate = useNavigate();
+  const justSearched = useBitacoraSearchParamStore(
+    (state) => state.justSearched
+  );
   const size = 8;
 
   const setAsCompleted = () => {
@@ -1398,15 +908,15 @@ export default function AccesoDataDisplay() {
 
   useEffect(() => {
     if (searchCount === 0) {
-      UserService.getAccesos(+id!, page, size).then((data) => {
+      BitacoraService.getAll(page, size).then((data) => {
         if (data === false) {
           setNotFound(true);
           setLoading(false);
-          setAccesos([]);
+          setBitacora([]);
           resetSearchCount();
           setWasSearch(false);
         } else {
-          setAccesos(data.rows);
+          setBitacora(data.rows);
           setPages(data.pages);
           setCurrent(data.current);
           setLoading(false);
@@ -1423,13 +933,13 @@ export default function AccesoDataDisplay() {
           loadingToast = toast.loading("Buscando...");
         }
         if (secondParam === "HOY") {
-          UserService.getToday(page, size, id!).then((data) => {
+          BitacoraService.getToday(page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
-              setAccesos([]);
+              setBitacora([]);
             } else {
-              setAccesos(data.rows);
+              setBitacora(data.rows);
               setPages(data.pages);
               setCurrent(data.current);
               setLoading(false);
@@ -1439,13 +949,13 @@ export default function AccesoDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "RECIENTEMENTE") {
-          UserService.getRecent(page, size, id!).then((data) => {
+          BitacoraService.getRecent(page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
-              setAccesos([]);
+              setBitacora([]);
             } else {
-              setAccesos(data.rows);
+              setBitacora(data.rows);
               setPages(data.pages);
               setCurrent(data.current);
               setLoading(false);
@@ -1455,13 +965,13 @@ export default function AccesoDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "ESTA_SEMANA") {
-          UserService.getThisWeek(page, size, id!).then((data) => {
+          BitacoraService.getThisWeek(page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
-              setAccesos([]);
+              setBitacora([]);
             } else {
-              setAccesos(data.rows);
+              setBitacora(data.rows);
               setPages(data.pages);
               setCurrent(data.current);
               setLoading(false);
@@ -1471,13 +981,13 @@ export default function AccesoDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "ESTE_MES") {
-          UserService.getThisMonth(page, size, id!).then((data) => {
+          BitacoraService.getThisMonth(page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
-              setAccesos([]);
+              setBitacora([]);
             } else {
-              setAccesos(data.rows);
+              setBitacora(data.rows);
               setPages(data.pages);
               setCurrent(data.current);
               setLoading(false);
@@ -1487,13 +997,13 @@ export default function AccesoDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "ESTE_AÑO") {
-          UserService.getThisYear(page, size, id!).then((data) => {
+          BitacoraService.getThisYear(page, size).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
-              setAccesos([]);
+              setBitacora([]);
             } else {
-              setAccesos(data.rows);
+              setBitacora(data.rows);
               setPages(data.pages);
               setCurrent(data.current);
               setLoading(false);
@@ -1502,19 +1012,18 @@ export default function AccesoDataDisplay() {
             setIsOperationCompleted(false);
           });
         } else if (secondParam === "ENTRE") {
-          UserService.getBetween(
+          BitacoraService.getBetween(
             new Date(input).toISOString().split("T")[0],
             new Date(secondInput).toISOString().split("T")[0],
             page,
-            size,
-            id!
+            size
           ).then((data) => {
             if (data === false) {
               setNotFound(true);
               setLoading(false);
-              setAccesos([]);
+              setBitacora([]);
             } else {
-              setAccesos(data.rows);
+              setBitacora(data.rows);
               setPages(data.pages);
               setCurrent(data.current);
               setLoading(false);
@@ -1525,14 +1034,6 @@ export default function AccesoDataDisplay() {
           });
         }
       }
-    }
-
-    if (!user) {
-      UserService.getById(+id!).then((data) => {
-        if (data) {
-          setUser(data);
-        }
-      });
     }
   }, [isOperationCompleted, searchCount, page]);
 
@@ -1545,20 +1046,14 @@ export default function AccesoDataDisplay() {
       <div className="absolute h-full w-full px-12 py-5">
         <nav className="flex justify-between items-center select-none max-[380px]:flex-col gap-4">
           <div className="font-medium text-slate-600">
-            Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
+            Menú <Right className="w-3 h-3 inline fill-600" />{" "}
             <span
               onClick={() => {
-                navigate("/usuarios");
+                resetSearchCount();
               }}
-              className="hover:text-[#2096ed] cursor-pointer"
+              className="text-[#2096ed] cursor-pointer"
             >
-              Usuarios
-            </span>{" "}
-            <Right className="w-3 h-3 inline fill-slate-600" />{" "}
-            <span className="text-[#2096ed]">{id}</span>{" "}
-            <Right className="w-3 h-3 inline fill-slate-600" /> Actividad de{" "}
-            <span className="text-[#2096ed]">
-              {user?.nombre} {user?.apellido}, {user?.documento}
+              Bitácora
             </span>
           </div>
           <div className="flex gap-2 relative">
@@ -1572,25 +1067,16 @@ export default function AccesoDataDisplay() {
               </button>
             ) : (
               <button
-                type="button"
-                onClick={() => navigate("/usuarios")}
-                className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-              >
-                Volver
-              </button>
-            )}
-            {searchCount === 0 ? (
-              <button
                 onClick={() => setIsSearch(true)}
                 className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
               >
                 Buscar registro
               </button>
-            ) : null}
+            )}
           </div>
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
-        {accesos.length > 0 && loading == false && (
+        {bitacora.length > 0 && loading == false && (
           <div className="relative overflow-x-auto scrollbar-thin">
             <table className="w-full text-sm font-medium text-slate-600 text-left">
               <thead className="text-xs bg-[#2096ed] uppercase text-white select-none w-full">
@@ -1599,22 +1085,16 @@ export default function AccesoDataDisplay() {
                     #
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    IP
+                    Usuario
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Dispositivo
+                    Acción
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Navegador
+                    Tabla
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Sistema operativo
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
-                    URL solicitada
-                  </th>
-                  <th scope="col" className="px-6 py-3 border border-slate-300">
-                    Metodo
+                    Fecha
                   </th>
                   <th scope="col" className="px-6 py-3 border border-slate-300">
                     Acción
@@ -1622,13 +1102,13 @@ export default function AccesoDataDisplay() {
                 </tr>
               </thead>
               <tbody>
-                {accesos.map((acceso, index) => {
+                {bitacora.map((bitacora, index) => {
                   return (
                     <DataRow
                       action={""}
-                      acceso={acceso}
+                      bitacora={bitacora}
                       setOperationAsCompleted={setAsCompleted}
-                      key={acceso.id}
+                      key={bitacora.id}
                       row_number={createRowNumber(current, size, index + 1)}
                     />
                   );
@@ -1637,7 +1117,8 @@ export default function AccesoDataDisplay() {
             </table>
           </div>
         )}
-        {(notFound === true || (accesos.length === 0 && loading === false)) && (
+        {(notFound === true ||
+          (bitacora.length === 0 && loading === false)) && (
           <div className="grid w-full h-4/5">
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
@@ -1646,7 +1127,7 @@ export default function AccesoDataDisplay() {
               </p>
               <p className="font-medium text text-center mt-1">
                 {searchCount === 0
-                  ? "Esto puede deberse a un error del servidor, o a que no hay ningúna acceso registrado."
+                  ? "Esto puede deberse a un error del servidor, o a que no hay ningún registro en la bitácora"
                   : "Esto puede deberse a un error del servidor, o a que ningún registro concuerda con tu busqueda"}
               </p>
             </div>
@@ -1678,7 +1159,7 @@ export default function AccesoDataDisplay() {
           </div>
         )}
       </div>
-      {accesos.length > 0 && loading == false && (
+      {bitacora.length > 0 && loading == false && (
         <Pagination
           pages={pages}
           current={current}

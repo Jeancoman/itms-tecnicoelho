@@ -175,6 +175,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
           */}
           <div>
             <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              URL Slug
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData?.slug}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
               Nombre
             </p>
             <p className="text-gray-900 font-medium text-base break-words">
@@ -414,16 +422,17 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 onChange={(e) => {
                   setFormData({
                     ...formData,
-                    existencias: Number(e.target.value),
+                    existencias: parseInt(e.target.value),
                   });
                 }}
-                value={formData.existencias}
+                value={formData.existencias ?? ""}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 required
                 min={0}
+                max={10000000000}
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Número invalido
+                10 dígitos máximo
               </span>
             </div>
             <div className="w-1/3">
@@ -436,12 +445,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 onChange={(e) => {
                   setFormData({
                     ...formData,
-                    precioCompra: !isNaN(Number(e.target.value))
-                      ? Number(e.target.value)
-                      : 0.0,
+                    precioCompra: parseFloat(e.target.value),
                   });
                 }}
-                value={formData.precioCompra}
+                value={formData.precioCompra ?? ""}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 min={0}
                 step="0.01"
@@ -449,7 +456,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 required
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                El formato debe ser 0,00 o 0.00, 12 dígitos máximo
+                El formato debe ser 0,00. 12 dígitos máximo
               </span>
             </div>
             <div className="w-1/3">
@@ -462,12 +469,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 onChange={(e) => {
                   setFormData({
                     ...formData,
-                    precioVenta: !isNaN(Number(e.target.value))
-                      ? Number(e.target.value)
-                      : 0.0,
+                    precioVenta: parseFloat(e.target.value),
                   });
                 }}
-                value={formData.precioVenta}
+                value={formData.precioVenta ?? ""}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 min={0}
                 step="0.01"
@@ -475,7 +480,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 required
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                El formato debe ser 0,00 o 0.00, 12 dígitos máximo
+                El formato debe ser 0,00. 12 dígitos máximo
               </span>
             </div>
           </div>
@@ -769,27 +774,15 @@ function EditModal({
               Datos actuales
             </h3>
             <div className="space-y-5">
-              {/* Marca 
-              <div>
-                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                  Marca
-                </p>
-                <p className="text-gray-900 font-medium text-base break-words">
-                  {producto?.marca || "No especificada"}
-                </p>
-              </div>
-              */}
-              {/* Modelo 
-              <div>
-                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                  Modelo
-                </p>
-                <p className="text-gray-900 font-medium text-base break-words">
-                  {producto?.modelo || "No especificado"}
-                </p>
-              </div>
-              */}
               {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  URL Slug
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {producto?.slug}
+                </p>
+              </div>
               <div>
                 <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                   Nombre
@@ -867,9 +860,7 @@ function EditModal({
                   {producto?.impuestos && producto.impuestos.length > 0 ? (
                     <ul className="list-disc ml-5 text-gray-900 font-medium text-base">
                       {producto.impuestos.map((imp) => (
-                        <li key={imp.id}>
-                          {imp.codigo} - {imp.porcentaje}%
-                        </li>
+                        <li key={imp.id}>{imp.codigo}</li>
                       ))}
                     </ul>
                   ) : (
@@ -897,38 +888,20 @@ function EditModal({
               Nuevos datos
             </h3>
             <div className="space-y-5">
-              {/* Marca 
               <div>
                 <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                  Marca
+                  URL Slug
                 </p>
                 <p
                   className={`text-base font-medium break-words ${
-                    formData.marca !== producto?.marca
+                    formData.slug !== producto?.slug
                       ? "text-blue-600 font-semibold"
                       : "text-gray-900"
                   }`}
                 >
-                  {formData.marca || "No especificada"}
+                  {formData.slug}
                 </p>
               </div>
-              */}
-              {/* Modelo 
-              <div>
-                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                  Modelo
-                </p>
-                <p
-                  className={`text-base font-medium break-words ${
-                    formData.modelo !== producto?.modelo
-                      ? "text-blue-600 font-semibold"
-                      : "text-gray-900"
-                  }`}
-                >
-                  {formData.modelo || "No especificado"}
-                </p>
-              </div>
-              */}
               {/* Nombre */}
               <div>
                 <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
@@ -1227,16 +1200,17 @@ function EditModal({
                 onChange={(e) => {
                   setFormData({
                     ...formData,
-                    existencias: Number(e.target.value),
+                    existencias: parseInt(e.target.value),
                   });
                 }}
-                value={formData.existencias}
+                value={formData.existencias ?? ""}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 required
                 min={0}
+                max={10000000000}
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Número invalido
+                10 dígitos máximo
               </span>
             </div>
             <div className="w-1/3">
@@ -1246,15 +1220,13 @@ function EditModal({
               <input
                 type="number"
                 placeholder="Introducir precio de compra"
-                onChange={(e) => {
+                onChange={(e) =>
                   setFormData({
                     ...formData,
-                    precioCompra: !isNaN(Number(e.target.value))
-                      ? Number(e.target.value)
-                      : 0.0,
-                  });
-                }}
-                value={formData.precioCompra}
+                    precioCompra: parseFloat(e.target.value),
+                  })
+                }
+                value={formData.precioCompra ?? ""}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 min={0}
                 max={1000000000000}
@@ -1262,7 +1234,7 @@ function EditModal({
                 required
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                El formato debe ser 0,00 o 0.00, 12 dígitos máximo
+                El formato debe ser 0,00. 12 dígitos máximo
               </span>
             </div>
             <div className="w-1/3">
@@ -1272,15 +1244,13 @@ function EditModal({
               <input
                 type="number"
                 placeholder="Introducir precio de venta"
-                onChange={(e) => {
+                onChange={(e) =>
                   setFormData({
                     ...formData,
-                    precioVenta: !isNaN(Number(e.target.value))
-                      ? Number(e.target.value)
-                      : 0.0,
-                  });
-                }}
-                value={formData.precioVenta}
+                    precioVenta: parseFloat(e.target.value),
+                  })
+                }
+                value={formData.precioVenta ?? ""}
                 className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 min={0}
                 max={1000000000000}
@@ -1288,7 +1258,7 @@ function EditModal({
                 required
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                El formato debe ser 0,00 o 0.00, 12 dígitos máximo
+                El formato debe ser 0,00. 12 dígitos máximo
               </span>
             </div>
           </div>
@@ -1477,6 +1447,7 @@ function ImagesModal({
   producto,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
   const [isUploading, setIsUploading] = useState<{ [key: number]: boolean }>(
     {}
   );
@@ -1572,13 +1543,7 @@ function ImagesModal({
 
   const resetFormData = () => {
     setToUpdate(imagenes || []);
-    setToCreate([
-      {
-        id: -1,
-        url: "",
-        esPública: false,
-      },
-    ]);
+    setToCreate([]);
     setToDelete([]);
     setLastID(-2);
   };
@@ -1611,6 +1576,92 @@ function ImagesModal({
     </>
   );
 
+  const renderConfirmationScreen = () => (
+    <div className="p-8 pt-6">
+      <div className="space-y-6">
+        {toUpdate.length > 0 && (
+          <div>
+            <h3 className="font-semibold">Imágenes:</h3>
+            <ul className="list-disc list-inside">
+              {toUpdate.map((img) => {
+                // Buscar la imagen original correspondiente
+                const imagenOriginal = imagenes?.find(
+                  (original) => original.id === img.id
+                );
+                // Determinar si la imagen ha cambiado en la propiedad URL
+                const haCambiado =
+                  imagenOriginal && imagenOriginal.url !== img.url;
+                return (
+                  <li
+                    key={img.id}
+                    className={
+                      haCambiado
+                        ? "text-blue-600 font-semibold"
+                        : "text-gray-900"
+                    }
+                  >
+                    {img.url || "Sin URL"}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+        {toCreate.length > 0 && (
+          <div>
+            <h3 className="font-semibold">Nuevas imágenes:</h3>
+            <ul className="list-disc list-inside">
+              {toCreate.map((img) => (
+                <li key={img.id}>{img.url || "Sin URL"} </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {toDelete.length > 0 && (
+          <div>
+            <h3 className="font-semibold">Imágenes elimnadas:</h3>
+            <ul className="list-disc list-inside">
+              {toDelete.map((img) => (
+                <li key={img.id}>{img.url || "Sin URL"}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      <div className="flex gap-2 justify-end mt-6">
+        <button
+          type="button"
+          onClick={() => setIsConfirmationScreen(false)}
+          className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 transition"
+        >
+          Volver
+        </button>
+        <button
+          type="button"
+          onClick={async () => {
+            closeModal();
+            const loadingToast = toast.loading("Editando imágenes...");
+            const result = await ProductService.editImages(producto?.id!, {
+              toUpdate,
+              toCreate,
+              toDelete,
+            });
+            toast.dismiss(loadingToast);
+            if (result) {
+              toast.success("Imágenes editadas con éxito.");
+            } else {
+              toast.error("No se pudieron editar las imágenes.");
+            }
+            setOperationAsCompleted();
+          }}
+          className="bg-[#2096ed] text-white font-semibold rounded-lg py-2 px-4 hover:bg-[#1182d5] transition"
+        >
+          Confirmar cambios
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <dialog
       ref={ref}
@@ -1618,10 +1669,16 @@ function ImagesModal({
     >
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">
-          {isViewerScreen ? "Visualizar imagen" : "Editar imagenes"}
+          {isConfirmationScreen
+            ? "Confirmar cambios"
+            : isViewerScreen
+            ? "Visualizar imagen"
+            : "Editar imagenes"}
         </h1>
       </div>
-      {isViewerScreen ? (
+      {isConfirmationScreen ? (
+        renderConfirmationScreen()
+      ) : isViewerScreen ? (
         renderViewerScreen()
       ) : (
         <form
@@ -1629,22 +1686,7 @@ function ImagesModal({
           autoComplete="off"
           onSubmit={(e) => {
             e.preventDefault();
-            closeModal();
-            const loadingToast = toast.loading("Editando imagenes...");
-            void ProductService.editImages(producto?.id!, {
-              toUpdate,
-              toCreate,
-              toDelete,
-            }).then((data) => {
-              if (data) {
-                toast.dismiss(loadingToast);
-                toast.success("Imagenes editadas con exito.");
-              } else {
-                toast.dismiss(loadingToast);
-                toast.error("Imagenes no pudieron ser editadas.");
-              }
-              setOperationAsCompleted();
-            });
+            setIsConfirmationScreen(true);
           }}
         >
           {toUpdate.map((imagen) => (
@@ -1992,7 +2034,14 @@ function ViewModal({ isOpen, closeModal, producto }: ModalProps) {
             </p>
           </div>
           */}
-
+            <div>
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                URL Slug
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {producto?.slug}
+              </p>
+            </div>
             <div>
               <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                 Nombre
@@ -2137,6 +2186,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useProductSearchParamStore(
+    (state) => state.setJustSearched
+  );
 
   const resetSearch = () => {
     setTempInput("");
@@ -2145,7 +2197,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: "",
       label: "Seleccionar parametro de busqueda",
     });
-    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -2195,13 +2246,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             incrementSearchCount();
             closeModal();
             setWasSearch(true);
+            setJustSearched(true);
           }
         }}
       >
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -2240,7 +2294,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           value={tempInput}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           onChange={(e) => {
-            setInput(e.target.value);
+            if (isOpen) {
+              setInput(e.target.value);
+            }
             setTempInput(e.target.value);
           }}
           required
@@ -2251,7 +2307,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               type="checkbox"
               onChange={(e) => {
-                setIsPrecise(e.target.checked);
+                if (isOpen) {
+                  setIsPrecise(e.target.checked);
+                }
                 setTempIsPrecise(e.target.checked);
               }}
               checked={tempIsPrecise}
@@ -2352,13 +2410,13 @@ function DataRow({ producto, setOperationAsCompleted }: DataRowProps) {
       <td className="px-6 py-4 border border-slate-300 truncate max-w-[200px]">
         {producto?.categoría?.nombre}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 w-[165px]">
         {formatter.format(producto?.precioCompra || 0)}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 w-[160px]">
         {formatter.format(producto?.precioVenta || 0)}
       </td>
-      <td className="px-6 py-4 border border-slate-300">
+      <td className="px-6 py-4 border border-slate-300 w-[50px]">
         {producto?.existencias}
       </td>
       <td
@@ -2557,8 +2615,8 @@ const reportConfig: Record<
       data.rows.map((producto: any) => ({
         Código: producto?.código,
         Nombre: producto?.nombre,
-        "Precio de compra": producto?.precio_compra,
-        "Precio de venta": producto?.precio_venta,
+        "Precio de compra": producto?.precioCompra,
+        "Precio de venta": producto?.precioVenta,
         Existencias: producto?.existencias,
       })),
     filename: `reporte-de-productos-existencias-bajo-${new Date().toISOString()}`,
@@ -2569,8 +2627,8 @@ const reportConfig: Record<
       data.rows.map((producto: any) => ({
         Código: producto?.código,
         Nombre: producto?.nombre,
-        "Precio de compra": producto?.precio_compra,
-        "Precio de venta": producto?.precio_venta,
+        "Precio de compra": producto?.precioCompra,
+        "Precio de venta": producto?.precioVenta,
         Existencias: producto?.existencias,
       })),
     filename: `reporte-de-productos-cero-existencias-${new Date().toISOString()}`,
@@ -3198,6 +3256,12 @@ export default function ProductsDataDisplay() {
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const [isReport, setIsReport] = useState(false);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useProductSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = useProductSearchParamStore(
+    (state) => state.justSearched
+  );
   const size = 8;
 
   const openAddModal = () => {
@@ -3242,7 +3306,12 @@ export default function ProductsDataDisplay() {
       });
     } else {
       if (isPrecise && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (param === "NOMBRE") {
           ProductService.getByExactNombre(input, page, size).then((data) => {
             toast.dismiss(loadingToast);
@@ -3256,7 +3325,6 @@ export default function ProductsDataDisplay() {
               setCurrent(data.current);
               setLoading(false);
             }
-            setIsPrecise(false);
             setIsOperationCompleted(false);
           });
         } else if (param === "CÓDIGO") {
@@ -3272,12 +3340,16 @@ export default function ProductsDataDisplay() {
               setLoading(false);
             }
             toast.dismiss(loadingToast);
-            setIsPrecise(false);
             setIsOperationCompleted(false);
           });
         }
       } else if (!isPrecise && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (param === "NOMBRE") {
           ProductService.getByNombre(input, page, size).then((data) => {
             if (data === false) {
@@ -3325,7 +3397,10 @@ export default function ProductsDataDisplay() {
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-600" />{" "}
             <span
-              onClick={resetSearchCount}
+              onClick={() => {
+                setIsPrecise(false);
+                resetSearchCount();
+              }}
               className="text-[#2096ed] cursor-pointer"
             >
               Productos
@@ -3340,39 +3415,71 @@ export default function ProductsDataDisplay() {
               />
             )}
             {action === "ADD" ? (
-              <button
-                onClick={openAddModal}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Añadir producto
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetSearchCount();
+                      setIsPrecise(false);
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={openAddModal}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Añadir producto
+                </button>
+              </>
             ) : null}
             {action === "SEARCH" ? (
               <>
                 {searchCount > 0 ? (
                   <button
                     type="button"
-                    onClick={resetSearchCount}
-                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                    onClick={() => {
+                      resetSearchCount();
+                      setIsPrecise(false);
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsSearch(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Buscar producto
+                  </button>
+                )}
+              </>
+            ) : null}
+            {action === "REPORT" ? (
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetSearchCount();
+                      setIsPrecise(false);
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                   >
                     Cancelar busqueda
                   </button>
                 ) : null}
                 <button
-                  onClick={() => setIsSearch(true)}
+                  onClick={() => setIsReport(true)}
                   className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
                 >
-                  Buscar producto
+                  Generar reporte
                 </button>
               </>
-            ) : null}
-            {action === "REPORT" ? (
-              <button
-                onClick={() => setIsReport(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Generar reporte
-              </button>
             ) : null}
             <button
               id="acciones-btn"
@@ -3482,6 +3589,7 @@ export default function ProductsDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false);
             }
           }}
           prev={() => {

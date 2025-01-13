@@ -358,10 +358,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 value={formData.nombre}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 required
-                pattern="^.{2,}$"
+                pattern="^.{1,50}$"
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Minimo 2 caracteres
+                Minimo 1 carácter, máximo 50
               </span>
             </div>
             <div className="w-2/4">
@@ -379,11 +379,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 }}
                 value={formData.apellido}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                pattern="^.{2,}$"
+                pattern="^.{1,50}$"
                 required
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Minimo 2 caracteres
+                Minimo 1 carácter, máximo 50
               </span>
             </div>
           </div>
@@ -509,6 +509,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 })}
                 required
                 minLength={3}
+                maxLength={64}
               />
               <span
                 className={clsx({
@@ -604,18 +605,19 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               required
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener una letra
-              mayúscula, una letra minúscula, un número y un carácter especial
+              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener
+              una letra mayúscula, una letra minúscula, un número y un carácter
+              especial
             </span>
             {visible ? (
               <On
                 onClick={() => setVisible(false)}
-                className="absolute top-10 right-4 fill-[#2096ed]"
+                className="absolute top-11 right-4 fill-[#2096ed]"
               />
             ) : (
               <Off
                 onClick={() => setVisible(true)}
-                className="absolute top-10 right-4 fill-[#2096ed]"
+                className="absolute top-11 right-4 fill-[#2096ed]"
               />
             )}
           </div>
@@ -660,6 +662,7 @@ function EditModal({
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [isConfirmationScreen, setIsConfirmationScreen] = useState(false);
+  const [roles, setRoles] = useState<Rol[]>([]);
   const [selectedRole, setSelectedRole] = useState<Selected>({
     value: usuario?.rol?.id,
     label: usuario?.rol?.nombre,
@@ -731,7 +734,7 @@ function EditModal({
     debounce(async (documento) => {
       if (documento.length >= 8) {
         const exist = await UserService.getByExactDocumento(documento, 1, 100);
-        if (exist && usuario?.documento !== documento ) {
+        if (exist && usuario?.documento !== documento) {
           setDocumentoExist(true);
           setStillWritingDocumento(false);
         } else {
@@ -813,6 +816,13 @@ function EditModal({
     }
   };
 
+  const loadRoles = async () => {
+    const data = await RolService.getAll(1, 100);
+    if (data) {
+      setRoles(data.rows);
+    }
+  };
+
   useEffect(() => {
     checkUsername(formData.nombreUsuario);
   }, [formData.nombreUsuario]);
@@ -824,6 +834,12 @@ function EditModal({
   useEffect(() => {
     checkCorreo(formData.correo);
   }, [formData.correo]);
+
+  useEffect(() => {
+    if (roles.length === 0) {
+      void loadRoles();
+    }
+  }, [roles.length]);
 
   useEffect(() => {
     if (isOpen) {
@@ -1072,10 +1088,10 @@ function EditModal({
                 value={formData.nombre}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                 required
-                pattern="^.{2,}$"
+                pattern="^.{1,50}$"
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Minimo 2 caracteres
+                Minimo 1 carácter, máximo 50
               </span>
             </div>
             <div className="w-2/4">
@@ -1093,11 +1109,11 @@ function EditModal({
                 }}
                 value={formData.apellido}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                pattern="^.{2,}$"
+                pattern="^.{1,50}$"
                 required
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-                Minimo 2 caracteres
+                Minimo 1 carácter, máximo 50
               </span>
             </div>
           </div>
@@ -1223,6 +1239,7 @@ function EditModal({
                 })}
                 required
                 minLength={3}
+                maxLength={64}
               />
               <span
                 className={clsx({
@@ -1240,14 +1257,40 @@ function EditModal({
               <label className="block text-gray-600 text-base font-medium mb-2">
                 Rol<span className="text-red-600 text-lg">*</span>
               </label>
-              <select
-                className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
-                value={selectedRole.value}
-                disabled={true}
-              >
-                <option value={selectedRole.value}>{selectedRole.label}</option>
-              </select>
-              <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
+              {session.find()?.usuario.id === usuario?.id ? (
+                <>
+                  <select
+                    className="select-none border w-full p-2 rounded outline-none focus:border-[#2096ed] appearance-none text-slate-400 font-medium bg-slate-100"
+                    value={selectedRole.value}
+                    disabled={true}
+                  >
+                    <option value={selectedRole.value}>
+                      {selectedRole.label}
+                    </option>
+                  </select>
+                  <Down className="absolute h-4 w-4 top-11 right-5 fill-slate-300" />
+                </>
+              ) : (
+                <Select
+                  options={roles.map((rol) => ({
+                    value: rol.id,
+                    label: rol.nombre,
+                    onClick: (value, label) => {
+                      setSelectedRole({
+                        value,
+                        label,
+                      });
+                    },
+                  }))}
+                  onChange={() => {
+                    setFormData({
+                      ...formData,
+                      rol_id: selectedRole.value as number,
+                    });
+                  }}
+                  selected={selectedRole}
+                />
+              )}
             </div>
           </div>
           <div className="w-full">
@@ -1307,8 +1350,9 @@ function EditModal({
               maxLength={32}
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener una letra
-              mayúscula, una letra minúscula, un número y un carácter especial
+              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener
+              una letra mayúscula, una letra minúscula, un número y un carácter
+              especial
             </span>
             {visible ? (
               <On
@@ -1398,7 +1442,11 @@ function DeleteModal({
       className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Eliminar usuario</h1>
+        <h1 className="text-xl font-bold text-white">
+          {session.find()?.usuario.id === usuario?.id
+            ? "Eliminar tu usuario"
+            : "Eliminar usuario"}
+        </h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -1573,6 +1621,11 @@ function DataRow({
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
   const navigate = useNavigate();
+  const createdBy = session?.find()?.usuario?.creado_por?.lista;
+  const isAllowed =
+    (createdBy?.length ?? 0) > 0
+      ? createdBy?.every((id) => usuario?.id !== id)
+      : true;
 
   const closeEditModal = () => {
     setIsEditOpen(false);
@@ -1622,80 +1675,76 @@ function DataRow({
       >
         {action === "EDIT" && (
           <>
-            {
-              //@ts-ignore
-              usuario?.creado_por?.lista?.find(
-                (id) => session.find()?.usuario.id === id
-              ) || session.find()?.usuario.id === usuario?.id ? (
-                <>
-                  <button
-                    onClick={() => {
-                      setIsEditOpen(true);
-                    }}
-                    className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-                  >
-                    {session.find()?.usuario.id === usuario?.id
-                      ? "Editar usuario"
-                      : "Editar usuario"}
-                  </button>
-                  <EditModal
-                    usuario={usuario}
-                    isOpen={isEditOpen}
-                    closeModal={closeEditModal}
-                    setOperationAsCompleted={setOperationAsCompleted}
-                  />
-                </>
-              ) : (
-                <button className="font-medium text-[#2096ed] dark:text-blue-500 line-through cursor-default">
-                  Editar usuario
+            {isAllowed || session.find()?.usuario.id === usuario?.id ? (
+              <>
+                <button
+                  onClick={() => {
+                    setIsEditOpen(true);
+                  }}
+                  className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+                >
+                  {session.find()?.usuario.id === usuario?.id
+                    ? "Editar tu usuario"
+                    : "Editar usuario"}
                 </button>
-              )
-            }
+                <EditModal
+                  usuario={usuario}
+                  isOpen={isEditOpen}
+                  closeModal={closeEditModal}
+                  setOperationAsCompleted={setOperationAsCompleted}
+                />
+              </>
+            ) : (
+              <button className="font-medium text-[#2096ed] dark:text-blue-500 line-through cursor-default">
+                Editar usuario
+              </button>
+            )}
           </>
         )}
         {action === "PREVIEW" && (
           <>
-            <button
-              onClick={() => {
-                navigate(`/usuarios/${usuario?.id}/actividad`);
-              }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-            >
-              Mostrar actividad
-            </button>
+            {isAllowed || session.find()?.usuario.id === usuario?.id ? (
+              <button
+                onClick={() => {
+                  navigate(`/usuarios/${usuario?.id}/actividad`);
+                }}
+                className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+              >
+                Mostrar actividad
+              </button>
+            ) : (
+              <button className="font-medium text-[#2096ed] dark:text-blue-500 line-through cursor-default">
+                Mostrar actividad
+              </button>
+            )}
           </>
         )}
         {action === "DELETE" && (
           <>
-            {
-              //@ts-ignore
-              usuario?.creado_por?.lista?.find(
-                (id) => session.find()?.usuario.id === id
-              ) || session.find()?.usuario.id === usuario?.id ? (
-                <>
-                  <button
-                    onClick={() => {
-                      setIsDeleteOpen(true);
-                    }}
-                    className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-                  >
-                    {session.find()?.usuario.id === usuario?.id
-                      ? "Eliminar usuario"
-                      : "Eliminar usuario"}
-                  </button>
-                  <DeleteModal
-                    usuario={usuario}
-                    isOpen={isDeleteOpen}
-                    closeModal={closeDeleteModal}
-                    setOperationAsCompleted={setOperationAsCompleted}
-                  />
-                </>
-              ) : (
-                <button className="font-medium text-[#2096ed] dark:text-blue-500 line-through cursor-default">
-                  Eliminar usuario
+            {isAllowed || session.find()?.usuario.id === usuario?.id ? (
+              <>
+                <button
+                  onClick={() => {
+                    setIsDeleteOpen(true);
+                  }}
+                  className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+                >
+                  {session.find()?.usuario.id === usuario?.id
+                    ? "Eliminar tu usuario"
+                    : "Eliminar usuario"}
                 </button>
-              )
-            }
+                <DeleteModal
+                  usuario={usuario}
+                  isOpen={isDeleteOpen}
+                  closeModal={closeDeleteModal}
+                  setOperationAsCompleted={setOperationAsCompleted}
+                />
+              </>
+            ) : (
+              <button className="font-medium text-[#2096ed] dark:text-blue-500 line-through cursor-default">
+                Eliminar usuario
+              </button>
+            )}
           </>
         )}
         {action === "VIEW" && (
@@ -1767,6 +1816,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useUserSearchParamStore(
+    (state) => state.setJustSearched
+  );
 
   const resetSearch = () => {
     setTempInput("");
@@ -1775,7 +1827,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: "",
       label: "Seleccionar parametro de busqueda",
     });
-    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -1825,13 +1876,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             incrementSearchCount();
             closeModal();
             setWasSearch(true);
+            setJustSearched(true);
           }
         }}
       >
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -1882,7 +1936,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           value={tempInput}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           onChange={(e) => {
-            setInput(e.target.value);
+            if (isOpen) {
+              setInput(e.target.value);
+            }
             setTempInput(e.target.value);
           }}
           required
@@ -1893,7 +1949,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               type="checkbox"
               onChange={(e) => {
-                setIsPrecise(e.target.checked);
+                if (isOpen) {
+                  setIsPrecise(e.target.checked);
+                }
                 setTempIsPrecise(e.target.checked);
               }}
               checked={tempIsPrecise}
@@ -2190,6 +2248,10 @@ export default function UsersDataDisplay() {
   const setIsPrecise = useUserSearchParamStore((state) => state.setIsPrecise);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useUserSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = useUserSearchParamStore((state) => state.justSearched);
   const size = 7;
 
   const openAddModal = () => {
@@ -2222,7 +2284,7 @@ export default function UsersDataDisplay() {
           setWasSearch(false);
           resetSearchCount();
         } else {
-          if (!currentUser) {
+          if (!currentUser || !isOperationCompleted) {
             void UserService.getById(session.find()?.usuario.id!).then(
               (user) => {
                 if (user) {
@@ -2230,13 +2292,12 @@ export default function UsersDataDisplay() {
                   const withOutUser = data.rows.filter(
                     (obj) => obj.id !== user.id
                   );
-                  withOutUser.unshift(user), setUsers(withOutUser);
+                  withOutUser.unshift(user);
+                  setUsers(withOutUser);
                   setPages(data.pages);
                   setCurrent(data.current);
                   setLoading(false);
                   setNotFound(false);
-                  setWasSearch(false);
-                  resetSearchCount();
                 }
               }
             );
@@ -2244,20 +2305,24 @@ export default function UsersDataDisplay() {
             const withOutUser = data.rows.filter(
               (obj) => obj.id !== currentUser.id
             );
-            withOutUser.unshift(currentUser), setUsers(withOutUser);
+            withOutUser.unshift(currentUser);
+            setUsers(withOutUser);
             setPages(data.pages);
             setCurrent(data.current);
             setLoading(false);
             setNotFound(false);
-            setWasSearch(false);
-            resetSearchCount();
           }
         }
         setIsOperationCompleted(false);
       });
     } else {
       if (isPrecise && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (param === "NOMBRE") {
           void UserService.getByExactNombre(input, page, size).then((data) => {
             if (data === false) {
@@ -2272,7 +2337,6 @@ export default function UsersDataDisplay() {
               setNotFound(false);
             }
             toast.dismiss(loadingToast);
-            setIsPrecise(false);
             setIsOperationCompleted(false);
           });
         } else if (param === "APELLIDO") {
@@ -2290,7 +2354,6 @@ export default function UsersDataDisplay() {
                 setNotFound(false);
               }
               toast.dismiss(loadingToast);
-              setIsPrecise(false);
               setIsOperationCompleted(false);
             }
           );
@@ -2309,13 +2372,17 @@ export default function UsersDataDisplay() {
                 setNotFound(false);
               }
               toast.dismiss(loadingToast);
-              setIsPrecise(false);
               setIsOperationCompleted(false);
             }
           );
         }
       } else if (!isPrecise && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (param === "NOMBRE") {
           void UserService.getByNombre(input, page, size).then((data) => {
             if (data === false) {
@@ -2398,30 +2465,48 @@ export default function UsersDataDisplay() {
               />
             )}
             {action === "ADD" ? (
-              <button
-                onClick={openAddModal}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Añadir usuario
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetSearchCount();
+                      setIsPrecise(false);
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={openAddModal}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Añadir usuario
+                </button>
+              </>
             ) : null}
             {action === "SEARCH" ? (
               <>
                 {searchCount > 0 ? (
                   <button
                     type="button"
-                    onClick={resetSearchCount}
-                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                    onClick={() => {
+                      resetSearchCount();
+                      setIsPrecise(false);
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                   >
                     Cancelar busqueda
                   </button>
-                ) : null}
-                <button
-                  onClick={() => setIsSearch(true)}
-                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                >
-                  Buscar usuario
-                </button>
+                ) : (
+                  <button
+                    onClick={() => setIsSearch(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Buscar usuario
+                  </button>
+                )}
               </>
             ) : null}
             <button
@@ -2472,7 +2557,7 @@ export default function UsersDataDisplay() {
                       usuario={user}
                       setOperationAsCompleted={setAsCompleted}
                       key={user.id}
-                      row_number={createRowNumber(current, size, index + 1)}
+                      row_number={createRowNumber(current, size + 1, index + 1)}
                     />
                   );
                 })}
@@ -2528,6 +2613,7 @@ export default function UsersDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(true);
             }
           }}
           prev={() => {

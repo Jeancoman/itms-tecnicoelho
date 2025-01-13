@@ -21,6 +21,18 @@ export type ModalProps = {
   deuda?: DeudaCliente;
   historico?: HistoricoInventario;
   acceso?: AccesoUsuario;
+  conversion?: Conversion;
+  bitacora?: Bitacora;
+  input?: string;
+  secondInput?: string;
+  param?: string;
+  secondParam?: string;
+  setInput?: (value: any) => void;
+  setSecondInput?: (value: any) => void;
+  setParam?: (value: any) => void;
+  setSecondParam?: (value: any) => void;
+  setWasSearch?: (value: boolean) => void;
+  resetSearch?: () => void;
 };
 
 export type SectionProps = {
@@ -94,6 +106,7 @@ export type DataRowProps = {
   rol?: Rol;
   historico?: HistoricoInventario;
   acceso?: AccesoUsuario;
+  bitacora?: Bitacora;
   row_number: number;
 };
 
@@ -301,6 +314,8 @@ export type Permiso = {
   impuesto: boolean;
   rol: boolean;
   historico: boolean;
+  conversion: boolean;
+  bitacora: boolean;
 };
 
 export interface Permisos {
@@ -334,6 +349,7 @@ export interface Ticket {
   tipo: ServicioTipo;
   readonly creado?: Date;
   readonly cerrado?: Date;
+  notas?: string;
   cliente_id?: number;
   cliente?: Cliente;
   categoría_id?: number;
@@ -585,7 +601,7 @@ export interface HistoricoVenta {
   cliente_direccion: string;
   tasa_cambio: number;
   fecha_tasa_cambio: string;
-  impuestos?: impuestoCalculado[]
+  impuestos?: impuestoCalculado[];
 }
 
 export interface FormErrors {
@@ -608,11 +624,28 @@ export type Asset = {
 };
 
 export type impuestoCalculado = {
-  impuesto: Impuesto,
-  total: number
+  impuesto: Impuesto;
+  total: number;
+};
+
+export interface Conversion {
+  readonly id: number;
+  automatica: boolean;
+  tasa_cambio?: number;
+  modificada?: Date;
 }
 
-export type ReportType = 
+export interface Bitacora {
+  readonly id?: number;
+  fecha?: Date;
+  antes?: string;
+  despues?: string;
+  accion?: string;
+  tabla?: string;
+  usuario: string;
+}
+
+export type ReportType =
   | "VENDIDO_EN"
   | "COMPRADO_EN"
   | "MAS_VENDIDO"

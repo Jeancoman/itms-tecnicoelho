@@ -355,7 +355,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               onChange={handleInputChange("telefono")}
               value={formData.telefono}
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
+              pattern="^\+(?:[0-9]●?){10,12}[0-9]$"
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
               Teléfono debe estar en formato E.164
@@ -791,10 +791,10 @@ function EditModal({
               onChange={handleInputChange("telefono")}
               value={formData.telefono}
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
+              pattern="^\+(?:[0-9]●?){10,12}[0-9]$"
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Formato de teléfono invalido
+              Teléfono debe estar en formato E.164
             </span>
           </div>
           <div className="flex gap-2 justify-end">
@@ -1025,6 +1025,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useProviderSearchParamStore(
+    (state) => state.setJustSearched
+  );
 
   const resetSearch = () => {
     setTempInput("");
@@ -1033,7 +1036,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: "",
       label: "Seleccionar parametro de busqueda",
     });
-    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -1083,13 +1085,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             incrementSearchCount();
             closeModal();
             setWasSearch(true);
+            setJustSearched(true);
           }
         }}
       >
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -1128,7 +1133,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           value={tempInput}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           onChange={(e) => {
-            setInput(e.target.value);
+            if (isOpen) {
+              setInput(e.target.value);
+            }
             setTempInput(e.target.value);
           }}
           required
@@ -1139,7 +1146,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               type="checkbox"
               onChange={(e) => {
-                setIsPrecise(e.target.checked);
+                if (isOpen) {
+                  setIsPrecise(e.target.checked);
+                }
                 setTempIsPrecise(e.target.checked);
               }}
               checked={tempIsPrecise}
@@ -1398,7 +1407,11 @@ function ReportModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
-function DataRow({ proveedor, setOperationAsCompleted, row_number }: DataRowProps) {
+function DataRow({
+  proveedor,
+  setOperationAsCompleted,
+  row_number,
+}: DataRowProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -1439,7 +1452,9 @@ function DataRow({ proveedor, setOperationAsCompleted, row_number }: DataRowProp
       >
         {row_number}
       </th>
-      <td className="px-6 py-4 border border-slate-300 truncate">{proveedor?.nombre}</td>
+      <td className="px-6 py-4 border border-slate-300 truncate">
+        {proveedor?.nombre}
+      </td>
       <td className="px-6 py-4 border border-slate-300 truncate min-w-[100px]">
         {proveedor?.documento || "No especificado"}
       </td>
@@ -1800,6 +1815,12 @@ export default function ProvidersDataDisplay() {
     (state) => state.setIsPrecise
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useProviderSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = useProviderSearchParamStore(
+    (state) => state.justSearched
+  );
   const [isReport, setIsReport] = useState(false);
   const size = 8;
 
@@ -1843,6 +1864,12 @@ export default function ProvidersDataDisplay() {
       });
     } else {
       if (isPrecise && wasSearch) {
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (param === "NOMBRE") {
           ProviderService.getByExactNombre(input, page, size).then((data) => {
             if (data === false) {
@@ -1856,7 +1883,7 @@ export default function ProvidersDataDisplay() {
               setLoading(false);
               setNotFound(false);
             }
-            setIsPrecise(false);
+            toast.dismiss(loadingToast);
             setIsOperationCompleted(false);
           });
         } else if (param === "DOCUMENTO") {
@@ -1873,12 +1900,18 @@ export default function ProvidersDataDisplay() {
                 setLoading(false);
                 setNotFound(false);
               }
-              setIsPrecise(false);
+              toast.dismiss(loadingToast);
               setIsOperationCompleted(false);
             }
           );
         }
       } else if (wasSearch) {
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (param === "NOMBRE") {
           ProviderService.getByNombre(input, page, size).then((data) => {
             if (data === false) {
@@ -1892,6 +1925,7 @@ export default function ProvidersDataDisplay() {
               setLoading(false);
               setNotFound(false);
             }
+            toast.dismiss(loadingToast);
             setIsOperationCompleted(false);
           });
         } else if (param === "DOCUMENTO") {
@@ -1907,6 +1941,7 @@ export default function ProvidersDataDisplay() {
               setLoading(false);
               setNotFound(false);
             }
+            toast.dismiss(loadingToast);
             setIsOperationCompleted(false);
           });
         }
@@ -1925,7 +1960,10 @@ export default function ProvidersDataDisplay() {
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span
-              onClick={resetSearchCount}
+              onClick={() => {
+                resetSearchCount();
+                setIsPrecise(false);
+              }}
               className="text-[#2096ed] cursor-pointer"
             >
               Proveedores
@@ -1941,39 +1979,71 @@ export default function ProvidersDataDisplay() {
               />
             )}
             {action === "ADD" ? (
-              <button
-                onClick={openAddModal}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Añadir proveedor
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetSearchCount();
+                      setIsPrecise(false);
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={openAddModal}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Añadir proveedor
+                </button>
+              </>
             ) : null}
             {action === "SEARCH" ? (
               <>
                 {searchCount > 0 ? (
                   <button
                     type="button"
-                    onClick={resetSearchCount}
-                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                    onClick={() => {
+                      resetSearchCount();
+                      setIsPrecise(false);
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsSearch(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Buscar proveedor
+                  </button>
+                )}
+              </>
+            ) : null}
+            {action === "REPORT" ? (
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetSearchCount();
+                      setIsPrecise(false);
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                   >
                     Cancelar busqueda
                   </button>
                 ) : null}
                 <button
-                  onClick={() => setIsSearch(true)}
+                  onClick={() => setIsReport(true)}
                   className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
                 >
-                  Buscar proveedor
+                  Generar reporte
                 </button>
               </>
-            ) : null}
-            {action === "REPORT" ? (
-              <button
-                onClick={() => setIsReport(true)}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Generar reporte
-              </button>
             ) : null}
             <button
               id="acciones-btn"
@@ -2077,6 +2147,7 @@ export default function ProvidersDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false);
             }
           }}
           prev={() => {

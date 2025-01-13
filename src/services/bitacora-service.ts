@@ -1,19 +1,19 @@
-import { HistoricoInventario, Response } from "../types";
+import { Bitacora, Response } from "../types";
 import session from "../utils/session";
 
-export default class HistoricoService {
+export default class BitacoraService {
   static async getAll(page: number, size: number) {
     try {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/historico-inventario?page=${page}&size=${size}`,
+        }/api/bitacora?page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -38,13 +38,13 @@ export default class HistoricoService {
   static async getById(id: number) {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/historico-inventario/${id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/bitacora/${id}`,
         {
           method: "GET",
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            "Connection": "keep-alive",
+            Connection: "keep-alive",
             Authorization: session.find()?.token!,
           },
         }
@@ -54,7 +54,7 @@ export default class HistoricoService {
         return false;
       }
 
-      return (await response.json()) as HistoricoInventario;
+      return (await response.json()) as Bitacora;
     } catch {
       return false;
     }
@@ -65,7 +65,7 @@ export default class HistoricoService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/historico-inventario/busqueda-especifica?tipo=HOY&page=${page}&size=${size}`,
+        }/api/bitacora/busqueda-especifica?tipo=HOY&page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -98,7 +98,7 @@ export default class HistoricoService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/historico-inventario/busqueda-especifica?tipo=RECIENTEMENTE&page=${page}&size=${size}`,
+        }/api/bitacora/busqueda-especifica?tipo=RECIENTEMENTE&page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -131,7 +131,7 @@ export default class HistoricoService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/historico-inventario/busqueda-especifica?tipo=ESTA_SEMANA&page=${page}&size=${size}`,
+        }/api/bitacora/busqueda-especifica?tipo=ESTA_SEMANA&page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -164,7 +164,7 @@ export default class HistoricoService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/historico-inventario/busqueda-especifica?tipo=ESTE_MES&page=${page}&size=${size}`,
+        }/api/bitacora/busqueda-especifica?tipo=ESTE_MES&page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -197,7 +197,7 @@ export default class HistoricoService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/historico-inventario/busqueda-especifica?tipo=ESTE_AÑO&page=${page}&size=${size}`,
+        }/api/bitacora/busqueda-especifica?tipo=ESTE_AÑO&page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -235,7 +235,7 @@ export default class HistoricoService {
       const response = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/historico-inventario/busqueda?page=${page}&size=${size}&fecha_inicial=${start}&fecha_final=${end}`,
+        }/api/bitacora/busqueda?page=${page}&size=${size}&fecha_inicial=${start}&fecha_final=${end}`,
         {
           method: "GET",
           headers: {
@@ -258,83 +258,6 @@ export default class HistoricoService {
       }
 
       return data;
-    } catch {
-      return false;
-    }
-  }
-
-  static async create(historico: HistoricoInventario) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/historico-inventario/`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "Connection": "keep-alive",
-            Authorization: session.find()?.token!,
-          },
-          body: JSON.stringify(historico),
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return (await response.json()) as HistoricoInventario;
-    } catch {
-      return false;
-    }
-  }
-
-  static async update(id: number, historico: HistoricoInventario) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/historico-inventario/${id}`,
-        {
-          method: "PATCH",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "Connection": "keep-alive",
-            Authorization: session.find()?.token!,
-          },
-          body: JSON.stringify(historico),
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  static async delete(id: number) {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/historico-inventario/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "Connection": "keep-alive",
-            Authorization: session.find()?.token!,
-          },
-        }
-      );
-
-      if (response.status > 300) {
-        return false;
-      }
-
-      return true;
     } catch {
       return false;
     }

@@ -1,4 +1,4 @@
-import { Session } from "../types";
+import type { Session, Usuario } from "../types";
 import jwt_decode from "jwt-decode";
 import { JwtPayload } from "../types";
 
@@ -28,10 +28,21 @@ const revoke = () => {
   localStorage.removeItem("session");
 };
 
+const updateUser = (user: Usuario) => {
+  const session = localStorage.getItem("session");
+  const data = JSON.parse(session!) as Session;
+
+  set({
+    usuario: user,
+    token: data.token
+  })
+}
+
 const session = {
   set,
   find,
   revoke,
+  updateUser
 };
 
 export default session;

@@ -44,7 +44,9 @@ const categories = [
   { name: "Mensajería", key: "mensajería" },
   { name: "Roles", key: "rol" },
   { name: "Restauración", key: "restauracion" },
-  { name: "Historico", key: "historico"}
+  { name: "Tasa de cambio", key: "conversion" },
+  { name: "Historico", key: "historico" },
+  { name: "Bitácora", key: "bitacora" },
 ];
 
 const actions = ["ver", "crear", "editar", "eliminar"];
@@ -65,10 +67,18 @@ const customConfig: Record<
     actions: ["crear"],
     actionLabels: { crear: "gestionar" },
   },
+  conversion: {
+    actions: ["editar"],
+    actionLabels: { editar: "gestionar" },
+  },
   mensajería: {
     actions: ["ver", "editar"],
+    actionLabels: { editar: "gestionar" },
   },
   historico: {
+    actions: ["ver"],
+  },
+  bitacora: {
     actions: ["ver"],
   },
 };
@@ -88,6 +98,7 @@ function EditModal({
   const resetFormData = () => {
     setFormData(rol!);
     setIsConfirmationScreen(false);
+    handlePermissionChange(rol!);
   };
 
   const handlePermissionChange = (updatedPermissions: Partial<Rol>) => {
@@ -123,13 +134,11 @@ function EditModal({
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           closeModal();
-          setIsConfirmationScreen(false);
           ref.current?.close();
         }
       });
     } else {
       closeModal();
-      setIsConfirmationScreen(false);
       ref.current?.close();
     }
   }, [isOpen]);
@@ -141,6 +150,7 @@ function EditModal({
 
   const handleFinalSubmit = () => {
     closeModal();
+    setIsConfirmationScreen(false);
     const loadingToast = toast.loading("Editando rol...");
     void RolService.update(rol?.id!, formData).then((data) => {
       toast.dismiss(loadingToast);
@@ -178,6 +188,8 @@ function EditModal({
                   {categories.map((category) => {
                     const config = customConfig[category.key] || {};
                     const availableActions = config.actions || actions;
+                    const actionLabels =
+                      customConfig[category.key]?.actionLabels || {};
                     return (
                       <div key={category.key} className="mb-4">
                         <p className="text-sm font-medium text-gray-700 mb-2">
@@ -194,7 +206,7 @@ function EditModal({
                                   : "text-red-600"
                               }`}
                             >
-                              {action.toUpperCase()}:{" "}
+                              {(actionLabels[action] || action).toUpperCase()}:{" "}
                               {
                                 //@ts-ignore
                                 rol![action]?.[category.key] ? "✓" : "✗"
@@ -236,6 +248,9 @@ function EditModal({
                   {categories.map((category) => {
                     const config = customConfig[category.key] || {};
                     const availableActions = config.actions || actions;
+                    const actionLabels =
+                      customConfig[category.key]?.actionLabels || {};
+
                     return (
                       <div key={category.key} className="mb-4">
                         <p className="text-sm font-medium text-gray-700 mb-2">
@@ -260,7 +275,8 @@ function EditModal({
                                     : "text-red-600"
                                 }`}
                               >
-                                {action.toUpperCase()}:{" "}
+                                {(actionLabels[action] || action).toUpperCase()}
+                                :{" "}
                                 {
                                   //@ts-ignore
                                   formData[action]?.[category.key] ? "✓" : "✗"
@@ -924,7 +940,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: "",
       label: "Seleccionar parametro de busqueda",
     });
-    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -980,7 +995,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -1009,7 +1026,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           value={tempInput}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           onChange={(e) => {
-            setInput(e.target.value);
+            if (isOpen) {
+              setInput(e.target.value);
+            }
             setTempInput(e.target.value);
           }}
           required
@@ -1020,7 +1039,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               type="checkbox"
               onChange={(e) => {
-                setIsPrecise(e.target.checked);
+                if (isOpen) {
+                  setIsPrecise(e.target.checked);
+                }
                 setTempIsPrecise(e.target.checked);
               }}
               checked={tempIsPrecise}
@@ -1432,6 +1453,10 @@ export default function RolsDataDisplay() {
   const setIsPrecise = useRolSearchParamStore((state) => state.setIsPrecise);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useRolSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = useRolSearchParamStore((state) => state.justSearched);
   const [isSearch, setIsSearch] = useState(false);
   const size = 8;
 
@@ -1477,7 +1502,12 @@ export default function RolsDataDisplay() {
       });
     } else {
       if (isPrecise && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (param === "NOMBRE") {
           RolService.getByExactNombre(input, page, size).then((data) => {
             toast.dismiss(loadingToast);
@@ -1491,12 +1521,16 @@ export default function RolsDataDisplay() {
               setCurrent(data.current);
               setLoading(false);
             }
-            setIsPrecise(false)
             setIsOperationCompleted(false);
           });
         }
       } else if (!isPrecise && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (param === "NOMBRE") {
           RolService.getByNombre(input, page, size).then((data) => {
             if (data === false) {
@@ -1528,10 +1562,13 @@ export default function RolsDataDisplay() {
           <div className="font-medium text-slate-600">
             Menú <Right className="w-3 h-3 inline fill-600" />{" "}
             <span
-              onClick={resetSearchCount}
+              onClick={() => {
+                resetSearchCount();
+                setIsPrecise(false);
+              }}
               className="text-[#2096ed] cursor-pointer"
             >
-              Roles
+              Roles y permisos
             </span>
           </div>
           <div className="flex gap-2 relative">
@@ -1543,30 +1580,48 @@ export default function RolsDataDisplay() {
               />
             )}
             {action === "ADD" ? (
-              <button
-                onClick={openAddModal}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Añadir rol
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetSearchCount();
+                      setIsPrecise(false);
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={openAddModal}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Añadir rol
+                </button>
+              </>
             ) : null}
             {action === "SEARCH" ? (
               <>
                 {searchCount > 0 ? (
                   <button
                     type="button"
-                    onClick={resetSearchCount}
-                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                    onClick={() => {
+                      resetSearchCount();
+                      setIsPrecise(false);
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                   >
                     Cancelar busqueda
                   </button>
-                ) : null}
-                <button
-                  onClick={() => setIsSearch(true)}
-                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                >
-                  Buscar rol
-                </button>
+                ) : (
+                  <button
+                    onClick={() => setIsSearch(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Buscar rol
+                  </button>
+                )}
               </>
             ) : null}
             <button
@@ -1661,6 +1716,7 @@ export default function RolsDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false)
             }
           }}
           prev={() => {

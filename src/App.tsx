@@ -1,3 +1,4 @@
+import { io } from "socket.io-client";
 import { HashRouter, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/home-page";
 import ClientsPage from "./pages/clients-page";
@@ -20,8 +21,52 @@ import ImpuestoPage from "./pages/impuestos-page";
 import RolesPage from "./pages/roles-page";
 import HistoricoPage from "./pages/historico-pages";
 import AccesoPage from "./pages/acceso-page";
+import BitacoraPage from "./pages/bitacora-page";
+import { useEffect } from "react";
+import permissions from "./utils/permissions";
+import session from "./utils/session";
+import options from "./utils/options";
+import UserService from "./services/user-service";
 
 export default function App() {
+  const socket = io(`${import.meta.env.VITE_BACKEND_URL}`);
+
+  useEffect(() => {
+    const fetchUser = async (id: string) => {
+      const fetchedUser = await UserService.getById(+id);
+      if (fetchedUser) {
+        session.updateUser(fetchedUser);
+      }
+    };
+
+    socket.on("rolActualizado", (rolActualizado) => {
+      if (rolActualizado.id === permissions.find()?.id) {
+        permissions.set(rolActualizado);
+        window.location.reload();
+      }
+    });
+
+    socket.on("usuarioEliminado", (id) => {
+      if (id === session.find()?.usuario.id) {
+        session.revoke();
+        permissions.revoke();
+        options.revoke();
+        window.location.reload();
+      }
+    });
+
+    socket.on("usuarioEditado", (id) => {
+      if (id === session.find()?.usuario.id) {
+        fetchUser(id);
+      }
+    });
+
+    return () => {
+      socket.off("rolActualizado");
+      socket.off("usuarioEliminado");
+    };
+  }, []);
+
   return (
     <HashRouter>
       <Routes>
@@ -44,6 +89,7 @@ export default function App() {
         <Route path="/roles" element={<RolesPage />} />
         <Route path="/entrar" element={<LoginPage />} />
         <Route path="/historico" element={<HistoricoPage />} />
+        <Route path="/bitacora" element={<BitacoraPage />} />
         <Route
           path="/solicitar-restablecimiento-contraseña"
           element={<RequestPasswordResetPage />}

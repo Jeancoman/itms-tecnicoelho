@@ -27,6 +27,7 @@ import clsx from "clsx";
 import ImageService from "../../services/image-service";
 import { useConfirmationScreenStore } from "../../store/confirmationStore";
 import { createRowNumber } from "../../utils/functions";
+import "/src/content.css";
 
 function AddSection({ close, setOperationAsCompleted }: SectionProps) {
   const isConfirmationScreen = useConfirmationScreenStore(
@@ -479,15 +480,9 @@ function AddConfirmationModal({
                   <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                     Contenido
                   </p>
-                  <div
-                    className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
-                      publicación?.contenido?.length &&
-                      publicación.contenido.length > 200
-                        ? "max-h-40 overflow-hidden"
-                        : ""
-                    }`}
-                  >
+                  <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-40 overflow-hidden">
                     <div
+                      className="content"
                       dangerouslySetInnerHTML={{
                         __html: publicación?.contenido ?? "",
                       }}
@@ -535,6 +530,7 @@ function AddConfirmationModal({
             <div className="bg-white rounded-lg mb-6">
               <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-80 overflow-y-auto">
                 <div
+                  className="content"
                   dangerouslySetInnerHTML={{
                     __html: publicación?.contenido ?? "",
                   }}
@@ -669,6 +665,7 @@ function ViewModal({ isOpen, closeModal, publicación }: ModalProps) {
                     }`}
                   >
                     <div
+                      className="content"
                       dangerouslySetInnerHTML={{
                         __html: publicación?.descripcionPortada ?? "",
                       }}
@@ -700,15 +697,9 @@ function ViewModal({ isOpen, closeModal, publicación }: ModalProps) {
                   <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
                     Contenido
                   </p>
-                  <div
-                    className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
-                      publicación?.contenido?.length &&
-                      publicación.contenido.length > 200
-                        ? "max-h-40 overflow-hidden"
-                        : ""
-                    }`}
-                  >
+                  <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-40 overflow-hidden">
                     <div
+                      className="content"
                       dangerouslySetInnerHTML={{
                         __html: publicación?.contenido ?? "",
                       }}
@@ -1965,6 +1956,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.setTempIsPrecise
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = usePublicationSearchParamStore(
+    (state) => state.setJustSearched
+  );
 
   const resetSearch = () => {
     setTempInput("");
@@ -1973,7 +1967,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: "",
       label: "Seleccionar parametro de busqueda",
     });
-    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -2023,13 +2016,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             incrementSearchCount();
             closeModal();
             setWasSearch(true);
+            setJustSearched(true)
           }
         }}
       >
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -2053,7 +2049,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             value={tempInput}
             className="border p-2 rounded outline-none focus:border-[#2096ed]"
             onChange={(e) => {
-              setInput(e.target.value);
+              if (isOpen) {
+                setInput(e.target.value);
+              }
               setTempInput(e.target.value);
             }}
             required
@@ -2065,7 +2063,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               type="checkbox"
               onChange={(e) => {
-                setIsPrecise(e.target.checked);
+                if (isOpen) {
+                  setIsPrecise(e.target.checked);
+                }
                 setTempIsPrecise(e.target.checked);
               }}
               checked={tempIsPrecise}
@@ -2135,6 +2135,10 @@ export default function PublicationsDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = usePublicationSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = usePublicationSearchParamStore((state) => state.justSearched);
   const size = 8;
 
   const openAddModal = () => {
@@ -2175,6 +2179,12 @@ export default function PublicationsDataDisplay() {
       });
     } else {
       if (isPrecise && wasSearch) {
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         PublicationService.getByExactTitulo(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
@@ -2186,10 +2196,16 @@ export default function PublicationsDataDisplay() {
             setCurrent(data.current);
             setLoading(false);
           }
-          setIsPrecise(false);
+          toast.dismiss(loadingToast)
           setIsOperationCompleted(false);
         });
       } else if (wasSearch) {
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         PublicationService.getByTitulo(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
@@ -2201,6 +2217,7 @@ export default function PublicationsDataDisplay() {
             setCurrent(data.current);
             setLoading(false);
           }
+          toast.dismiss(loadingToast)
           setIsOperationCompleted(false);
         });
       }
@@ -2219,7 +2236,10 @@ export default function PublicationsDataDisplay() {
             Menú <Right className="w-3 h-3 inline fill-slate-600" />{" "}
             <span
               className="text-[#2096ed] cursor-pointer hover:text-[#1182d5] transition ease-in-out delay-100 duration-300"
-              onClick={resetSearchCount}
+              onClick={() => {
+                resetSearchCount();
+                setIsPrecise(false);
+              }}
             >
               Publicaciones
             </span>{" "}
@@ -2246,30 +2266,48 @@ export default function PublicationsDataDisplay() {
                   />
                 )}
                 {action === "ADD" ? (
-                  <button
-                    onClick={openAddModal}
-                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                  >
-                    Añadir publicación
-                  </button>
+                  <>
+                    {searchCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          resetSearchCount();
+                          setIsPrecise(false);
+                        }}
+                        className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                      >
+                        Cancelar busqueda
+                      </button>
+                    ) : null}
+                    <button
+                      onClick={openAddModal}
+                      className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                    >
+                      Añadir publicación
+                    </button>
+                  </>
                 ) : null}
                 {action === "SEARCH" ? (
                   <>
                     {searchCount > 0 ? (
                       <button
                         type="button"
-                        onClick={resetSearchCount}
-                        className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                        onClick={() => {
+                          resetSearchCount();
+                          setIsPrecise(false);
+                        }}
+                        className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                       >
                         Cancelar busqueda
                       </button>
-                    ) : null}
-                    <button
-                      onClick={() => setIsSearch(true)}
-                      className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                    >
-                      Buscar publicación
-                    </button>
+                    ) : (
+                      <button
+                        onClick={() => setIsSearch(true)}
+                        className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                      >
+                        Buscar publicación
+                      </button>
+                    )}
                   </>
                 ) : null}
                 <button
@@ -2289,7 +2327,7 @@ export default function PublicationsDataDisplay() {
                   setToAdd(false);
                   setToEdit(false);
                 }}
-                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
               >
                 Volver
               </button>
@@ -2430,6 +2468,7 @@ export default function PublicationsDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false)
             }
           }}
           prev={() => {

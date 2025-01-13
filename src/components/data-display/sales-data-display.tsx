@@ -1333,10 +1333,8 @@ function DataRow({ venta, setOperationAsCompleted, row_number }: DataRowProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const navigate = useNavigate();
   const [action, setAction] = useState<`${Action}`>(
-    permissions.find()?.eliminar.compra
+    permissions.find()?.eliminar.venta && !venta?.anulada
       ? "DELETE"
-      : permissions.find()?.editar.compra
-      ? "EDIT"
       : "VIEW"
   );
   const [isDropup, setIsDropup] = useState(false);
@@ -1367,7 +1365,7 @@ function DataRow({ venta, setOperationAsCompleted, row_number }: DataRowProps) {
       >
         {row_number}
       </th>
-      <td className="px-6 py-4 border border-slate-300 min-w-[60px] truncate">
+      <td className="px-6 py-4 border border-slate-300 min-w-[60px] w-[80px] truncate">
         {format(new Date(venta?.fecha!), "dd/MM/yyyy hh:mm a")}
       </td>
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
@@ -1375,10 +1373,10 @@ function DataRow({ venta, setOperationAsCompleted, row_number }: DataRowProps) {
         {venta?.historico_ventum?.cliente_apellido},{" "}
         {venta?.historico_ventum?.cliente_documento}
       </td>
-      <td className="px-6 py-2 border border-slate-300">
+      <td className="px-6 py-2 border border-slate-300 min-w-[60px] w-[150px]">
         {formatter.format(venta?.subtotal || 0)}
       </td>
-      <td className="px-6 py-2 border border-slate-300">
+      <td className="px-6 py-2 border border-slate-300 min-w-[60px] w-[150px]">
         {formatter.format(venta?.total || 0)}
       </td>
       <td className="px-6 py-2 border border-slate-300">
@@ -1396,7 +1394,7 @@ function DataRow({ venta, setOperationAsCompleted, row_number }: DataRowProps) {
         ref={ref}
         className="px-6 py-2 border border-slate-300 min-w-[180px] w-[180px] relative"
       >
-        {(action === "VIEW_AS_PDF" || venta?.anulada) && (
+        {action === "VIEW_AS_PDF" && (
           <>
             <button
               onClick={() => {
@@ -1408,27 +1406,7 @@ function DataRow({ venta, setOperationAsCompleted, row_number }: DataRowProps) {
             </button>
           </>
         )}
-        {/*
-        action === "EDIT" && venta?.tipoPago === "CREDITO" && (
-          <>
-            <button
-              onClick={() => {
-                setIsEditOpen(true);
-              }}
-              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
-            >
-              Deuda
-            </button>
-            <EditModal
-              deuda={venta.deudas?.pop()}
-              isOpen={isEditOpen}
-              closeModal={closeEditModal}
-              setOperationAsCompleted={setOperationAsCompleted}
-            />
-          </>
-        )
-        */}
-        {action === "DELETE" && !venta?.anulada && (
+        {(action === "DELETE" && !venta?.anulada) && (
           <>
             <button
               onClick={() => {
@@ -1446,7 +1424,7 @@ function DataRow({ venta, setOperationAsCompleted, row_number }: DataRowProps) {
             />
           </>
         )}
-        {action === "VIEW" && (
+        {(action === "VIEW" || venta?.anulada) && action !== "VIEW_AS_PDF" && (
           <>
             <button
               onClick={() => {
@@ -1502,7 +1480,7 @@ function EmbeddedDataRow({
   producto,
   action,
   onChange,
-  row_number
+  row_number,
 }: EmbeddedDataRowProps) {
   const max = producto?.existencias!;
   const precio = producto?.precioVenta!;
@@ -1614,7 +1592,7 @@ function EmbeddedDetailsDataRow({
   producto,
   action,
   onChange,
-  row_number
+  row_number,
 }: EmbeddedDataRowProps) {
   const max = producto?.existencias!;
   const precio = producto?.precioVenta!;
@@ -1730,7 +1708,7 @@ function EmbeddedTable({
   const [detalles, setDetalles] = useState<DetalleVenta[]>(
     detalles_venta ? detalles_venta : []
   );
-  const [thisPage, setThisPage] = useState(1)
+  const [thisPage, setThisPage] = useState(1);
   const size = 8;
 
   useEffect(() => {
@@ -1743,7 +1721,7 @@ function EmbeddedTable({
         } else {
           setProductos(data.rows);
           setPages?.(data.pages);
-          setThisPage(data.current)
+          setThisPage(data.current);
           setCurrent?.(data.current);
           setLoading(false);
           setNotFound(false);
@@ -2101,6 +2079,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useSaleSearchParamStore(
+    (state) => state.setJustSearched
+  );
 
   const resetSearch = () => {
     setTempInput("");
@@ -2117,7 +2098,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: -1,
       label: "Seleccionar cliente",
     });
-    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -2184,13 +2164,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             incrementSearchCount();
             closeModal();
             setWasSearch(true);
+            setJustSearched(true);
           }
         }}
       >
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -2236,7 +2219,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                   }))}
                   selected={selectedClient}
                   onChange={() => {
-                    setSearchId(selectedClient.value as number);
+                    if (isOpen) {
+                      setSearchId(selectedClient.value as number);
+                    }
                   }}
                 />
               )}
@@ -2287,7 +2272,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="relative">
             <Select
               onChange={() => {
-                setSecondParam(selectedFecha.value as string);
+                if (isOpen) {
+                  setSecondParam(selectedFecha.value as string);
+                }
               }}
               options={[
                 {
@@ -2364,7 +2351,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               value={tempInput}
               className="border p-2 rounded outline-none focus:border-[#2096ed]"
               onChange={(e) => {
-                setInput(e.target.value);
+                if (isOpen) {
+                  setInput(e.target.value);
+                }
                 setTempInput(e.target.value);
               }}
               required
@@ -2375,7 +2364,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               value={secondTempInput}
               className="border p-2 rounded outline-none focus:border-[#2096ed]"
               onChange={(e) => {
-                setSecondInput(e.target.value);
+                if (isOpen) {
+                  setSecondInput(e.target.value);
+                }
                 setSecondTempInput(e.target.value);
               }}
               required
@@ -3177,6 +3168,10 @@ export default function SalesDataDisplay() {
   const [isReport, setIsReport] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useSaleSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = useSaleSearchParamStore((state) => state.justSearched);
   const size = 8;
 
   const openAddModal = () => {
@@ -3227,7 +3222,12 @@ export default function SalesDataDisplay() {
       });
     } else {
       if (param === "FECHA" && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (secondParam === "HOY") {
           SaleService.getToday(page, size).then((data) => {
             if (data === false) {
@@ -3330,7 +3330,12 @@ export default function SalesDataDisplay() {
           });
         }
       } else if (param === "CLIENTE" && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         SaleService.getByClient(searchId, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
@@ -3391,12 +3396,23 @@ export default function SalesDataDisplay() {
             {!(toAdd || toEdit) ? (
               <>
                 {action === "ADD" ? (
-                  <button
-                    onClick={openAddModal}
-                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                  >
-                    Añadir venta
-                  </button>
+                  <>
+                    {searchCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={resetSearchCount}
+                        className="text-gray-500 text-sm bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                      >
+                        Cancelar busqueda
+                      </button>
+                    ) : null}
+                    <button
+                      onClick={openAddModal}
+                      className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                    >
+                      Añadir venta
+                    </button>
+                  </>
                 ) : null}
                 {action === "SEARCH" ? (
                   <>
@@ -3404,26 +3420,38 @@ export default function SalesDataDisplay() {
                       <button
                         type="button"
                         onClick={resetSearchCount}
-                        className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                        className="text-gray-500 text-sm bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                      >
+                        Cancelar busqueda
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setIsSearch(true)}
+                        className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                      >
+                        Buscar venta
+                      </button>
+                    )}
+                  </>
+                ) : null}
+                {action === "REPORT" ? (
+                  <>
+                    {searchCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={resetSearchCount}
+                        className="text-gray-500 text-sm bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                       >
                         Cancelar busqueda
                       </button>
                     ) : null}
                     <button
-                      onClick={() => setIsSearch(true)}
+                      onClick={() => setIsReport(true)}
                       className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
                     >
-                      Buscar venta
+                      Generar reporte
                     </button>
                   </>
-                ) : null}
-                {action === "REPORT" ? (
-                  <button
-                    onClick={() => setIsReport(true)}
-                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                  >
-                    Generar reporte
-                  </button>
                 ) : null}
               </>
             ) : null}
@@ -3434,7 +3462,7 @@ export default function SalesDataDisplay() {
                   onClick={() => {
                     setToAdd(false);
                   }}
-                  className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                 >
                   Volver
                 </button>
@@ -3593,6 +3621,7 @@ export default function SalesDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false);
             }
           }}
           prev={() => {

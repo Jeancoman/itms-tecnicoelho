@@ -120,7 +120,6 @@ export default function HomeDataDisplay() {
         </nav>
         <hr className="border-1 border-slate-300 my-5" />
         <div className="mb-10 text-xl font-medium text-slate-600 text-end">
-          Sesión activa como:{" "}
           <span className="text-[#2096ed]">
             {session.find()?.usuario.rol?.nombre}
           </span>{" "}
@@ -165,7 +164,9 @@ export default function HomeDataDisplay() {
             <div className="bg-orange-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <div>
                 <p className="text-white text-lg font-medium">{stockBajo}</p>
-                <p className="text-white text-lg font-medium">Existencias bajas</p>
+                <p className="text-white text-lg font-medium">
+                  Existencias bajas
+                </p>
               </div>
               <Warning className="h-10 w-10 fill-white" />
             </div>
@@ -181,7 +182,9 @@ export default function HomeDataDisplay() {
             <div className="bg-red-400 rounded flex justify-between p-5 items-center shadow transition duration-300">
               <div>
                 <p className="text-white text-lg font-medium">{sinStock}</p>
-                <p className="text-white text-lg font-medium">Cero existencias</p>
+                <p className="text-white text-lg font-medium">
+                  Cero existencias
+                </p>
               </div>
               <Warning className="h-10 w-10 fill-white" />
             </div>

@@ -128,6 +128,15 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               {formData.descripción || "No especificada"}
             </p>
           </div>
+
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Publicada
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {formData?.esPública ? "Sí" : "No"}
+            </p>
+          </div>
         </div>
       </div>
       {/* BOTONES DE ACCIÓN */}
@@ -296,21 +305,43 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 Mínimo 10 caracteres
               </span>
             </div>
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  closeModal();
-                  ref.current?.close();
-                  resetFormData();
-                }}
-                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-              >
-                Cancelar
-              </button>
-              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-                Completar
-              </button>
+            <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
+              <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+                <input
+                  className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  type="checkbox"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      esPública: e.target.checked,
+                    });
+                  }}
+                  checked={formData.esPública}
+                  id="checkbox"
+                />
+                <label
+                  className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+                  htmlFor="checkbox"
+                >
+                  Publicada
+                </label>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeModal();
+                    ref.current?.close();
+                    resetFormData();
+                  }}
+                  className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                >
+                  Cancelar
+                </button>
+                <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+                  Completar
+                </button>
+              </div>
             </div>
           </form>
         </>
@@ -420,6 +451,15 @@ function EditModal({
                   {imagen?.descripción || "No especificada"}
                 </p>
               </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Publicada
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {imagen?.esPública ? "Sí" : "No"}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -457,6 +497,20 @@ function EditModal({
                   }`}
                 >
                   {formData.descripción || "No especificada"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Publicada
+                </p>
+                <p
+                  className={`text-base font-medium break-words ${
+                    formData.esPública !== imagen?.esPública
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {formData.esPública ? "Sí" : "No"}
                 </p>
               </div>
             </div>
@@ -629,20 +683,42 @@ function EditModal({
                 Mínimo 10 caracteres
               </span>
             </div>
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  closeModal();
-                  setFormData(imagen!);
-                }}
-                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-              >
-                Cancelar
-              </button>
-              <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-                Completar
-              </button>
+            <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
+              <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
+                <input
+                  className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  type="checkbox"
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      esPública: e.target.checked,
+                    });
+                  }}
+                  checked={formData.esPública}
+                  id="checkbox"
+                />
+                <label
+                  className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
+                  htmlFor="checkbox"
+                >
+                  Publicada
+                </label>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeModal();
+                    setFormData(imagen!);
+                  }}
+                  className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                >
+                  Cancelar
+                </button>
+                <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+                  Completar
+                </button>
+              </div>
             </div>
           </form>
         </>
@@ -869,6 +945,15 @@ function ViewModal({ isOpen, closeModal, imagen }: ModalProps) {
                 {imagen?.descripción || "No especificada"}
               </p>
             </div>
+
+            <div className="col-span-2">
+              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                Publicada
+              </p>
+              <p className="text-gray-900 font-medium text-base break-words">
+                {imagen?.esPública ? "Sí" : "No"}
+              </p>
+            </div>
           </div>
         </div>
         <div className="flex gap-2 justify-end">
@@ -1066,6 +1151,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useImageSearchParamStore(
+    (state) => state.setJustSearched
+  );
 
   const resetSearch = () => {
     setTempInput("");
@@ -1074,7 +1162,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: "",
       label: "Seleccionar parametro de busqueda",
     });
-    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -1124,13 +1211,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             incrementSearchCount();
             closeModal();
             setWasSearch(true);
+            setJustSearched(true);
           }
         }}
       >
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -1169,7 +1259,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           value={tempInput}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           onChange={(e) => {
-            setInput(e.target.value);
+            if (isOpen) {
+              setInput(e.target.value);
+            }
             setTempInput(e.target.value);
           }}
           required
@@ -1180,7 +1272,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               type="checkbox"
               onChange={(e) => {
-                setIsPrecise(e.target.checked);
+                if (isOpen) {
+                  setIsPrecise(e.target.checked);
+                }
                 setTempIsPrecise(e.target.checked);
               }}
               checked={tempIsPrecise}
@@ -1451,9 +1545,14 @@ export default function ImagesDataDisplay() {
   const input = useImageSearchParamStore((state) => state.input);
   const param = useImageSearchParamStore((state) => state.param);
   const [isSearch, setIsSearch] = useState(false);
+  const setIsPrecise = useImageSearchParamStore((state) => state.setIsPrecise);
   const isPrecise = useImageSearchParamStore((state) => state.isPrecise);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useImageSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = useImageSearchParamStore((state) => state.justSearched);
   const size = 8;
 
   const openAddModal = () => {
@@ -1495,21 +1594,21 @@ export default function ImagesDataDisplay() {
         setIsOperationCompleted(false);
       });
     } else if (isPrecise && wasSearch) {
-      const loadingToast = toast.loading("Buscando...");
+      let loadingToast = undefined;
+      if (justSearched) {
+        loadingToast = toast.loading("Buscando...");
+      }
       if (param === "URL") {
         ImageService.getExactUrl(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setImages([]);
             setLoading(false);
-            setWasSearch(false);
           } else {
             setImages(data.rows);
             setPages(data.pages);
             setCurrent(data.current);
             setLoading(false);
-            setNotFound(false);
-            setWasSearch(false);
           }
           toast.dismiss(loadingToast);
           setIsOperationCompleted(false);
@@ -1520,36 +1619,34 @@ export default function ImagesDataDisplay() {
             setNotFound(true);
             setImages([]);
             setLoading(false);
-            setWasSearch(false);
           } else {
             setImages(data.rows);
             setPages(data.pages);
             setCurrent(data.current);
             setLoading(false);
             setNotFound(false);
-            setWasSearch(false);
           }
           toast.dismiss(loadingToast);
           setIsOperationCompleted(false);
         });
       }
     } else if (wasSearch) {
-      const loadingToast = toast.loading("Buscando...");
+      let loadingToast = undefined;
+      if (justSearched) {
+        loadingToast = toast.loading("Buscando...");
+      }
       if (param === "URL") {
         ImageService.getByUrl(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
             setImages([]);
             setLoading(false);
-            resetSearchCount();
-            setWasSearch(false);
           } else {
             setImages(data.rows);
             setPages(data.pages);
             setCurrent(data.current);
             setLoading(false);
             setNotFound(false);
-            setWasSearch(false);
           }
           toast.dismiss(loadingToast);
           setIsOperationCompleted(false);
@@ -1560,14 +1657,12 @@ export default function ImagesDataDisplay() {
             setNotFound(true);
             setImages([]);
             setLoading(false);
-            setWasSearch(false);
           } else {
             setImages(data.rows);
             setPages(data.pages);
             setCurrent(data.current);
             setLoading(false);
             setNotFound(false);
-            setWasSearch(false);
           }
           toast.dismiss(loadingToast);
           setIsOperationCompleted(false);
@@ -1602,30 +1697,48 @@ export default function ImagesDataDisplay() {
               />
             )}
             {action === "ADD" ? (
-              <button
-                onClick={openAddModal}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Añadir imagen
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPrecise(false);
+                      resetSearchCount();
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={openAddModal}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Añadir imagen
+                </button>
+              </>
             ) : null}
             {action === "SEARCH" ? (
               <>
                 {searchCount > 0 ? (
                   <button
                     type="button"
-                    onClick={resetSearchCount}
-                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                    onClick={() => {
+                      setIsPrecise(false);
+                      resetSearchCount();
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                   >
                     Cancelar busqueda
                   </button>
-                ) : null}
-                <button
-                  onClick={() => setIsSearch(true)}
-                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                >
-                  Buscar imagen
-                </button>
+                ) : (
+                  <button
+                    onClick={() => setIsSearch(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Buscar imagen
+                  </button>
+                )}
               </>
             ) : null}
             <button
@@ -1723,6 +1836,7 @@ export default function ImagesDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false)
             }
           }}
           prev={() => {

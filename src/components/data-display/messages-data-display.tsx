@@ -34,12 +34,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const [formData, setFormData] = useState<Mensaje>({
     contenido: "",
     estado: "NO_ENVIADO",
+    servicio_id: +id!,
   });
 
   const resetFormData = () => {
     setFormData({
       contenido: "",
       estado: "NO_ENVIADO",
+      servicio_id: +id!,
     });
     setIsConfirmationScreen(false);
   };
@@ -149,11 +151,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               }}
               value={formData.contenido}
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              minLength={10}
+              minLength={1}
               required
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 10 caracteres
+              Mínimo 1 carácter
             </span>
           </div>
           <div className="flex gap-2 justify-end">
@@ -396,11 +398,11 @@ function EditModal({
               }}
               value={formData.contenido}
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              minLength={10}
+              minLength={1}
               required
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 10 caracteres
+              Mínimo 1 carácter
             </span>
           </div>
           <div className="flex gap-2 justify-end">
@@ -512,11 +514,89 @@ function DeleteModal({
   );
 }
 
+function ViewModal({ isOpen, closeModal, mensaje }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Datos del mensaje</h1>
+      </div>
+      <div className="p-8 pt-6">
+        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+          <div>
+            <div className="space-y-5">
+              {/* Nombre */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Estado
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {mensaje?.estado === "ENVIADO" ? "Enviado" : "No enviado"}
+                </p>
+              </div>
+              {/* Descripción */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Contenido
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words whitespace-pre-wrap">
+                  {mensaje?.contenido || "No especificada"}
+                </p>
+              </div>
+              {/* Tipo */}
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={closeModal}
+            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
 function DataRow({
   mensaje,
   setOperationAsCompleted,
   row_number,
 }: DataRowProps) {
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
@@ -524,7 +604,7 @@ function DataRow({
       ? "EDIT"
       : permissions.find()?.eliminar.mensaje
       ? "DELETE"
-      : "NONE"
+      : "VIEW"
   );
   const [isDropup, setIsDropup] = useState(false);
   const ref = useRef<HTMLTableCellElement>(null);
@@ -537,6 +617,10 @@ function DataRow({
 
   const closeDeleteModal = () => {
     setIsDeleteOpen(false);
+  };
+
+  const closeViewModal = () => {
+    setIsViewOpen(false);
   };
 
   const selectAction = (action: `${Action}`) => {
@@ -624,6 +708,24 @@ function DataRow({
             />
           </>
         )}
+        {action === "VIEW" && (
+          <>
+            <button
+              onClick={() => {
+                setIsViewOpen(true);
+              }}
+              className="font-medium text-[#2096ed] dark:text-blue-500 hover:bg-blue-100 -ml-2 py-1 px-2 rounded-lg"
+            >
+              Mostrar mensaje
+            </button>
+            <ViewModal
+              mensaje={mensaje}
+              isOpen={isViewOpen}
+              closeModal={closeViewModal}
+              setOperationAsCompleted={setOperationAsCompleted}
+            />
+          </>
+        )}
         {action === "SEND" && (
           <>
             {mensaje?.estado === "NO_ENVIADO" ? (
@@ -686,11 +788,7 @@ function DataRow({
           >
             <More className="w-5 h-5 inline fill-black" />
           </button>
-        ) : (
-          <button className="font-medium line-through text-[#2096ed] dark:text-blue-500 -ml-2 py-1 px-2 rounded-lg cursor-default">
-            Nada permitido
-          </button>
-        )}
+        ) : null}
       </td>
     </tr>
   );
@@ -714,13 +812,15 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useMessageSearchParamStore(
+    (state) => state.setJustSearched
+  );
 
   const resetSearch = () => {
     setSelectedSearchType({
       value: "",
       label: "Seleccionar parametro de busqueda",
     });
-    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -770,13 +870,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             incrementSearchCount();
             closeModal();
             setWasSearch(true);
+            setJustSearched(true);
           }
         }}
       >
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -797,7 +900,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="relative">
             <Select
               onChange={() => {
-                setSecondParam(selectedState.value as string);
+                if (isOpen) {
+                  setSecondParam(selectedState.value as string);
+                }
               }}
               options={[
                 {
@@ -1060,6 +1165,29 @@ function IndividualDropup({ id, close, selectAction, top }: DropupProps) {
           </div>
         </li>
       )}
+      <li>
+        <div
+          onClick={() => {
+            selectAction("VIEW");
+            close();
+          }}
+          className="
+              text-sm
+              py-2
+              px-4
+              font-medium
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent
+              text-slate-600
+              hover:bg-slate-100
+              cursor-pointer
+            "
+        >
+          Mostrar mensaje
+        </div>
+      </li>
     </ul>
   );
 }
@@ -1088,6 +1216,12 @@ export default function MessagesDataDisplay() {
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
   const resetAllSearchs = useFunctionStore((state) => state.resetAllSearchs);
+  const setJustSearched = useMessageSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = useMessageSearchParamStore(
+    (state) => state.justSearched
+  );
   const size = 8;
 
   const openAddModal = () => {
@@ -1130,9 +1264,11 @@ export default function MessagesDataDisplay() {
         }
         setIsOperationCompleted(false);
       });
-    }
-    if (wasSearch) {
-      const loadingToast = toast.loading("Buscando...");
+    } else if (wasSearch) {
+      let loadingToast = undefined;
+      if (justSearched) {
+        loadingToast = toast.loading("Buscando...");
+      }
       MessageService.getByState(Number(id), secondParam, page, size).then(
         (data) => {
           if (data === false) {
@@ -1186,12 +1322,33 @@ export default function MessagesDataDisplay() {
               />
             )}
             {action === "ADD" ? (
-              <button
-                onClick={openAddModal}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Añadir mensaje
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate("/tickets");
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Volver
+                  </button>
+                )}
+                <button
+                  onClick={openAddModal}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Añadir mensaje
+                </button>
+              </>
             ) : null}
             {action === "SEARCH" ? (
               <>
@@ -1199,17 +1356,29 @@ export default function MessagesDataDisplay() {
                   <button
                     type="button"
                     onClick={resetSearchCount}
-                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                   >
                     Cancelar busqueda
                   </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate("/tickets");
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Volver
+                  </button>
+                )}
+                {searchCount === 0 ? (
+                  <button
+                    onClick={() => setIsSearch(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Buscar mensaje
+                  </button>
                 ) : null}
-                <button
-                  onClick={() => setIsSearch(true)}
-                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                >
-                  Buscar mensaje
-                </button>
               </>
             ) : null}
             <button
@@ -1314,6 +1483,7 @@ export default function MessagesDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false);
             }
           }}
           prev={() => {

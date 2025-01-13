@@ -96,11 +96,8 @@ export default function SalePDFPage() {
               <h5 className="font-mono">
                 DIRECCIÓN: {venta?.historico_ventum?.cliente_direccion}
               </h5>
-              <h5 className="font-mono mt-4">
-                CONDICIÓN DE PAGO: {venta?.tipoPago}
-              </h5>
             </div>
-            <div className="font-mono text-right mt-5">
+            <div className="font-mono text-right mt-8">
               <h3 className="font-bold capitalize text-xl">TECNICOELHO</h3>
               <h5 className="font-mono">J-80065323-2</h5>
               <h5 className="font-mono">TELF: +58 0426-2452374</h5>
@@ -114,6 +111,9 @@ export default function SalePDFPage() {
                   ? format(new Date(venta?.fecha), "dd/MM/yyyy")
                   : ""}
               </h5>
+              <h5 className="font-mono">
+                CONDICIÓN DE PAGO: {venta?.tipoPago}
+              </h5>
             </div>
           </div>
         </div>
@@ -121,7 +121,7 @@ export default function SalePDFPage() {
           <tr>
             <td className="font-bold">CÓDIGO</td>
             <td className="font-bold">DESCRIPCIÓN</td>
-            <td className="font-bold">CANTIDAD</td>
+            <td className="font-bold text-center">CANTIDAD</td>
             <td className="font-bold text-right">PRECIO UNITARIO</td>
             <td className="font-bold text-right">SUBTOTAL</td>
           </tr>
@@ -132,7 +132,7 @@ export default function SalePDFPage() {
                 <tr key={index}>
                   <td>{detalle.producto_codigo}</td>
                   <td>{detalle.producto_nombre}</td>
-                  <td>{detalle.cantidad}</td>
+                  <td className="text-center">{detalle.cantidad}</td>
                   <td className="text-right">
                     {formatter.format(
                       detalle.precioUnitario *

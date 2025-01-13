@@ -446,7 +446,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 }}
                 value={formData.telefono}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
+                pattern="^\+(?:[0-9]●?){10,12}[0-9]$"
                 required={formData.enviarMensajes}
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
@@ -505,11 +505,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               value={formData.dirección}
               autoComplete="none"
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              pattern="^.{1,100}$"
+              pattern="^.{1,150}$"
               required
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 1 carácter, máximo 100
+              Minimo 1 carácter, máximo 150
             </span>
           </div>
           <div className="relative w-full">
@@ -533,8 +533,9 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
               maxLength={32}
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener una letra
-              mayúscula, una letra minúscula, un número y un carácter especial
+              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener
+              una letra mayúscula, una letra minúscula, un número y un carácter
+              especial
             </span>
             {visible ? (
               <On
@@ -1090,7 +1091,7 @@ function EditModal({
                         ...formData,
                         documento: e.target.value,
                       });
-                      setStillWritingDocumento(true)
+                      setStillWritingDocumento(true);
                     }}
                     value={formData.documento}
                     required
@@ -1131,7 +1132,7 @@ function EditModal({
                 }}
                 value={formData.telefono}
                 className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-                pattern="^\+(?:[0-9]●?){6,14}[0-9]$"
+                pattern="^\+(?:[0-9]●?){10,12}[0-9]$"
                 required={formData.enviarMensajes}
               />
               <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
@@ -1152,7 +1153,7 @@ function EditModal({
                   ...formData,
                   email: e.target.value,
                 });
-                setStillWritingCorreo(true)
+                setStillWritingCorreo(true);
               }}
               value={formData.email}
               className={clsx({
@@ -1190,11 +1191,11 @@ function EditModal({
               value={formData.dirección}
               autoComplete="none"
               className="border border-slate-300 p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
-              pattern="^.{1,100}$"
+              pattern="^.{1,150}$"
               required
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              Minimo 1 carácter, máximo 100
+              Minimo 1 carácter, máximo 150
             </span>
           </div>
           <div className="relative w-full">
@@ -1218,8 +1219,9 @@ function EditModal({
               maxLength={32}
             />
             <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
-              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener una letra
-              mayúscula, una letra minúscula, un número y un carácter especial.
+              La contraseña debe tener mínimo 8 caracteres y máximo 32, contener
+              una letra mayúscula, una letra minúscula, un número y un carácter
+              especial.
             </span>
             {visible ? (
               <On
@@ -1512,6 +1514,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useClientSearchParamStore(
+    (state) => state.setJustSearched
+  );
 
   const resetSearch = () => {
     setTempInput("");
@@ -1520,7 +1525,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: "",
       label: "Seleccionar parametro de busqueda",
     });
-    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -1570,13 +1574,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             incrementSearchCount();
             closeModal();
             setWasSearch(true);
+            setJustSearched(true);
           }
         }}
       >
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -1639,7 +1646,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           value={tempInput}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           onChange={(e) => {
-            setInput(e.target.value);
+            if (isOpen) {
+              setInput(e.target.value);
+            }
             setTempInput(e.target.value);
           }}
           required
@@ -1650,7 +1659,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               type="checkbox"
               onChange={(e) => {
-                setIsPrecise(e.target.checked);
+                if (isOpen) {
+                  setIsPrecise(e.target.checked);
+                }
                 setTempIsPrecise(e.target.checked);
               }}
               checked={
@@ -2079,6 +2090,10 @@ export default function ClientsDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useClientSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = useClientSearchParamStore((state) => state.justSearched);
   const size = 8;
 
   const openAddModal = () => {
@@ -2123,7 +2138,12 @@ export default function ClientsDataDisplay() {
       });
     } else {
       if (isPrecise && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (param === "NOMBRE") {
           void ClientService.getByExactNombre(input, page, size).then(
             (data) => {
@@ -2139,7 +2159,6 @@ export default function ClientsDataDisplay() {
                 setLoading(false);
                 setNotFound(false);
               }
-              setIsPrecise(false);
               setIsOperationCompleted(false);
             }
           );
@@ -2158,12 +2177,12 @@ export default function ClientsDataDisplay() {
                 setLoading(false);
                 setNotFound(false);
               }
-              setIsPrecise(false);
               setIsOperationCompleted(false);
             }
           );
         } else if (param === "TELEFONO") {
           let sanitizedTelefono = input;
+
           if ((input as string).startsWith("+")) {
             sanitizedTelefono = (input as string).substring(1); // Quita el primer carácter (el '+')
           }
@@ -2185,7 +2204,6 @@ export default function ClientsDataDisplay() {
               setLoading(false);
               setNotFound(false);
             }
-            setIsPrecise(false);
             setIsOperationCompleted(false);
           });
         } else if (param === "DOCUMENTO") {
@@ -2203,13 +2221,17 @@ export default function ClientsDataDisplay() {
                 setLoading(false);
                 setNotFound(false);
               }
-              setIsPrecise(false);
               setIsOperationCompleted(false);
             }
           );
         }
       } else if (!isPrecise && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (param === "NOMBRE") {
           void ClientService.getByNombre(input, page, size).then((data) => {
             toast.dismiss(loadingToast);
@@ -2244,6 +2266,7 @@ export default function ClientsDataDisplay() {
           });
         } else if (param === "TELEFONO") {
           let sanitizedTelefono = input;
+
           if ((input as string).startsWith("+")) {
             sanitizedTelefono = (input as string).substring(1); // Quita el primer carácter (el '+')
           }
@@ -2308,30 +2331,48 @@ export default function ClientsDataDisplay() {
               />
             )}
             {action === "ADD" ? (
-              <button
-                onClick={openAddModal}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Añadir cliente
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetSearchCount();
+                      setIsPrecise(false);
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={openAddModal}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Añadir cliente
+                </button>
+              </>
             ) : null}
             {action === "SEARCH" ? (
               <>
                 {searchCount > 0 ? (
                   <button
                     type="button"
-                    onClick={resetSearchCount}
-                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                    onClick={() => {
+                      resetSearchCount();
+                      setIsPrecise(false);
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                   >
                     Cancelar busqueda
                   </button>
-                ) : null}
-                <button
-                  onClick={() => setIsSearch(true)}
-                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                >
-                  Buscar cliente
-                </button>
+                ) : (
+                  <button
+                    onClick={() => setIsSearch(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Buscar cliente
+                  </button>
+                )}
               </>
             ) : null}
             <button
@@ -2439,6 +2480,7 @@ export default function ClientsDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false);
             }
           }}
           prev={() => {

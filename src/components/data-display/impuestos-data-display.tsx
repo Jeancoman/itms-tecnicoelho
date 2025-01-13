@@ -406,11 +406,11 @@ function EditModal({
                   porcentaje: parseFloat(e.target.value),
                 });
               }}
-              value={formData.porcentaje === 0 ? "" : formData.porcentaje}
+              value={formData.porcentaje || ""}
               placeholder="Introducir porcentaje"
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               required
-              min="1"
+              min="0"
               max="100"
               step="0.01"
               name="porcentaje"
@@ -789,11 +789,11 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   porcentaje: parseFloat(e.target.value),
                 });
               }}
-              value={formData.porcentaje === 0 ? "" : formData.porcentaje}
+              value={formData.porcentaje || ""}
               placeholder="Introducir porcentaje"
               className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
               required
-              min="1"
+              min="0"
               max="100"
               step="0.01"
               name="porcentaje"
@@ -1017,6 +1017,41 @@ function ViewModal({ isOpen, closeModal, impuesto }: ModalProps) {
                   : "No especificado"}
               </p>
             </div>
+
+                      {/* PORCENTAJE */}
+          <div className="col-span-2">
+            <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+              Aplica a
+            </p>
+            <p className="text-gray-900 font-medium text-base break-words">
+              {impuesto?.aplicaA === "PRODUCTO" ? "Producto" : "Ventas y compras"}
+            </p>
+          </div>
+
+          {impuesto?.aplicaA === "VENTA" && (
+            <>
+              {impuesto?.condicionPago && (
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Condición de pago
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {impuesto?.condicionPago === "CONTADO" ? "Contado" : "Credito"}
+                  </p>
+                </div>
+              )}
+              {impuesto.tipoMoneda && (
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Moneda de pago
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {impuesto.tipoMoneda === "BOLIVAR" ? "Bolívar" : "Divisa"}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
           </div>
         </div>
         <div className="flex gap-2 justify-end">
@@ -1144,6 +1179,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useImpuestoSearchParamStore(
+    (state) => state.setJustSearched
+  );
 
   const resetSearch = () => {
     setTempInput("");
@@ -1152,7 +1190,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: "",
       label: "Seleccionar parametro de busqueda",
     });
-    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -1202,13 +1239,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             incrementSearchCount();
             closeModal();
             setWasSearch(true);
+            setJustSearched(true);
           }
         }}
       >
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -1247,7 +1287,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           value={tempInput}
           className="border p-2 rounded outline-none focus:border-[#2096ed]"
           onChange={(e) => {
-            setInput(e.target.value);
+            if (isOpen) {
+              setInput(e.target.value);
+            }
             setTempInput(e.target.value);
           }}
           required
@@ -1258,7 +1300,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               type="checkbox"
               onChange={(e) => {
-                setIsPrecise(e.target.checked);
+                if (isOpen) {
+                  setIsPrecise(e.target.checked);
+                }
                 setTempIsPrecise(e.target.checked);
               }}
               checked={tempIsPrecise}
@@ -1299,7 +1343,11 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
-function DataRow({ impuesto, setOperationAsCompleted, row_number }: DataRowProps) {
+function DataRow({
+  impuesto,
+  setOperationAsCompleted,
+  row_number,
+}: DataRowProps) {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -1682,6 +1730,12 @@ export default function ImpuestosDataDisplay() {
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
   const [isSearch, setIsSearch] = useState(false);
+  const setJustSearched = useImpuestoSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = useImpuestoSearchParamStore(
+    (state) => state.justSearched
+  );
   const size = 8;
 
   const openAddModal = () => {
@@ -1726,7 +1780,10 @@ export default function ImpuestosDataDisplay() {
       });
     } else {
       if (isPrecise && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
         if (param === "NOMBRE") {
           ImpuestoService.getByExactNombre(input, page, size).then((data) => {
             toast.dismiss(loadingToast);
@@ -1740,7 +1797,6 @@ export default function ImpuestosDataDisplay() {
               setCurrent(data.current);
               setLoading(false);
             }
-            setIsPrecise(false);
             setIsOperationCompleted(false);
           });
         } else if (param === "CÓDIGO") {
@@ -1756,12 +1812,14 @@ export default function ImpuestosDataDisplay() {
               setLoading(false);
             }
             toast.dismiss(loadingToast);
-            setIsPrecise(false);
             setIsOperationCompleted(false);
           });
         }
       } else if (!isPrecise && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
         if (param === "NOMBRE") {
           ImpuestoService.getByNombre(input, page, size).then((data) => {
             if (data === false) {
@@ -1819,30 +1877,48 @@ export default function ImpuestosDataDisplay() {
               />
             )}
             {action === "ADD" ? (
-              <button
-                onClick={openAddModal}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Añadir impuesto
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPrecise(false);
+                      resetSearchCount();
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={openAddModal}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Añadir impuesto
+                </button>
+              </>
             ) : null}
             {action === "SEARCH" ? (
               <>
                 {searchCount > 0 ? (
                   <button
                     type="button"
-                    onClick={resetSearchCount}
-                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                    onClick={() => {
+                      setIsPrecise(false);
+                      resetSearchCount();
+                    }}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                   >
                     Cancelar busqueda
                   </button>
-                ) : null}
-                <button
-                  onClick={() => setIsSearch(true)}
-                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                >
-                  Buscar impuesto
-                </button>
+                ) : (
+                  <button
+                    onClick={() => setIsSearch(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Buscar impuesto
+                  </button>
+                )}
               </>
             ) : null}
             <button
@@ -1944,6 +2020,7 @@ export default function ImpuestosDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false)
             }
           }}
           prev={() => {

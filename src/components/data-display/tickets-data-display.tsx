@@ -37,6 +37,7 @@ import clsx from "clsx";
 import TicketService from "../../services/ticket-service";
 import { Editor } from "@tinymce/tinymce-react";
 import { createRowNumber } from "../../utils/functions";
+import "/src/content.css";
 
 function EditModal({
   isOpen,
@@ -81,6 +82,9 @@ function EditModal({
     label: ticket?.estado === "ABIERTO" ? "Abierto" : "Cerrado",
   });
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [view, setView] = useState<
+    "confirmation" | "contenidoDetail" | "contenidoDetailNew"
+  >("confirmation");
 
   const resetFormData = () => {
     setTicketFormData(ticket!);
@@ -116,6 +120,18 @@ function EditModal({
       value: ticket?.estado,
       label: ticket?.estado === "ABIERTO" ? "Abierto" : "Cerrado",
     });
+  };
+
+  const navigateToContenidoDetail = () => {
+    setView("contenidoDetail");
+  };
+
+  const navigateToContenidoDetailNew = () => {
+    setView("contenidoDetailNew");
+  };
+
+  const navigateToConfirmation = () => {
+    setView("confirmation");
   };
 
   useEffect(() => {
@@ -296,217 +312,281 @@ function EditModal({
   }
 
   const renderConfirmationScreen = () => {
-    const toggleDescription = () => {
-      setShowFullDescription((prev) => !prev);
-    };
-
     return (
-      <div className="p-8 pt-6">
-        <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
-          <div className="grid grid-cols-2 gap-8">
-            {/* Datos actuales */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Datos actuales
-              </h3>
-              <div className="space-y-5">
+      <>
+        {view === "confirmation" && (
+          <div className="p-8 pt-6">
+            <div className="bg-white border border-gray-300 p-6 rounded-lg mb-6">
+              <div className="grid grid-cols-2 gap-8">
+                {/* Datos actuales */}
                 <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Estado
-                  </p>
-                  <p className="text-gray-900 font-medium text-base break-words">
-                    {capitalizeFirstLetter(ticket?.estado || "")}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Asunto
-                  </p>
-                  <p className="text-gray-900 font-medium text-base break-words">
-                    {ticket?.asunto}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Prioridad
-                  </p>
-                  <p className="text-gray-900 font-medium text-base break-words">
-                    {ticket?.prioridad
-                      ? capitalizeFirstLetter(ticket.prioridad)
-                      : ""}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Tipo
-                  </p>
-                  <p className="text-gray-900 font-medium text-base break-words">
-                    {ticket?.tipo ? capitalizeFirstLetter(ticket.tipo) : ""}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Categoría
-                  </p>
-                  <p className="text-gray-900 font-medium text-base break-words">
-                    {ticket?.categoría?.nombre}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Descripción
-                  </p>
-                  <div
-                    className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
-                      showFullDescription
-                        ? "max-h-80 overflow-y-auto"
-                        : "max-h-40 overflow-hidden"
-                    }`}
-                  >
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: ticket?.descripción ?? "",
-                      }}
-                    />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                    Datos actuales
+                  </h3>
+                  <div className="space-y-5">
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Estado
+                      </p>
+                      <p className="text-gray-900 font-medium text-base break-words">
+                        {capitalizeFirstLetter(ticket?.estado || "")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Asunto
+                      </p>
+                      <p className="text-gray-900 font-medium text-base break-words">
+                        {ticket?.asunto}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Prioridad
+                      </p>
+                      <p className="text-gray-900 font-medium text-base break-words">
+                        {ticket?.prioridad
+                          ? capitalizeFirstLetter(ticket.prioridad)
+                          : ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Tipo
+                      </p>
+                      <p className="text-gray-900 font-medium text-base break-words">
+                        {ticket?.tipo ? capitalizeFirstLetter(ticket.tipo) : ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Categoría
+                      </p>
+                      <p className="text-gray-900 font-medium text-base break-words">
+                        {ticket?.categoría?.nombre}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Notas
+                      </p>
+                      <p
+                        className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                          showFullDescription
+                            ? "max-h-80 overflow-y-auto"
+                            : "max-h-40 overflow-hidden"
+                        }`}
+                      >
+                        {ticket?.notas || "No especificadas"}
+                      </p>
+                      {(ticket?.notas?.length ?? 0) > 200 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowFullDescription(!showFullDescription)
+                          }
+                          className="text-blue-500 mt-2"
+                        >
+                          {showFullDescription ? "Ver menos" : "Ver más"}
+                        </button>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Descripción
+                      </p>
+                      <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-40 overflow-hidden">
+                        <div
+                          className="content"
+                          dangerouslySetInnerHTML={{
+                            __html: ticket?.descripción ?? "",
+                          }}
+                        />
+                      </div>
+                      {(ticket?.descripción?.length ?? 0) > 200 && (
+                        <button
+                          type="button"
+                          onClick={navigateToContenidoDetail}
+                          className="text-blue-500 mt-2"
+                        >
+                          Ver más
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {(ticket?.descripción?.length ?? 0) > 200 && (
-                    <button
-                      type="button"
-                      onClick={toggleDescription}
-                      className="text-blue-500 mt-2"
-                    >
-                      {showFullDescription ? "Ver Menos" : "Ver Más"}
-                    </button>
-                  )}
+                </div>
+
+                {/* Nuevos datos */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                    Nuevos datos
+                  </h3>
+                  <div className="space-y-5">
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Estado
+                      </p>
+                      <p
+                        className={`text-base font-medium break-words ${
+                          selectedState.value !== ticket?.estado
+                            ? "text-blue-600 font-semibold"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {selectedState.label}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Asunto
+                      </p>
+                      <p
+                        className={`text-base font-medium break-words ${
+                          ticketFormData.asunto !== ticket?.asunto
+                            ? "text-blue-600 font-semibold"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {ticketFormData.asunto}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Prioridad
+                      </p>
+                      <p
+                        className={`text-base font-medium break-words ${
+                          ticketFormData.prioridad !== ticket?.prioridad
+                            ? "text-blue-600 font-semibold"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {selectedPriority.label}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Tipo
+                      </p>
+                      <p
+                        className={`text-base font-medium break-words ${
+                          ticketFormData.tipo !== ticket?.tipo
+                            ? "text-blue-600 font-semibold"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {selectedType.label}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Categoría
+                      </p>
+                      <p
+                        className={`text-base font-medium break-words ${
+                          ticketFormData.categoría_id !== ticket?.categoría_id
+                            ? "text-blue-600 font-semibold"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {selectedCategory.label}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Notas
+                      </p>
+                      <p
+                        className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                          showFullDescription
+                            ? "max-h-80 overflow-y-auto"
+                            : "max-h-40 overflow-hidden"
+                        }`}
+                      >
+                        {ticketFormData?.notas || "No especificadas"}
+                      </p>
+                      {(ticketFormData?.notas?.length ?? 0) > 200 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowFullDescription(!showFullDescription)
+                          }
+                          className="text-blue-500 mt-2"
+                        >
+                          {showFullDescription ? "Ver menos" : "Ver más"}
+                        </button>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                        Descripción
+                      </p>
+                      <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-40 overflow-hidden">
+                        <div
+                          className="content"
+                          dangerouslySetInnerHTML={{
+                            __html: ticketFormData.descripción ?? "",
+                          }}
+                        />
+                      </div>
+                      {(ticketFormData.descripción?.length ?? 0) > 200 && (
+                        <button
+                          type="button"
+                          onClick={navigateToContenidoDetailNew}
+                          className="text-blue-500 mt-2"
+                        >
+                          Ver más
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Nuevos datos */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Nuevos datos
-              </h3>
-              <div className="space-y-5">
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Estado
-                  </p>
-                  <p
-                    className={`text-base font-medium break-words ${
-                      selectedState.value !== ticket?.estado
-                        ? "text-blue-600 font-semibold"
-                        : "text-gray-900"
-                    }`}
-                  >
-                    {selectedState.label}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Asunto
-                  </p>
-                  <p
-                    className={`text-base font-medium break-words ${
-                      ticketFormData.asunto !== ticket?.asunto
-                        ? "text-blue-600 font-semibold"
-                        : "text-gray-900"
-                    }`}
-                  >
-                    {ticketFormData.asunto}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Prioridad
-                  </p>
-                  <p
-                    className={`text-base font-medium break-words ${
-                      ticketFormData.prioridad !== ticket?.prioridad
-                        ? "text-blue-600 font-semibold"
-                        : "text-gray-900"
-                    }`}
-                  >
-                    {selectedPriority.label}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Tipo
-                  </p>
-                  <p
-                    className={`text-base font-medium break-words ${
-                      ticketFormData.tipo !== ticket?.tipo
-                        ? "text-blue-600 font-semibold"
-                        : "text-gray-900"
-                    }`}
-                  >
-                    {selectedType.label}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Categoría
-                  </p>
-                  <p
-                    className={`text-base font-medium break-words ${
-                      ticketFormData.categoría_id !== ticket?.categoría_id
-                        ? "text-blue-600 font-semibold"
-                        : "text-gray-900"
-                    }`}
-                  >
-                    {selectedCategory.label}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                    Descripción
-                  </p>
-                  <div
-                    className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
-                      showFullDescription
-                        ? "max-h-80 overflow-y-auto"
-                        : "max-h-40 overflow-hidden"
-                    }`}
-                  >
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: ticketFormData.descripción ?? "",
-                      }}
-                    />
-                  </div>
-                  {(ticketFormData.descripción?.length ?? 0) > 200 && (
-                    <button
-                      type="button"
-                      onClick={toggleDescription}
-                      className="text-blue-500 mt-2"
-                    >
-                      {showFullDescription ? "Ver Menos" : "Ver Más"}
-                    </button>
-                  )}
-                </div>
-              </div>
+            {/* Botones de Acción */}
+            <div className="flex gap-2 justify-end text-base">
+              <button
+                type="button"
+                onClick={() => setIsConfirmationScreen(false)}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Volver
+              </button>
+              <button
+                onClick={handleFinalSubmit}
+                className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+              >
+                Guardar
+              </button>
             </div>
           </div>
-        </div>
-
-        {/* Botones de Acción */}
-        <div className="flex gap-2 justify-end text-base">
-          <button
-            type="button"
-            onClick={() => setIsConfirmationScreen(false)}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Volver
-          </button>
-          <button
-            onClick={handleFinalSubmit}
-            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
-          >
-            Guardar
-          </button>
-        </div>
-      </div>
+        )}
+        {(view === "contenidoDetail" || view === "contenidoDetailNew") && (
+          <div className="p-8 pt-6">
+            <div className="bg-white rounded-lg mb-6">
+              <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-80 overflow-y-auto">
+                <div
+                  className="content"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      view === "contenidoDetailNew"
+                        ? ticketFormData.descripción ?? ""
+                        : ticket?.descripción ?? "",
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={navigateToConfirmation}
+                className="text-blue-500 mt-4"
+              >
+                Ver menos
+              </button>
+            </div>
+          </div>
+        )}
+      </>
     );
   };
 
@@ -784,6 +864,28 @@ function EditModal({
             </div>
             <div className="w-full">
               <label className="block text-gray-600 text-base font-medium mb-2">
+                Notas
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Introducir notas"
+                onChange={(e) => {
+                  setTicketFormData({
+                    ...ticketFormData,
+                    notas: e.target.value,
+                  });
+                }}
+                value={ticketFormData.notas || ""}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                minLength={1}
+                maxLength={4000}
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Minimo 1 carácter, máximo 4000
+              </span>
+            </div>
+            <div className="w-full">
+              <label className="block text-gray-600 text-base font-medium mb-2">
                 Descripción
               </label>
               <div className="h-full">
@@ -869,6 +971,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     prioridad: "BAJA",
     estado: "ABIERTO",
     asunto: "",
+    notas: "",
     tipo: "TIENDA",
     descripción: "",
     categoría_id: -1,
@@ -883,12 +986,16 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     value: "",
   });
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [view, setView] = useState<"confirmation" | "contenidoDetail">(
+    "confirmation"
+  );
 
   const resetFormData = () => {
     setTicketFormData({
       prioridad: "BAJA",
       estado: "ABIERTO",
       tipo: "TIENDA",
+      notas: "",
       descripción: "",
       categoría_id: -1,
       cliente_id: -1,
@@ -951,6 +1058,14 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
     closeModal();
     resetFormData();
     setIsConfirmationScreen(false);
+  };
+
+  const navigateToContenidoDetail = () => {
+    setView("contenidoDetail");
+  };
+
+  const navigateToConfirmation = () => {
+    setView("confirmation");
   };
 
   const loadClients = async () => {
@@ -1074,110 +1189,154 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   }
 
   const renderConfirmationScreen = () => {
-    const toggleDescription = () => {
-      setShowFullDescription((prev) => !prev);
-    };
-
     return (
-      <div className="p-8 pt-6">
-        <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
-          <div className="grid grid-cols-2 gap-6">
-            {/* Asunto */}
-            <div>
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Asunto
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {ticketFormData.asunto}
-              </p>
-            </div>
+      <>
+        {view === "confirmation" && (
+          <div className="p-8 pt-6">
+            <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
+              <div className="grid grid-cols-2 gap-6">
+                {/* Asunto */}
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Asunto
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {ticketFormData.asunto}
+                  </p>
+                </div>
 
-            {/* Prioridad */}
-            <div>
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Prioridad
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {selectedPriority.label}
-              </p>
-            </div>
+                {/* Prioridad */}
+                <div>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Prioridad
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {selectedPriority.label}
+                  </p>
+                </div>
 
-            {/* Cliente */}
-            <div className="col-span-2">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Cliente
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {selectedClient.label}
-              </p>
-            </div>
+                {/* Cliente */}
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Cliente
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {selectedClient.label}
+                  </p>
+                </div>
 
-            {/* Tipo */}
-            <div className="col-span-2">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Tipo
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {selectedType.label}
-              </p>
-            </div>
+                {/* Tipo */}
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Tipo
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {selectedType.label}
+                  </p>
+                </div>
 
-            {/* Categoría */}
-            <div className="col-span-2">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Categoría
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {selectedCategory.label}
-              </p>
-            </div>
-
-            {/* Descripción */}
-            <div className="col-span-2">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Descripción
-              </p>
-              <div
-                className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
-                  showFullDescription
-                    ? "max-h-80 overflow-y-auto"
-                    : "max-h-40 overflow-hidden"
-                }`}
-              >
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: ticketFormData.descripción ?? "",
-                  }}
-                />
+                {/* Categoría */}
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Categoría
+                  </p>
+                  <p className="text-gray-900 font-medium text-base break-words">
+                    {selectedCategory.label}
+                  </p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Notas
+                  </p>
+                  <p
+                    className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                      showFullDescription
+                        ? "max-h-80 overflow-y-auto"
+                        : "max-h-40 overflow-hidden"
+                    }`}
+                  >
+                    {ticketFormData.notas || "No especificadaa"}
+                  </p>
+                  {(ticketFormData?.notas?.length ?? 0) > 200 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowFullDescription(!showFullDescription)
+                      }
+                      className="text-blue-500 mt-2"
+                    >
+                      {showFullDescription ? "Ver menos" : "Ver más"}
+                    </button>
+                  )}
+                </div>
+                {/* Descripción */}
+                <div className="col-span-2">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                    Descripción
+                  </p>
+                  <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-40 overflow-hidden">
+                    <div
+                      className="content"
+                      dangerouslySetInnerHTML={{
+                        __html: ticketFormData.descripción ?? "",
+                      }}
+                    />
+                  </div>
+                  {(ticketFormData.descripción?.length ?? 0) > 200 && (
+                    <button
+                      type="button"
+                      onClick={navigateToContenidoDetail}
+                      className="text-blue-500 mt-2"
+                    >
+                      Ver más
+                    </button>
+                  )}
+                </div>
               </div>
-              {(ticketFormData.descripción?.length ?? 0) > 200 && (
-                <button
-                  type="button"
-                  onClick={toggleDescription}
-                  className="text-blue-500 mt-2"
-                >
-                  {showFullDescription ? "Ver Menos" : "Ver Más"}
-                </button>
-              )}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => setIsConfirmationScreen(false)}
+                className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+              >
+                Volver
+              </button>
+              <button
+                onClick={handleFinalSubmit}
+                className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+              >
+                Guardar
+              </button>
             </div>
           </div>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={() => setIsConfirmationScreen(false)}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Volver
-          </button>
-          <button
-            onClick={handleFinalSubmit}
-            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
-          >
-            Guardar
-          </button>
-        </div>
-      </div>
+        )}
+
+        {view === "contenidoDetail" && (
+          <>
+            <div className="p-8 pt-6">
+              <div className="bg-white rounded-lg mb-6">
+                <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-80 overflow-y-auto">
+                  <div
+                    className="content"
+                    dangerouslySetInnerHTML={{
+                      __html: ticketFormData?.descripción ?? "",
+                    }}
+                  />
+                </div>
+                {/* Botón para regresar a la confirmación */}
+                <button
+                  type="button"
+                  onClick={navigateToConfirmation}
+                  className="text-blue-500 mt-4"
+                >
+                  Ver menos
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </>
     );
   };
 
@@ -1456,6 +1615,28 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
             </div>
             <div className="w-full">
               <label className="block text-gray-600 text-base font-medium mb-2">
+                Notas
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Introducir notas"
+                onChange={(e) => {
+                  setTicketFormData({
+                    ...ticketFormData,
+                    notas: e.target.value,
+                  });
+                }}
+                value={ticketFormData.notas || ""}
+                className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+                minLength={1}
+                maxLength={4000}
+              />
+              <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                Minimo 1 carácter, máximo 4000
+              </span>
+            </div>
+            <div className="w-full">
+              <label className="block text-gray-600 text-base font-medium mb-2">
                 Descripción
               </label>
               <div className="h-full">
@@ -1509,12 +1690,10 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                 type="submit"
                 className={clsx({
                   ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                    
-                      selectedClient.label?.startsWith("Selecciona") ||
-                      selectedCategory.label?.startsWith("Selecciona") ||
-                      selectedPriority.label?.startsWith("Selecciona") ||
-                      selectedType.label?.startsWith("Selecciona")
-                    ,
+                    selectedClient.label?.startsWith("Selecciona") ||
+                    selectedCategory.label?.startsWith("Selecciona") ||
+                    selectedPriority.label?.startsWith("Selecciona") ||
+                    selectedType.label?.startsWith("Selecciona"),
                   ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
                     true,
                 })}
@@ -1569,7 +1748,6 @@ function DeleteModal({
       if (options.find()?.creación.siempre) {
         await handleCreateMessage();
       }
-
     } else {
       toast.error(data.message);
     }
@@ -1692,13 +1870,20 @@ function DeleteModal({
 function ViewModal({ isOpen, closeModal, ticket }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [view, setView] = useState<"confirmation" | "contenidoDetail">(
+    "confirmation"
+  );
 
   const capitalizeFirstLetter = (string: string) => {
     return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
   };
 
-  const toggleDescription = () => {
-    setShowFullDescription((prev) => !prev);
+  const navigateToContenidoDetail = () => {
+    setView("contenidoDetail");
+  };
+
+  const navigateToConfirmation = () => {
+    setView("confirmation");
   };
 
   useEffect(() => {
@@ -1736,116 +1921,164 @@ function ViewModal({ isOpen, closeModal, ticket }: ModalProps) {
       <div className="bg-[#2096ed] py-4 px-8">
         <h1 className="text-xl font-bold text-white">Datos del ticket</h1>
       </div>
-      <div className="p-8 pt-6">
-        <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
-          <div className="grid grid-cols-2 gap-6">
-            {/* Asunto */}
-            <div className="col-span-2">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Asunto
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {ticket?.asunto}
-              </p>
-            </div>
+      {view === "confirmation" && (
+        <div className="p-8 pt-6">
+          <div className="bg-white border-gray-300 p-6 border rounded-lg mb-6">
+            <div className="grid grid-cols-2 gap-6">
+              {/* Asunto */}
+              <div className="col-span-2">
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Asunto
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {ticket?.asunto}
+                </p>
+              </div>
 
-            {/* Prioridad */}
-            <div>
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Prioridad
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {capitalizeFirstLetter(ticket?.prioridad!)}
-              </p>
-            </div>
+              {/* Prioridad */}
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Prioridad
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {capitalizeFirstLetter(ticket?.prioridad!)}
+                </p>
+              </div>
 
-            <div>
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Estado
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {capitalizeFirstLetter(ticket?.estado || "")}
-              </p>
-            </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Estado
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {capitalizeFirstLetter(ticket?.estado || "")}
+                </p>
+              </div>
 
-            {/* Cliente */}
-            <div className="col-span-2">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Cliente
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {ticket?.cliente?.nombre || ""}{" "}
-                {ticket?.cliente?.apellido || ""}
-                {ticket?.cliente?.documento
-                  ? `, ${ticket?.cliente?.documento}`
-                  : ""}
-              </p>
-            </div>
+              {/* Cliente */}
+              <div className="col-span-2">
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Cliente
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {ticket?.cliente?.nombre || ""}{" "}
+                  {ticket?.cliente?.apellido || ""}
+                  {ticket?.cliente?.documento
+                    ? `, ${ticket?.cliente?.documento}`
+                    : ""}
+                </p>
+              </div>
 
-            {/* Tipo */}
-            <div className="col-span-2">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Tipo
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {capitalizeFirstLetter(ticket?.prioridad!)}
-              </p>
-            </div>
+              {/* Tipo */}
+              <div className="col-span-2">
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Tipo
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {capitalizeFirstLetter(ticket?.tipo!)}
+                </p>
+              </div>
 
-            {/* Categoría */}
-            <div className="col-span-2">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Categoría
-              </p>
-              <p className="text-gray-900 font-medium text-base break-words">
-                {ticket?.categoría?.nombre}
-              </p>
-            </div>
+              {/* Categoría */}
+              <div className="col-span-2">
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Categoría
+                </p>
+                <p className="text-gray-900 font-medium text-base break-words">
+                  {ticket?.categoría?.nombre}
+                </p>
+              </div>
 
-            {/* Descripción */}
-            <div className="col-span-2">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
-                Descripción
-              </p>
-              <div
-                className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
-                  showFullDescription
-                    ? "max-h-80 overflow-y-auto"
-                    : "max-h-40 overflow-hidden"
-                }`}
-              >
+              <div className="col-span-2">
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Notas
+                </p>
+                <p
+                  className={`text-gray-900 font-medium text-base break-words p-2 border rounded ${
+                    showFullDescription
+                      ? "max-h-80 overflow-y-auto"
+                      : "max-h-40 overflow-hidden"
+                  }`}
+                >
+                  {ticket?.notas || "No especificadas"}
+                </p>
+                {(ticket?.notas?.length ?? 0) > 200 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowFullDescription(!showFullDescription)}
+                    className="text-blue-500 mt-2"
+                  >
+                    {showFullDescription ? "Ver menos" : "Ver más"}
+                  </button>
+                )}
+              </div>
+
+              {/* Descripción */}
+              <div className="col-span-2">
+                <p className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">
+                  Descripción
+                </p>
+                <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-40 overflow-hidden">
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: ticket?.descripción ?? "",
+                    }}
+                  />
+                </div>
+                {(ticket?.descripción?.length ?? 0) > 200 && (
+                  <button
+                    type="button"
+                    onClick={navigateToContenidoDetail}
+                    className="text-blue-500 mt-2"
+                  >
+                    Ver más
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={closeModal}
+              className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+      {view === "contenidoDetail" && (
+        <>
+          <div className="p-8 pt-6">
+            <div className="bg-white rounded-lg mb-6">
+              <div className="text-gray-900 font-medium text-base break-words p-2 border rounded max-h-80 overflow-y-auto">
                 <div
+                  className="content"
                   dangerouslySetInnerHTML={{
                     __html: ticket?.descripción ?? "",
                   }}
                 />
               </div>
-              {(ticket?.descripción?.length ?? 0) > 200 && (
-                <button
-                  type="button"
-                  onClick={toggleDescription}
-                  className="text-blue-500 mt-2"
-                >
-                  {showFullDescription ? "Ver Menos" : "Ver Más"}
-                </button>
-              )}
+              {/* Botón para regresar a la confirmación */}
+              <button
+                type="button"
+                onClick={navigateToConfirmation}
+                className="text-blue-500 mt-4"
+              >
+                Ver menos
+              </button>
             </div>
           </div>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button
-            onClick={closeModal}
-            className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"
-          >
-            Cerrar
-          </button>
-        </div>
-      </div>
+        </>
+      )}
     </dialog>
   );
 }
 
-function DataRow({ ticket, setOperationAsCompleted, row_number }: DataRowProps) {
+function DataRow({
+  ticket,
+  setOperationAsCompleted,
+  row_number,
+}: DataRowProps) {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -1907,7 +2140,7 @@ function DataRow({ ticket, setOperationAsCompleted, row_number }: DataRowProps) 
             Baja
           </div>
         ) : ticket?.prioridad === "MEDIA" ? (
-          <div className="bg-yellow-200 text-center text-yellow-600 text-xs py-2 font-bold rounded-lg capitalize">
+          <div className="bg-blue-200 text-center text-blue-600 text-xs py-2 font-bold rounded-lg capitalize">
             Media
           </div>
         ) : (
@@ -1927,10 +2160,10 @@ function DataRow({ ticket, setOperationAsCompleted, row_number }: DataRowProps) 
       <td className="px-6 py-3 border border-slate-300 truncate max-w-[200px]">
         {ticket?.asunto}
       </td>
-      <td className="px-6 py-3 border border-slate-300 truncate">
+      <td className="px-6 py-3 border border-slate-300 truncate min-w-[60px] w-[80px]">
         {format(new Date(ticket?.creado!), "dd/MM/yyyy hh:mm a")}
       </td>
-      <td className="px-6 py-3 border border-slate-300 truncate">
+      <td className="px-6 py-3 border border-slate-300 truncate min-w-[60px] w-[80px]">
         {ticket?.cerrado
           ? format(new Date(ticket?.cerrado!), "dd/MM/yyyy hh:mm a")
           : "Nunca"}
@@ -2322,6 +2555,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useTicketSearchParamStore(
+    (state) => state.setJustSearched
+  );
   const [tempId, setTempId] = useState(0);
 
   const resetSearch = () => {
@@ -2343,7 +2579,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: -1,
       label: "Seleccionar categoría",
     });
-    setWasSearch(false);
     setTempId(0);
   };
 
@@ -2423,13 +2658,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             closeModal();
             setWasSearch(true);
             setTempId(0);
+            setJustSearched(true);
           }
         }}
       >
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -2463,9 +2701,11 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             className="border p-2 rounded outline-none focus:border-[#2096ed]"
             onChange={(e) => {
               setTempId(Number(e.target));
-              setSearchId(Number(e.target));
+              if (isOpen) {
+                setSearchId(Number(e.target));
+              }
             }}
-            value={tempId === 0 ? "" : tempId}
+            value={tempId ?? ""}
             min={1}
             required
           />
@@ -2474,8 +2714,10 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="relative">
             <Select
               onChange={() => {
-                setInput(selectedState.value as string);
-                setSecondParam(selectedSearchType.value as string);
+                if (isOpen) {
+                  setInput(selectedState.value as string);
+                  setSecondParam(selectedSearchType.value as string);
+                }
               }}
               options={[
                 {
@@ -2520,7 +2762,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                   }))}
                   selected={selectedCategory}
                   onChange={() => {
-                    setSearchId(selectedCategory.value as number);
+                    if (isOpen) {
+                      setSearchId(selectedCategory.value as number);
+                    }
                   }}
                 />
               )}
@@ -2586,7 +2830,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                   }))}
                   selected={selectedClient}
                   onChange={() => {
-                    setSearchId(selectedClient.value as number);
+                    if (isOpen) {
+                      setSearchId(selectedClient.value as number);
+                    }
                   }}
                 />
               )}
@@ -2638,7 +2884,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="relative">
             <Select
               onChange={() => {
-                setSecondParam(selectedFecha.value as string);
+                if (isOpen) {
+                  setSecondParam(selectedFecha.value as string);
+                }
               }}
               options={[
                 {
@@ -2717,7 +2965,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               value={tempInput}
               className="border p-2 rounded outline-none focus:border-[#2096ed]"
               onChange={(e) => {
-                setInput(e.target.value);
+                if (isOpen) {
+                  setInput(e.target.value);
+                }
                 setTempInput(e.target.value);
               }}
               required
@@ -2728,7 +2978,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               value={secondTempInput}
               className="border p-2 rounded outline-none focus:border-[#2096ed]"
               onChange={(e) => {
-                setSecondInput(e.target.value);
+                if (isOpen) {
+                  setSecondInput(e.target.value);
+                }
                 setSecondTempInput(e.target.value);
               }}
               required
@@ -2796,6 +3048,10 @@ export default function TicketDataDisplay() {
   const [isSearch, setIsSearch] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useTicketSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = useTicketSearchParamStore((state) => state.justSearched);
   const size = 8;
 
   const openAddModal = () => {
@@ -2840,7 +3096,12 @@ export default function TicketDataDisplay() {
       });
     } else {
       if (param === "CERRADO" || (param === "ABIERTO" && wasSearch)) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (secondParam === "HOY") {
           void TicketService.getToday(param, page, size).then((data) => {
             if (data === false) {
@@ -2966,7 +3227,12 @@ export default function TicketDataDisplay() {
           }
         }
       } else if (param === "CLIENTE" && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         void TicketService.getByClient(searchId, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
@@ -2983,7 +3249,11 @@ export default function TicketDataDisplay() {
           setIsOperationCompleted(false);
         });
       } else if (param === "CATEGORÍA" && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
         void TicketService.getByCategory(searchId, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
@@ -3000,7 +3270,11 @@ export default function TicketDataDisplay() {
           setIsOperationCompleted(false);
         });
       } else if (param === "ESTADO" && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
         void TicketService.getByState(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
@@ -3017,7 +3291,11 @@ export default function TicketDataDisplay() {
           setIsOperationCompleted(false);
         });
       } else if (param === "ID" && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
         void TicketService.getById(searchId).then((data) => {
           if (data === false) {
             setNotFound(true);
@@ -3063,12 +3341,23 @@ export default function TicketDataDisplay() {
               />
             )}
             {action === "ADD" ? (
-              <button
-                onClick={openAddModal}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Añadir ticket
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={openAddModal}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Añadir ticket
+                </button>
+              </>
             ) : null}
             {action === "SEARCH" ? (
               <>
@@ -3076,17 +3365,18 @@ export default function TicketDataDisplay() {
                   <button
                     type="button"
                     onClick={resetSearchCount}
-                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                   >
                     Cancelar busqueda
                   </button>
-                ) : null}
-                <button
-                  onClick={() => setIsSearch(true)}
-                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                >
-                  Buscar ticket
-                </button>
+                ) : (
+                  <button
+                    onClick={() => setIsSearch(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Buscar ticket
+                  </button>
+                )}
               </>
             ) : null}
             <button
@@ -3202,6 +3492,7 @@ export default function TicketDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false);
             }
           }}
           prev={() => {

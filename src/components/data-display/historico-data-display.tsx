@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ReactComponent as Right } from "/src/assets/chevron-right-solid.svg";
 import { ReactComponent as Face } from "/src/assets/report.svg";
+import { ReactComponent as More } from "/src/assets/more_vert.svg";
 import Pagination from "../misc/pagination";
 import {
   ModalProps,
@@ -14,7 +15,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import Select from "../misc/select";
 import permissions from "../../utils/permissions";
-import { useCategorySearchParamStore } from "../../store/searchParamStore";
+import { useHistoricoSearchParamStore } from "../../store/searchParamStore";
 import { useSearchedStore } from "../../store/searchedStore";
 import HistoricoService from "../../services/historico-service";
 import session from "../../utils/session";
@@ -22,6 +23,7 @@ import ProductService from "../../services/producto-service";
 import SelectWithSearch from "../misc/select-with-search";
 import { format } from "date-fns";
 import { createRowNumber } from "../../utils/functions";
+import clsx from "clsx";
 
 function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -244,18 +246,18 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   onChange={(e) => {
                     setFormData({
                       ...formData,
-                      existenciasNuevo: Number(e.target.value),
+                      existenciasNuevo: parseInt(e.target.value),
                     });
                   }}
-                  value={
-                    formData.existenciasNuevo === 0
-                      ? ""
-                      : formData.existenciasNuevo
-                  }
-                  className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
+                  value={formData.existenciasNuevo ?? ""}
+                  className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
                   required
-                  min={1}
+                  min={0}
+                  max={10000000000}
                 />
+                <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+                  10 dígitos máximo
+                </span>
               </>
             ) : (
               <>
@@ -267,7 +269,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   <input
                     type="number"
                     onChange={(e) => {
-                      const cantidad = Number(e.target.value);
+                      const cantidad = parseInt(e.target.value);
 
                       setRetirarCantidad(cantidad);
 
@@ -279,7 +281,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                         existenciasNuevo: existenciasFinales,
                       });
                     }}
-                    value={retirarCantidad === 0 ? "" : retirarCantidad}
+                    value={retirarCantidad ?? ""}
                     className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
                     required
                     min={1}
@@ -292,11 +294,7 @@ function AddModal({ isOpen, closeModal, setOperationAsCompleted }: ModalProps) {
                   </label>
                   <input
                     type="number"
-                    value={
-                      formData.existenciasNuevo === 0
-                        ? ""
-                        : formData.existenciasNuevo
-                    }
+                    value={formData.existenciasNuevo ?? ""}
                     className="border p-2 rounded outline-none focus:border-[#2096ed] w-full"
                     readOnly
                   />
@@ -461,317 +459,6 @@ function HistoricoModal({ isOpen, closeModal, historico }: ModalProps) {
   );
 }
 
-/*
-function DeleteModal({
-  isOpen,
-  closeModal,
-  setOperationAsCompleted,
-  categoría,
-}: ModalProps) {
-  const ref = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          ref.current?.close();
-        }
-      });
-    } else {
-      closeModal();
-      ref.current?.close();
-    }
-  }, [isOpen]);
-
-  return (
-    <dialog
-      ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
-    >
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          closeModal();
-          const loadingToast = toast.loading("Eliminando categoría...");
-          HistoricoService.delete(categoría?.id!).then((data) => {
-            toast.dismiss(loadingToast);
-            if (data) {
-              toast.success("Categoría eliminada con exito.");
-            } else {
-              toast.error("Categoría no pudo ser eliminada.");
-            }
-            setOperationAsCompleted();
-          });
-        }}
-      >
-        <div className="place-self-center  flex flex-col items-center">
-          <Warning className="fill-red-400 h-16 w-16" />
-          <p className="font-bold text-lg text-center mt-2">
-            ¿Esta seguro de que desea continuar?
-          </p>
-          <p className="font-medium text text-center mt-1">
-            Los cambios provocados por esta acción son irreversibles.
-          </p>
-        </div>
-        <div className="flex gap-2 justify-center">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-          >
-            Cancelar
-          </button>
-          <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Continuar
-          </button>
-        </div>
-      </form>
-    </dialog>
-  );
-}
-*/
-
-/*
-function SearchModal({ isOpen, closeModal }: ModalProps) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
-    value: "",
-    label: "Seleccionar parametro de busqueda",
-  });
-  const [selectedType, setSelectedType] = useState<Selected>({
-    value: "",
-    label: "Seleccionar tipo de categoría",
-  });
-  const setIsPrecise = useCategorySearchParamStore(
-    (state) => state.setIsPrecise
-  );
-  const setTempIsPrecise = useCategorySearchParamStore(
-    (state) => state.setTempIsPrecise
-  );
-  const tempIsPrecise = useCategorySearchParamStore(
-    (state) => state.tempIsPrecise
-  );
-  const tempInput = useCategorySearchParamStore((state) => state.tempInput);
-  const setInput = useCategorySearchParamStore((state) => state.setInput);
-  const setTempInput = useCategorySearchParamStore(
-    (state) => state.setTempInput
-  );
-  const setParam = useCategorySearchParamStore((state) => state.setParam);
-  const incrementSearchCount = useCategorySearchParamStore(
-    (state) => state.incrementSearchCount
-  );
-  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
-
-  const resetSearch = () => {
-    setTempInput("");
-    setTempIsPrecise(false);
-    setSelectedSearchType({
-      value: "",
-      label: "Seleccionar parametro de busqueda",
-    });
-    setSelectedType({
-      value: "",
-      label: "Seleccionar tipo de categoría",
-    });
-    setWasSearch(false);
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      ref.current?.showModal();
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          resetSearch();
-          closeModal();
-          ref.current?.close();
-        }
-      });
-    } else {
-      resetSearch();
-      closeModal();
-      ref.current?.close();
-    }
-  }, [isOpen]);
-
-  return (
-    <dialog
-      ref={ref}
-      onClick={(e) => {
-        const dialogDimensions = ref.current?.getBoundingClientRect()!;
-        if (
-          e.clientX < dialogDimensions.left ||
-          e.clientX > dialogDimensions.right ||
-          e.clientY < dialogDimensions.top ||
-          e.clientY > dialogDimensions.bottom
-        ) {
-          closeModal();
-          ref.current?.close();
-        }
-      }}
-      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
-    >
-      <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Buscar categoría</h1>
-      </div>
-      <form
-        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
-        autoComplete="off"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (selectedSearchType.value !== "") {
-            resetSearch();
-            incrementSearchCount();
-            closeModal();
-            setWasSearch(true);
-          }
-        }}
-      >
-        <div className="relative">
-          <Select
-            onChange={() => {
-              setParam(selectedSearchType.value as string);
-            }}
-            options={[
-              {
-                value: "NOMBRE",
-                label: "Nombre",
-                onClick: (value, label) => {
-                  setSelectedSearchType({
-                    value,
-                    label,
-                  });
-                },
-              },
-              {
-                value: "TIPO",
-                label: "Tipo",
-                onClick: (value, label) => {
-                  setSelectedSearchType({
-                    value,
-                    label,
-                  });
-                },
-              },
-            ]}
-            selected={selectedSearchType}
-          />
-        </div>
-        {selectedSearchType.value === "NOMBRE" ? (
-          <input
-            type="text"
-            placeholder={
-              selectedSearchType.value === "NOMBRE"
-                ? "Introduzca nombre del usuario"
-                : ""
-            }
-            value={tempInput}
-            className="border p-2 rounded outline-none focus:border-[#2096ed]"
-            onChange={(e) => {
-              setInput(e.target.value);
-              setTempInput(e.target.value);
-            }}
-            required
-          />
-        ) : null}
-        {selectedSearchType.value === "TIPO" ? (
-          <div className="relative">
-            <Select
-              onChange={() => {
-                setInput(selectedType.value as string);
-              }}
-              options={[
-                {
-                  value: "SERVICIO",
-                  label: "Servicio",
-                  onClick: (value, label) => {
-                    setSelectedType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-                {
-                  value: "PRODUCTO",
-                  label: "Producto",
-                  onClick: (value, label) => {
-                    setSelectedType({
-                      value,
-                      label,
-                    });
-                  },
-                },
-              ]}
-              selected={selectedType}
-            />
-          </div>
-        ) : null}
-        <div className="flex flex-col gap-4 w-full sm:flex-row sm:justify-between sm:items-center">
-          <div className="mb-[0.125rem] min-h-[1.5rem] justify-self-start flex items-center">
-            <input
-              className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              type="checkbox"
-              onChange={(e) => {
-                setIsPrecise(e.target.checked);
-                setTempIsPrecise(e.target.checked);
-              }}
-              checked={tempIsPrecise}
-              id="checkbox"
-              disabled={selectedSearchType.value === "TIPO"}
-            />
-            <label
-              className="inline-block pl-[0.15rem] hover:cursor-pointer text-gray-600 font-medium"
-              htmlFor="checkbox"
-            >
-              ¿Busqueda exacta?
-            </label>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                closeModal();
-                resetSearch();
-              }}
-              className="text-gray-500  bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
-            >
-              Cancelar
-            </button>
-            <button
-              className={clsx({
-                ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                  selectedSearchType.label?.startsWith("Seleccionar") ||
-                  (selectedType.label?.startsWith("Seleccionar") &&
-                    selectedSearchType.value === "TIPO"),
-                ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
-                  true,
-              })}
-            >
-              Buscar
-            </button>
-          </div>
-        </div>
-      </form>
-    </dialog>
-  );
-}
-*/
-
 function DataRow({ historico, row_number }: DataRowProps) {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const closeViewModal = () => {
@@ -805,7 +492,7 @@ function DataRow({ historico, row_number }: DataRowProps) {
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {format(new Date(historico?.fechaCambio!), "dd/MM/yyyy hh:mm a")}
       </td>
-      <td className="px-6 py-3 border border-slate-300 w-[200px] relative">
+      <td className="px-6 py-3 border border-slate-300 w-[200px] truncate relative">
         <button
           onClick={() => {
             setIsViewOpen(true);
@@ -911,10 +598,266 @@ function Dropup({ close, selectAction }: DropupProps) {
               cursor-pointer
             "
         >
-          Buscar en historico
+          Buscar registro
         </div>
       </li>
     </ul>
+  );
+}
+
+function SearchModal({ isOpen, closeModal }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [selectedSearchType, setSelectedSearchType] = useState<Selected>({
+    value: "",
+    label: "Seleccionar parametro de busqueda",
+  });
+  const [selectedFecha, setSelectedFecha] = useState<Selected>({
+    value: "",
+    label: "Seleccionar tipo de busqueda",
+  });
+  const tempInput = useHistoricoSearchParamStore((state) => state.tempInput);
+  const secondTempInput = useHistoricoSearchParamStore(
+    (state) => state.secondTempInput
+  );
+  const setInput = useHistoricoSearchParamStore((state) => state.setInput);
+  const setTempInput = useHistoricoSearchParamStore(
+    (state) => state.setTempInput
+  );
+  const setSecondInput = useHistoricoSearchParamStore(
+    (state) => state.setSecondInput
+  );
+  const setSecondTempInput = useHistoricoSearchParamStore(
+    (state) => state.setSecondTempInput
+  );
+  const setParam = useHistoricoSearchParamStore((state) => state.setParam);
+  const setSecondParam = useHistoricoSearchParamStore(
+    (state) => state.setSecondParam
+  );
+  const incrementSearchCount = useHistoricoSearchParamStore(
+    (state) => state.incrementSearchCount
+  );
+  const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useHistoricoSearchParamStore(
+    (state) => state.setJustSearched
+  );
+
+  const resetSearch = () => {
+    setTempInput("");
+    setSecondTempInput("");
+    setSelectedSearchType({
+      value: "",
+      label: "Seleccionar parametro de busqueda",
+    });
+    setSelectedFecha({
+      value: "",
+      label: "Seleccionar tipo de busqueda",
+    });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          resetSearch();
+          closeModal();
+          ref.current?.close();
+        }
+      });
+    } else {
+      resetSearch();
+      closeModal();
+      ref.current?.close();
+    }
+  }, [isOpen]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect()!;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">Buscar registro</h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 justify-center group"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (selectedSearchType.value !== "") {
+            resetSearch();
+            incrementSearchCount();
+            closeModal();
+            setWasSearch(true);
+            setJustSearched(true);
+          }
+        }}
+      >
+        <div className="relative">
+          <Select
+            onChange={() => {
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
+            }}
+            options={[
+              {
+                value: "FECHA",
+                label: "Fecha",
+                onClick: (value, label) => {
+                  setSelectedSearchType({
+                    value,
+                    label,
+                  });
+                },
+              },
+            ]}
+            selected={selectedSearchType}
+          />
+        </div>
+        {selectedSearchType.value === "FECHA" ? (
+          <div className="relative">
+            <Select
+              onChange={() => {
+                if (isOpen) {
+                  setSecondParam(selectedFecha.value as string);
+                }
+              }}
+              options={[
+                {
+                  value: "HOY",
+                  label: "Hoy",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "RECIENTEMENTE",
+                  label: "Recientemente",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ESTA_SEMANA",
+                  label: "Esta semana",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ESTE_MES",
+                  label: "Este mes",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ESTE_AÑO",
+                  label: "Este año",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+                {
+                  value: "ENTRE",
+                  label: "Entre las fechas",
+                  onClick: (value, label) => {
+                    setSelectedFecha({
+                      value,
+                      label,
+                    });
+                  },
+                },
+              ]}
+              selected={selectedFecha}
+            />
+          </div>
+        ) : null}
+        {selectedFecha.value === "ENTRE" ? (
+          <>
+            {" "}
+            <input
+              type="date"
+              placeholder="Fecha inicial"
+              value={tempInput}
+              className="border p-2 rounded outline-none focus:border-[#2096ed]"
+              onChange={(e) => {
+                if (isOpen) {
+                  setInput(e.target.value);
+                }
+                setTempInput(e.target.value);
+              }}
+              required
+            />
+            <input
+              type="date"
+              placeholder="Fecha final"
+              value={secondTempInput}
+              className="border p-2 rounded outline-none focus:border-[#2096ed]"
+              onChange={(e) => {
+                if (isOpen) {
+                  setSecondInput(e.target.value);
+                }
+                setSecondTempInput(e.target.value);
+              }}
+              required
+            />
+          </>
+        ) : null}
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              closeModal();
+              resetSearch();
+            }}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cancelar
+          </button>
+          <button
+            className={clsx({
+              ["pointer-events-none opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                selectedSearchType.label?.startsWith("Seleccionar") ||
+                (selectedFecha.label?.startsWith("Seleccionar") &&
+                  selectedSearchType?.value === "FECHA"),
+              ["group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300"]:
+                true,
+            })}
+          >
+            Buscar
+          </button>
+        </div>
+      </form>
+    </dialog>
   );
 }
 
@@ -1021,18 +964,35 @@ export default function HistoricoDataDisplay() {
   const [isOperationCompleted, setIsOperationCompleted] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDropup, setIsDropup] = useState(false);
-  //@ts-ignore
+  const [isSearch, setIsSearch] = useState(false);
   const [action, setAction] = useState<`${Action}`>(
-    permissions.find()?.crear.categoría ? "ADD" : "SEARCH"
+    permissions.find()?.editar.producto ? "ADD" : "SEARCH"
   );
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
   const [current, setCurrent] = useState(0);
-  const searchCount = useCategorySearchParamStore((state) => state.searchCount);
-  const resetSearchCount = useCategorySearchParamStore(
+  const searchCount = useHistoricoSearchParamStore(
+    (state) => state.searchCount
+  );
+  const resetSearchCount = useHistoricoSearchParamStore(
     (state) => state.resetSearchCount
   );
+  const param = useHistoricoSearchParamStore((state) => state.param);
+  const secondParam = useHistoricoSearchParamStore(
+    (state) => state.secondParam
+  );
+  const wasSearch = useSearchedStore((state) => state.wasSearch);
+  const input = useHistoricoSearchParamStore((state) => state.input);
+  const secondInput = useHistoricoSearchParamStore(
+    (state) => state.secondInput
+  );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useHistoricoSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = useHistoricoSearchParamStore(
+    (state) => state.justSearched
+  );
   const size = 8;
 
   const openAddModal = () => {
@@ -1056,25 +1016,135 @@ export default function HistoricoDataDisplay() {
   };
 
   useEffect(() => {
-    if (searchCount === 0 || isOperationCompleted) {
+    if (searchCount === 0) {
       HistoricoService.getAll(page, size).then((data) => {
         if (data === false) {
           setNotFound(true);
           setLoading(false);
           setHistorico([]);
-          setWasSearch(false);
           resetSearchCount();
+          setWasSearch(false);
         } else {
           setHistorico(data.rows);
           setPages(data.pages);
           setCurrent(data.current);
           setLoading(false);
           setNotFound(false);
-          setWasSearch(false);
           resetSearchCount();
+          setWasSearch(false);
         }
         setIsOperationCompleted(false);
       });
+    } else {
+      if (param === "FECHA" && wasSearch) {
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
+        if (secondParam === "HOY") {
+          HistoricoService.getToday(page, size).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setHistorico([]);
+            } else {
+              setHistorico(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (secondParam === "RECIENTEMENTE") {
+          HistoricoService.getRecent(page, size).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setHistorico([]);
+            } else {
+              setHistorico(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (secondParam === "ESTA_SEMANA") {
+          HistoricoService.getThisWeek(page, size).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setHistorico([]);
+            } else {
+              setHistorico(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (secondParam === "ESTE_MES") {
+          HistoricoService.getThisMonth(page, size).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setHistorico([]);
+            } else {
+              setHistorico(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        } else if (secondParam === "ESTE_AÑO") {
+          HistoricoService.getThisYear(page, size).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setHistorico([]);
+            } else {
+              setHistorico(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            setIsOperationCompleted(false);
+          });
+        } else if (secondParam === "ENTRE") {
+          HistoricoService.getBetween(
+            new Date(input).toISOString().split("T")[0],
+            new Date(secondInput).toISOString().split("T")[0],
+            page,
+            size
+          ).then((data) => {
+            if (data === false) {
+              setNotFound(true);
+              setLoading(false);
+              setHistorico([]);
+            } else {
+              setHistorico(data.rows);
+              setPages(data.pages);
+              setCurrent(data.current);
+              setLoading(false);
+              setNotFound(false);
+            }
+            toast.dismiss(loadingToast);
+            setIsOperationCompleted(false);
+          });
+        }
+      }
     }
   }, [isOperationCompleted, searchCount, page]);
 
@@ -1099,12 +1169,54 @@ export default function HistoricoDataDisplay() {
                 openSearchModal={() => {}}
               />
             )}
+            {action === "SEARCH" ? (
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsSearch(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Buscar registro
+                  </button>
+                )}
+              </>
+            ) : null}
+            {action === "ADD" ? (
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={openAddModal}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Ajustar inventario
+                </button>
+              </>
+            ) : null}
             {permissions.find()?.editar.producto ? (
               <button
-                onClick={openAddModal}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                id="acciones-btn"
+                onClick={() => {
+                  setIsDropup(!isDropup);
+                }}
+                className="bg-gray-300 border hover:bg-gray-400 outline-none text-black text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
               >
-                Ajustar inventario
+                <More className="w-5 h-5 inline fill-black" />
               </button>
             ) : null}
           </div>
@@ -1163,7 +1275,7 @@ export default function HistoricoDataDisplay() {
             <div className="place-self-center  flex flex-col items-center">
               <Face className="fill-[#2096ed] h-20 w-20" />
               <p className="font-bold text-xl text-center mt-1">
-                Ningúna categoría encontrada
+                Ningún registro encontrado
               </p>
               <p className="font-medium text text-center mt-1">
                 {searchCount === 0
@@ -1206,6 +1318,7 @@ export default function HistoricoDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false);
             }
           }}
           prev={() => {
@@ -1220,6 +1333,13 @@ export default function HistoricoDataDisplay() {
         isOpen={isAddOpen}
         closeModal={closeAddModal}
         setOperationAsCompleted={setAsCompleted}
+      />
+      <SearchModal
+        isOpen={isSearch}
+        closeModal={() => setIsSearch(false)}
+        setOperationAsCompleted={function (): void {
+          throw new Error("Function not implemented.");
+        }}
       />
     </>
   );

@@ -1019,17 +1019,17 @@ function DataRow({
       >
         {row_number}
       </th>
-      <td className="px-6 py-4 border border-slate-300 min-w-[60px] truncate">
+      <td className="px-6 py-4 border border-slate-300 min-w-[60px] w-[80px] truncate">
         {format(new Date(compra?.emisionFactura ?? 0), "dd/MM/yyyy hh:mm a")}
       </td>
       <td className="px-6 py-4 border border-slate-300 max-w-[200px] truncate">
         {compra?.historico_compra?.proveedor_nombre},{" "}
         {compra?.historico_compra?.proveedor_documento}
       </td>
-      <td className="px-6 py-2 border border-slate-300">
+      <td className="px-6 py-2 border border-slate-300 min-w-[60px] w-[150px]">
         {formatter.format(compra?.subtotal || 0)}
       </td>
-      <td className="px-6 py-2 border border-slate-300">
+      <td className="px-6 py-2 border border-slate-300 min-w-[60px] w-[150px]">
         {formatter.format(compra?.total || 0)}
       </td>
       <td className="px-6 py-2 border border-slate-300">
@@ -1948,6 +1948,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = usePurchaseSearchParamStore(
+    (state) => state.setJustSearched
+  );
 
   const resetSearch = () => {
     setTempInput("");
@@ -1964,7 +1967,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: -1,
       label: "Seleccionar proveedor",
     });
-    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -2031,13 +2033,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             incrementSearchCount();
             closeModal();
             setWasSearch(true);
+            setJustSearched(true);
           }
         }}
       >
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -2081,7 +2086,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
                   }))}
                   selected={selectedProvider}
                   onChange={() => {
-                    setSearchId(selectedProvider.value as number);
+                    if (isOpen) {
+                      setSearchId(selectedProvider.value as number);
+                    }
                   }}
                 />
               )}
@@ -2133,7 +2140,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="relative">
             <Select
               onChange={() => {
-                setSecondParam(selectedFecha.value as string);
+                if (isOpen) {
+                  setSecondParam(selectedFecha.value as string);
+                }
               }}
               options={[
                 {
@@ -2210,7 +2219,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               value={tempInput}
               className="border p-2 rounded outline-none focus:border-[#2096ed]"
               onChange={(e) => {
-                setInput(e.target.value);
+                if (isOpen) {
+                  setInput(e.target.value);
+                }
                 setTempInput(e.target.value);
               }}
               required
@@ -2221,7 +2232,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               value={secondTempInput}
               className="border p-2 rounded outline-none focus:border-[#2096ed]"
               onChange={(e) => {
-                setSecondInput(e.target.value);
+                if (isOpen) {
+                  setSecondInput(e.target.value);
+                }
                 setSecondTempInput(e.target.value);
               }}
               required
@@ -2980,6 +2993,12 @@ export default function PurchaseDataDisplay() {
   const [isReport, setIsReport] = useState(false);
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = usePurchaseSearchParamStore(
+    (state) => state.setJustSearched
+  );
+  const justSearched = usePurchaseSearchParamStore(
+    (state) => state.justSearched
+  );
   const size = 8;
 
   const openAddModal = () => {
@@ -3030,7 +3049,12 @@ export default function PurchaseDataDisplay() {
       });
     } else {
       if (param === "FECHA" && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         if (secondParam === "HOY") {
           PurchaseService.getToday(page, size).then((data) => {
             if (data === false) {
@@ -3133,7 +3157,12 @@ export default function PurchaseDataDisplay() {
           });
         }
       } else if (param === "PROVEEDOR" && wasSearch) {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
+
         PurchaseService.getByProvider(searchId, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
@@ -3151,7 +3180,7 @@ export default function PurchaseDataDisplay() {
         });
       }
     }
-  }, [isOperationCompleted, toEdit, searchCount, toAdd, pages]);
+  }, [isOperationCompleted, toEdit, searchCount, toAdd, page]);
 
   useEffect(() => {
     setPage(1);
@@ -3194,12 +3223,23 @@ export default function PurchaseDataDisplay() {
             {!(toAdd || toEdit) ? (
               <>
                 {action === "ADD" ? (
-                  <button
-                    onClick={openAddModal}
-                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                  >
-                    Añadir compra
-                  </button>
+                  <>
+                    {searchCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={resetSearchCount}
+                        className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                      >
+                        Cancelar busqueda
+                      </button>
+                    ) : null}
+                    <button
+                      onClick={openAddModal}
+                      className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                    >
+                      Añadir compra
+                    </button>
+                  </>
                 ) : null}
                 {action === "SEARCH" ? (
                   <>
@@ -3207,26 +3247,38 @@ export default function PurchaseDataDisplay() {
                       <button
                         type="button"
                         onClick={resetSearchCount}
-                        className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                        className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                      >
+                        Cancelar busqueda
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setIsSearch(true)}
+                        className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                      >
+                        Buscar compra
+                      </button>
+                    )}
+                  </>
+                ) : null}
+                {action === "REPORT" ? (
+                  <>
+                    {searchCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={resetSearchCount}
+                        className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                       >
                         Cancelar busqueda
                       </button>
                     ) : null}
                     <button
-                      onClick={() => setIsSearch(true)}
+                      onClick={() => setIsReport(true)}
                       className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
                     >
-                      Buscar compra
+                      Generar reporte
                     </button>
                   </>
-                ) : null}
-                {action === "REPORT" ? (
-                  <button
-                    onClick={() => setIsReport(true)}
-                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                  >
-                    Generar reporte
-                  </button>
                 ) : null}
               </>
             ) : null}
@@ -3237,7 +3289,7 @@ export default function PurchaseDataDisplay() {
                   onClick={() => {
                     setToAdd(false);
                   }}
-                  className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                 >
                   Volver
                 </button>
@@ -3396,6 +3448,7 @@ export default function PurchaseDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false);
             }
           }}
           prev={() => {

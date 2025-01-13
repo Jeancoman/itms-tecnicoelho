@@ -672,7 +672,7 @@ function DeleteModal({
       className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
     >
       <div className="bg-[#2096ed] py-4 px-8">
-        <h1 className="text-xl font-bold text-white">Eliminar cliente</h1>
+        <h1 className="text-xl font-bold text-white">Eliminar categoría</h1>
       </div>
       <form
         className="flex flex-col p-8 pt-6 gap-4 justify-center"
@@ -832,6 +832,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
     (state) => state.incrementSearchCount
   );
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
+  const setJustSearched = useCategorySearchParamStore(
+    (state) => state.setJustSearched
+  );
 
   const resetSearch = () => {
     setTempInput("");
@@ -844,7 +847,6 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
       value: "",
       label: "Seleccionar tipo de categoría",
     });
-    setWasSearch(false);
   };
 
   useEffect(() => {
@@ -894,13 +896,16 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             incrementSearchCount();
             closeModal();
             setWasSearch(true);
+            setJustSearched(true);
           }
         }}
       >
         <div className="relative">
           <Select
             onChange={() => {
-              setParam(selectedSearchType.value as string);
+              if (isOpen) {
+                setParam(selectedSearchType.value as string);
+              }
             }}
             options={[
               {
@@ -938,7 +943,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
             value={tempInput}
             className="border p-2 rounded outline-none focus:border-[#2096ed]"
             onChange={(e) => {
-              setInput(e.target.value);
+              if (isOpen) {
+                setInput(e.target.value);
+              }
               setTempInput(e.target.value);
             }}
             required
@@ -948,7 +955,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
           <div className="relative">
             <Select
               onChange={() => {
-                setInput(selectedType.value as string);
+                if (isOpen) {
+                  setInput(selectedType.value as string);
+                }
               }}
               options={[
                 {
@@ -982,7 +991,9 @@ function SearchModal({ isOpen, closeModal }: ModalProps) {
               className="mr-1 leading-tight w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               type="checkbox"
               onChange={(e) => {
-                setIsPrecise(e.target.checked);
+                if (isOpen) {
+                  setIsPrecise(e.target.checked);
+                }
                 setTempIsPrecise(e.target.checked);
               }}
               checked={tempIsPrecise}
@@ -1413,6 +1424,12 @@ export default function CategoriesDataDisplay() {
   const wasSearch = useSearchedStore((state) => state.wasSearch);
   const setWasSearch = useSearchedStore((state) => state.setWasSearch);
   const [isSearch, setIsSearch] = useState(false);
+  const justSearched = useCategorySearchParamStore(
+    (state) => state.justSearched
+  );
+  const setJustSearched = useCategorySearchParamStore(
+    (state) => state.setJustSearched
+  );
   const size = 8;
 
   const openAddModal = () => {
@@ -1457,7 +1474,10 @@ export default function CategoriesDataDisplay() {
       });
     } else {
       if (param === "TIPO") {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
         CategoryService.getByTipo(input, page, size).then((data) => {
           if (data === false) {
             setNotFound(true);
@@ -1474,7 +1494,10 @@ export default function CategoriesDataDisplay() {
           setIsOperationCompleted(false);
         });
       } else if (param === "NOMBRE") {
-        const loadingToast = toast.loading("Buscando...");
+        let loadingToast = undefined;
+        if (justSearched) {
+          loadingToast = toast.loading("Buscando...");
+        }
         if (isPrecise && wasSearch) {
           CategoryService.getByExactNombre(input, page, size).then((data) => {
             if (data === false) {
@@ -1535,12 +1558,23 @@ export default function CategoriesDataDisplay() {
               />
             )}
             {action === "ADD" ? (
-              <button
-                onClick={openAddModal}
-                className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-              >
-                Añadir categoría
-              </button>
+              <>
+                {searchCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={resetSearchCount}
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                  >
+                    Cancelar busqueda
+                  </button>
+                ) : null}
+                <button
+                  onClick={openAddModal}
+                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                >
+                  Añadir categoría
+                </button>
+              </>
             ) : null}
             {action === "SEARCH" ? (
               <>
@@ -1548,17 +1582,18 @@ export default function CategoriesDataDisplay() {
                   <button
                     type="button"
                     onClick={resetSearchCount}
-                    className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+                    className="text-gray-500 bg-gray-200 text-sm font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
                   >
                     Cancelar busqueda
                   </button>
-                ) : null}
-                <button
-                  onClick={() => setIsSearch(true)}
-                  className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
-                >
-                  Buscar categoría
-                </button>
+                ) : (
+                  <button
+                    onClick={() => setIsSearch(true)}
+                    className="bg-[#2096ed] hover:bg-[#1182d5] outline-none px-4 py-2 shadow text-white text-sm font-semibold text-center p-1 rounded-md transition ease-in-out delay-100 duration-300"
+                  >
+                    Buscar categoría
+                  </button>
+                )}
               </>
             ) : null}
             <button
@@ -1660,6 +1695,7 @@ export default function CategoriesDataDisplay() {
           next={() => {
             if (current < pages && current !== pages) {
               setPage(page + 1);
+              setJustSearched(false)
             }
           }}
           prev={() => {

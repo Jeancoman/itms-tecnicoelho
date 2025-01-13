@@ -341,6 +341,10 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    setFormData(mensajería!)
+  }, [mensajería])
+
   return (
     <dialog
       ref={ref}
@@ -508,7 +512,7 @@ function OptionModal({ isOpen, closeModal, mensajería }: ModalProps) {
             Cancelar
           </button>
           <button className="bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
-            Completar
+            Guardar
           </button>
         </div>
       </form>
@@ -548,6 +552,7 @@ function EditModal({
 
   const handleFinalSubmit = () => {
     closeModal();
+    setIsConfirmationScreen(false);
     const loadingToast = toast.loading("Editando plantilla...");
     TemplateService.update(plantilla?.id!, formData).then((data) => {
       toast.dismiss(loadingToast);
@@ -1095,7 +1100,7 @@ export default function MessagingDataDisplay() {
   };
 
   useEffect(() => {
-    void TemplateService.getAll(page, size).then((data) => {
+    TemplateService.getAll(page, size).then((data) => {
       if (data === false) {
         setNotFound(true);
         setLoading(false);
@@ -1110,7 +1115,7 @@ export default function MessagingDataDisplay() {
       setIsOperationCompleted(false);
     });
 
-    void MessagingOptionsService.get().then((data) => {
+    MessagingOptionsService.get().then((data) => {
       if (data) {
         setOptions(data);
       }

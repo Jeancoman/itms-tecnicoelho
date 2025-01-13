@@ -22,6 +22,8 @@ import { ReactComponent as Settings } from "/src/assets/settings.svg";
 import { ReactComponent as Timeline } from "/src/assets/timeline.svg";
 import { ReactComponent as Warning } from "/src/assets/circle-exclamation-solid.svg";
 import { ReactComponent as Check } from "/src/assets/check_circle.svg";
+import { ReactComponent as Exchange } from "/src/assets/currency_exchange.svg";
+import { ReactComponent as Bitacora } from "/src/assets/bitacora.svg";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import session from "../../utils/session";
 import permissions from "../../utils/permissions";
@@ -30,13 +32,17 @@ import {
   useColapsableSettingsStore,
 } from "../../store/colapsableStore";
 import {
+  useAccesoSearchParamStore,
   useCategorySearchParamStore,
   useClientSearchParamStore,
+  useHistoricoSearchParamStore,
+  useImpuestoSearchParamStore,
   useMessageSearchParamStore,
   useProductSearchParamStore,
   useProviderSearchParamStore,
   usePublicationSearchParamStore,
   usePurchaseSearchParamStore,
+  useRolSearchParamStore,
   useSaleSearchParamStore,
   useTicketSearchParamStore,
   useUserSearchParamStore,
@@ -44,10 +50,12 @@ import {
 import options from "../../utils/options";
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
-import { Asset, ModalProps } from "../../types";
+import { Asset, Conversion, ModalProps } from "../../types";
 import { useFunctionStore } from "../../store/functionStore";
 import Pagination from "./pagination";
 import RespaldoService from "../../services/respaldo-service";
+import toast from "react-hot-toast";
+import ConversionOptionsService from "../../services/conversion-options-service";
 
 function RestaurationModal({ isOpen, closeModal }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -379,9 +387,149 @@ function RestaurationModal({ isOpen, closeModal }: ModalProps) {
   );
 }
 
+function ConversionModal({ isOpen, closeModal, conversion }: ModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [formData, setFormData] = useState<Conversion>(conversion!);
+
+  useEffect(() => {
+    if (isOpen) {
+      ref.current?.showModal();
+      const keyListener = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          closeModal();
+          ref.current?.close();
+        }
+      };
+      document.addEventListener("keydown", keyListener);
+      return () => {
+        document.removeEventListener("keydown", keyListener);
+      };
+    } else {
+      ref.current?.close();
+    }
+  }, [isOpen, closeModal]);
+
+  useEffect(() => {
+    setFormData(conversion!);
+  }, [conversion]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClick={(e) => {
+        const dialogDimensions = ref.current?.getBoundingClientRect();
+        if (!dialogDimensions) return;
+        if (
+          e.clientX < dialogDimensions.left ||
+          e.clientX > dialogDimensions.right ||
+          e.clientY < dialogDimensions.top ||
+          e.clientY > dialogDimensions.bottom
+        ) {
+          closeModal();
+          ref.current?.close();
+        }
+      }}
+      className="w-full max-w-[90%] md:w-3/5 lg:w-3/6 xl:w-2/5 h-fit rounded shadow max-h-[650px] overflow-y-auto scrollbar-thin text-base font-normal"
+    >
+      <div className="bg-[#2096ed] py-4 px-8">
+        <h1 className="text-xl font-bold text-white">
+          Configurar tasa de cambio
+        </h1>
+      </div>
+      <form
+        className="flex flex-col p-8 pt-6 gap-4 group"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          closeModal();
+          const loadingToast = toast.loading("Editando tasa de cambio...");
+          ConversionOptionsService.update(formData).then((success) => {
+            toast.dismiss(loadingToast);
+            if (!success) {
+              toast.error("La tasa de cambio no pudo ser editada.");
+            } else {
+              toast.success("Tasa de cambio editada exitosamente.");
+            }
+          });
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="automatica"
+            className="w-4 h-4 accent-[#2096ed]"
+            checked={formData?.automatica}
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                automatica: e.target.checked,
+              });
+            }}
+          />
+          <label htmlFor="automatica" className="font-medium text-gray-700">
+            Usar tasa de cambio automática (BCV)
+          </label>
+        </div>
+
+        {!formData?.automatica && (
+          <div className="flex flex-col">
+            <label className="block text-gray-600 text-base font-medium mb-2">
+              Tasa de cambio<span className="text-red-600 text-lg">*</span>
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              id="tasa_cambio"
+              value={formData?.tasa_cambio ?? ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  tasa_cambio: parseFloat(e.target.value),
+                })
+              }
+              className="border p-2 rounded outline-none focus:border-[#2096ed] w-full peer invalid:[&:not(:placeholder-shown)]:border-red-500 invalid:[&:not(:placeholder-shown)]:text-red-500"
+              min={0}
+              max={1000000000000}
+              required
+            />
+            <span className="mt-2 hidden text-sm text-red-500 peer-[&:not(:placeholder-shown):invalid]:block">
+              El formato debe ser 0,00. 12 dígitos máximo
+            </span>
+          </div>
+        )}
+
+        {formData?.automatica && (
+          <p className="text-gray-600">
+            La tasa de cambio se obtendrá automáticamente del valor especificado
+            por el Banco Central de Venezuela (BCV) al momento de registrar una
+            venta.
+          </p>
+        )}
+
+        <div className="flex gap-2 justify-end mt-4">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="text-gray-500 bg-gray-200 font-semibold rounded-lg py-2 px-4 hover:bg-gray-300 hover:text-gray-700 transition ease-in-out delay-100 duration-300"
+          >
+            Cancelar
+          </button>
+          <button className="group-invalid:pointer-events-none group-invalid:opacity-30 bg-[#2096ed] text-white font-semibold rounded-lg p-2 px-4 hover:bg-[#1182d5] transition ease-in-out delay-100 duration-300">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
 export default function NavPanel() {
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const [isConversionOpen, setIsConversionOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [conversion, setConversion] = useState<Conversion | undefined>(
+    undefined
+  );
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -427,6 +575,18 @@ export default function NavPanel() {
   const resetMessageSearchCount = useMessageSearchParamStore(
     (state) => state.resetSearchCount
   );
+  const resetRoleSearchCount = useRolSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const resetTaxSearchCount = useImpuestoSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const resetHistoricoSearchCount = useHistoricoSearchParamStore(
+    (state) => state.resetSearchCount
+  );
+  const resetAccesoSearchCount = useAccesoSearchParamStore(
+    (state) => state.resetSearchCount
+  );
   const setFunction = useFunctionStore((state) => state.setFunction);
 
   const resetAllSearchs = () => {
@@ -440,6 +600,10 @@ export default function NavPanel() {
     resetPublicationSearchCount();
     resetUserSearchCount();
     resetMessageSearchCount();
+    resetRoleSearchCount();
+    resetTaxSearchCount();
+    resetHistoricoSearchCount();
+    resetAccesoSearchCount()
   };
 
   useEffect(() => {
@@ -499,6 +663,15 @@ export default function NavPanel() {
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleTouchEnd);
     };
+  }, []);
+
+  useEffect(() => {
+    ConversionOptionsService.get().then((data) => {
+      if (data) {
+        console.log(data);
+        setConversion(data);
+      }
+    });
   }, []);
 
   return (
@@ -812,10 +985,12 @@ export default function NavPanel() {
                 <p>Publicaciones</p>
               </NavLink>
             ) : null}
-            {permissions.find()?.ver.restauracion ||
+            {permissions.find()?.crear.restauracion ||
             permissions.find()?.ver.impuesto ||
             permissions.find()?.ver.rol ||
-            permissions.find()?.ver.mensajería ? (
+            permissions.find()?.ver.mensajería ||
+            permissions.find()?.editar.conversion ||
+            permissions.find()?.ver.bitacora ? (
               <div
                 onClick={toggleSettings}
                 className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg"
@@ -872,7 +1047,7 @@ export default function NavPanel() {
                           location.pathname.includes("roles"),
                       })}
                     />
-                    <p>Roles</p>
+                    <p>Roles y permisos</p>
                   </NavLink>
                 ) : null}
                 {permissions.find()?.ver.impuesto ? (
@@ -895,6 +1070,37 @@ export default function NavPanel() {
                       })}
                     />
                     <p>Impuestos</p>
+                  </NavLink>
+                ) : null}
+                {permissions.find()?.editar.conversion ? (
+                  <div
+                    onClick={() => setIsConversionOpen(true)}
+                    className="group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg mb-0.5"
+                  >
+                    <Exchange className="h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]" />
+                    <p className="mr-8">Tasa de cambio</p>
+                  </div>
+                ) : null}
+                {permissions.find()?.ver.bitacora ? (
+                  <NavLink
+                    to="/bitacora"
+                    onClick={resetAllSearchs}
+                    className={clsx({
+                      ["group/parent flex gap-3 items-center cursor-pointer hover:bg-white hover:text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                        !location.pathname.includes("bitacora"),
+                      ["flex gap-3 items-center cursor-pointer bg-white text-[#2096ed] p-2 rounded-lg mb-0.5"]:
+                        location.pathname.includes("bitacora"),
+                    })}
+                  >
+                    <Bitacora
+                      className={clsx({
+                        ["h-6 w-6 fill-white group-hover/parent:fill-[#2096ed]"]:
+                          !location.pathname.includes("bitacora"),
+                        ["h-6 w-6 fill-[#2096ed]"]:
+                          location.pathname.includes("bitacora"),
+                      })}
+                    />
+                    <p>Bitácora</p>
                   </NavLink>
                 ) : null}
                 {permissions.find()?.crear.restauracion ? (
@@ -935,6 +1141,12 @@ export default function NavPanel() {
           isOpen={isOpen}
           closeModal={() => setIsOpen(false)}
           setOperationAsCompleted={() => {}}
+        />
+        <ConversionModal
+          isOpen={isConversionOpen}
+          closeModal={() => setIsConversionOpen(false)}
+          setOperationAsCompleted={() => {}}
+          conversion={conversion}
         />
       </aside>
     </>
