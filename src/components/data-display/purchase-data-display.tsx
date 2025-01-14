@@ -22,7 +22,7 @@ import {
   impuestoCalculado,
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
-import { format } from "date-fns";
+import { add, format } from "date-fns";
 import ProductService from "../../services/producto-service";
 import Provider from "../../services/provider-service";
 import SelectWithSearch from "../misc/select-with-search";
@@ -80,6 +80,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
     { impuesto: Impuesto; total: number }[]
   >([]);
   const size = 8;
+  const VITE_ON_VERCEL = import.meta.env.VITE_ON_VERCEL === "true" || false;
 
   const resetFormData = () => {
     setFormData({
@@ -282,6 +283,9 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
 
     let updatedFormData = {
       ...formData,
+      emisionFactura: VITE_ON_VERCEL
+      ? add(new Date(formData.emisionFactura!), { hours: 4 })
+      : formData.emisionFactura,
       detalles: formData?.detalles
         ?.filter((detalle) => detalle.cantidad > 0)
         .map((detalle) => ({

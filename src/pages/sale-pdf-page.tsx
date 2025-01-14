@@ -79,43 +79,70 @@ export default function SalePDFPage() {
         className="bg-white w-[11in] h-[8.5in] mx-auto p-[1.25in]"
       >
         <div className="mb-8">
-          <div className="grid grid-cols-2">
-            <div>
+          <div
+            className="grid grid-cols-2 gap-4 items-start"
+            style={{
+              display: "grid",
+              gridTemplateRows: "auto auto 1fr auto", // Fila para cada sección
+              gridTemplateColumns: "1fr 1fr",
+            }}
+          >
+            {/* Logo y Datos del Cliente */}
+            <div className="col-span-1 row-start-1 row-end-3">
               <img
                 src="/assets/logo-completo.png"
                 className="w-72 mb-4 -ml-3"
               />
               <h5 className="font-mono">
-                NOMBRE: {venta?.historico_ventum?.cliente_nombre}{" "}
+                <span className="font-bold">NOMBRE:</span>{" "}
+                {venta?.historico_ventum?.cliente_nombre}{" "}
                 {venta?.historico_ventum?.cliente_apellido}
               </h5>
               <h5 className="font-mono">
-                DOCUMENTO: {venta?.historico_ventum?.cliente_documento}
+                <span className="font-bold">DOCUMENTO:</span>{" "}
+                {venta?.historico_ventum?.cliente_documento}
               </h5>
               <h5 className="font-mono">
-                DIRECCIÓN: {venta?.historico_ventum?.cliente_direccion}
+                <span className="font-bold">DIRECCIÓN:</span>{" "}
+                {venta?.historico_ventum?.cliente_direccion}
               </h5>
             </div>
-            <div className="font-mono text-right mt-8">
-              <h3 className="font-bold capitalize text-xl">TECNICOELHO</h3>
-              <h5 className="font-mono">J-80065323-2</h5>
-              <h5 className="font-mono">TELF: +58 0426-2452374</h5>
+
+            {/* Condición de Pago */}
+            <div className="col-span-1 row-start-4">
+              <h5 className="font-mono -mt-2">
+                <span className="font-bold">CONDICIÓN DE PAGO:</span>{" "}
+                {venta?.tipoPago === "CONTADO" ? "Contado" : "Credito"}
+              </h5>
+            </div>
+
+            {/* Datos de la Empresa */}
+            <div className="col-span-1 row-start-1 row-end-2 text-right">
+              <h2 className="font-bold capitalize text-xl mt-8">TECNICOELHO</h2>
+              <h5 className="font-mono mt-4">
+                <span className="font-bold">RIF:</span> J-80065323-2
+              </h5>
               <h5 className="font-mono">Calle Retumbo, Valle de la Pascua</h5>
-              <h5 className="mt-8 font-mono">
+              <h5 className="font-mono">
+                <span className="font-bold">TELF:</span> 0426-2452374
+              </h5>
+            </div>
+
+            {/* Factura y Fecha */}
+            <div className="col-span-1 row-start-4 text-right">
+              <h5 className="font-mono">
                 <span className="font-bold">FACTURA NO.</span> {venta?.id || 0}
               </h5>
               <h5 className="font-mono">
-                FECHA:{" "}
+                <span className="font-bold">FECHA: </span>
                 {venta?.fecha
-                  ? format(new Date(venta?.fecha), "dd/MM/yyyy")
+                  ? format(new Date(venta?.fecha), "dd/MM/yyyy hh:mm a")
                   : ""}
-              </h5>
-              <h5 className="font-mono">
-                CONDICIÓN DE PAGO: {venta?.tipoPago}
               </h5>
             </div>
           </div>
         </div>
+
         <table className="w-full mb-12 font-mono">
           <tr>
             <td className="font-bold">CÓDIGO</td>
