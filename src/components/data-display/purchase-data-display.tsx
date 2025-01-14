@@ -230,6 +230,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
     const saleTaxes = calculateSaleTaxes(formData, impuestosCompra);
 
     // Combinar ambos impuestos asegurando que no haya duplicados
+    // Comentario
     const combinedTaxesMap = new Map<
       number,
       { impuesto: Impuesto; total: number }
