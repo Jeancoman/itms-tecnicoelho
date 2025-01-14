@@ -22,7 +22,8 @@ import {
   impuestoCalculado,
 } from "../../types";
 import toast, { Toaster } from "react-hot-toast";
-import { add, format } from "date-fns";
+import { format } from "date-fns";
+import { DateTime } from "luxon";
 import ProductService from "../../services/producto-service";
 import Provider from "../../services/provider-service";
 import SelectWithSearch from "../misc/select-with-search";
@@ -80,7 +81,6 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
     { impuesto: Impuesto; total: number }[]
   >([]);
   const size = 8;
-  const VITE_ON_VERCEL = import.meta.env.VITE_ON_VERCEL === "true" || false;
 
   const resetFormData = () => {
     setFormData({
@@ -284,9 +284,12 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
 
     let updatedFormData = {
       ...formData,
-      emisionFactura: VITE_ON_VERCEL
-      ? add(new Date(formData.emisionFactura!), { hours: 4 })
-      : formData.emisionFactura,
+      emisionFactura: formData.emisionFactura
+        ? //@ts-ignore
+          DateTime.fromISO(formData.emisionFactura, {
+            zone: "America/Caracas",
+          }).toISO()
+        : formData.emisionFactura,
       detalles: formData?.detalles
         ?.filter((detalle) => detalle.cantidad > 0)
         .map((detalle) => ({
@@ -296,6 +299,7 @@ function AddSection({ close, setOperationAsCompleted, action }: SectionProps) {
     };
 
     const loadingToast = toast.loading("Añadiendo compra...");
+    //@ts-ignore
     PurchaseService.create(updatedFormData, impuestosCalculados).then(
       (data) => {
         toast.dismiss(loadingToast);
